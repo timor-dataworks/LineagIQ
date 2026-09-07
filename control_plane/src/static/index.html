@@ -59,7 +59,7 @@
       align-items: center;
       gap: 12px;
     }
-    input, select, button {
+    input, button {
       font-family: inherit;
       font-size: 14px;
       border-radius: 8px;
@@ -145,7 +145,7 @@
       text-transform: uppercase;
     }
     .badge-Dataset { background: rgba(0, 240, 255, 0.2); color: #00f0ff; border: 1px solid #00f0ff; }
-    .badge-Column { background: rgba(112, 0, 255, 0.2); color: #b87dff; border: 1px solid #7000ff; }
+    .badge-Column { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #a855f7; }
     .badge-Pipeline { background: rgba(255, 170, 0, 0.2); color: #ffaa00; border: 1px solid #ffaa00; }
     .badge-User { background: rgba(0, 255, 153, 0.2); color: #00ff99; border: 1px solid #00ff99; }
     
@@ -299,17 +299,32 @@
     }
 
     function renderNetwork(nodesData, edgesData) {
-      const formattedNodes = nodesData.map(n => {
+      const knownNodeIds = new Set(nodesData.map(n => n.id));
+      const allNodes = [...nodesData];
+
+      // Insert stubs for any missing node IDs referenced in edges
+      edgesData.forEach(e => {
+        if (!knownNodeIds.has(e.source_id)) {
+          knownNodeIds.add(e.source_id);
+          allNodes.push({ id: e.source_id, name: e.source_id.split('.').pop(), type: 'Dataset', description: 'External/Source Node' });
+        }
+        if (!knownNodeIds.has(e.target_id)) {
+          knownNodeIds.add(e.target_id);
+          allNodes.push({ id: e.target_id, name: e.target_id.split('.').pop(), type: 'Dataset', description: 'External/Target Node' });
+        }
+      });
+
+      const formattedNodes = allNodes.map(n => {
         const color = typeColors[n.type] || { background: '#94a3b8', border: '#64748b' };
         return {
           id: n.id,
-          label: n.name,
-          shape: n.type === 'Dataset' ? 'database' : (n.type === 'Pipeline' ? 'gears' : 'dot'),
-          size: n.type === 'Dataset' ? 22 : (n.type === 'Pipeline' ? 20 : 14),
+          label: n.name || n.id,
+          shape: 'dot',
+          size: n.type === 'Dataset' ? 18 : (n.type === 'Pipeline' ? 16 : (n.type === 'User' ? 14 : 10)),
           color: {
             background: color.background,
             border: color.border,
-            highlight: { background: color.highlight, border: color.background }
+            highlight: { background: '#ffffff', border: color.background }
           },
           font: { color: '#f8fafc', size: 12, face: 'Inter' },
           rawNode: n
@@ -322,7 +337,7 @@
           to: e.target_id,
           label: e.type,
           arrows: 'to',
-          color: { color: 'rgba(255, 255, 255, 0.25)', highlight: '#00f0ff' },
+          color: { color: 'rgba(255, 255, 255, 0.3)', highlight: '#00f0ff' },
           font: { color: '#94a3b8', size: 10, align: 'middle' }
         };
       });
@@ -333,9 +348,25 @@
       const container = document.getElementById('network-canvas');
       const data = { nodes: nodesDataSet, edges: edgesDataSet };
       const options = {
+        nodes: {
+          borderWidth: 2,
+          shadow: true
+        },
+        edges: {
+          width: 2,
+          shadow: true,
+          smooth: { type: 'continuous' }
+        },
         physics: {
-          stabilization: true,
-          barnesHut: { gravitationalConstant: -3000, springLength: 120 }
+          enabled: true,
+          solver: 'forceAtlas2Based',
+          forceAtlas2Based: {
+            gravitationalConstant: -40,
+            centralGravity: 0.01,
+            springLength: 90,
+            springConstant: 0.08
+          },
+          stabilization: { iterations: 100 }
         },
         interaction: { hover: true, tooltipDelay: 200 }
       };
@@ -343,10 +374,14 @@
       if (network) network.destroy();
       network = new vis.Network(container, data, options);
 
+      network.once("stabilizationIterationsDone", function() {
+        network.fit();
+      });
+
       network.on("selectNode", function (params) {
         if (params.nodes.length > 0) {
           selectedNodeId = params.nodes[0];
-          const nodeObj = rawNodes.find(n => n.id === selectedNodeId);
+          const nodeObj = allNodes.find(n => n.id === selectedNodeId);
           displayNodeDetails(nodeObj);
         }
       });
@@ -359,14 +394,14 @@
 
     function displayNodeDetails(node) {
       if (!node) return;
-      document.getElementById('panel-node-name').innerText = node.name;
+      document.getElementById('panel-node-name').innerText = node.name || node.id;
       document.getElementById('panel-node-id').innerText = node.id;
       document.getElementById('panel-node-desc').innerText = node.description || 'No description available.';
-      document.getElementById('panel-node-props').innerText = typeof node.properties === 'string' ? node.properties : JSON.stringify(node.properties, null, 2);
+      document.getElementById('panel-node-props').innerText = typeof node.properties === 'string' ? node.properties : JSON.stringify(node.properties || {}, null, 2);
 
       const badge = document.getElementById('panel-node-type');
-      badge.innerText = node.type;
-      badge.className = `node-badge badge-${node.type}`;
+      badge.innerText = node.type || 'Node';
+      badge.className = `node-badge badge-${node.type || 'Dataset'}`;
       badge.style.display = 'inline-block';
 
       document.getElementById('blast-btn').style.display = 'block';
@@ -397,7 +432,8 @@
         const impactedIds = new Set((result.impacted_nodes || []).map(n => n.id));
         
         // Highlight impacted nodes in glowing red
-        const updatedNodes = rawNodes.map(n => {
+        const currentNodes = nodesDataSet.get();
+        const updatedNodes = currentNodes.map(n => {
           const isImpacted = impactedIds.has(n.id);
           const color = isImpacted 
             ? { background: '#ff3366', border: '#ffffff', highlight: { background: '#ffffff', border: '#ff3366' } }
@@ -425,15 +461,12 @@
       }
 
       const filteredNodes = rawNodes.filter(n => 
-        n.name.toLowerCase().includes(searchTerm) || 
-        n.id.toLowerCase().includes(searchTerm) || 
-        n.type.toLowerCase().includes(searchTerm)
+        (n.name && n.name.toLowerCase().includes(searchTerm)) || 
+        (n.id && n.id.toLowerCase().includes(searchTerm)) || 
+        (n.type && n.type.toLowerCase().includes(searchTerm))
       );
 
-      const filteredIds = new Set(filteredNodes.map(n => n.id));
-      const filteredEdges = rawEdges.filter(e => filteredIds.has(e.source_id) && filteredIds.has(e.target_id));
-
-      renderNetwork(filteredNodes, filteredEdges);
+      renderNetwork(filteredNodes, rawEdges);
     }
 
     function resetGraphHighlight() {
@@ -441,7 +474,6 @@
       resetSidebar();
     }
 
-    // Load initial graph on page load
     window.addEventListener('DOMContentLoaded', loadGraph);
   </script>
 </body>
