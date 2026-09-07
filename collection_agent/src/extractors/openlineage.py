@@ -26,8 +26,8 @@ class OpenLineageExtractor:
         edges = []
         for inp_ds in input_datasets:
             edges.append({
-                "source": job_name,
-                "target": inp_ds,
+                "source": inp_ds,
+                "target": job_name,
                 "type": "CONSUMED_BY",
             })
             

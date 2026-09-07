@@ -22,5 +22,6 @@ def test_openlineage_parse_event():
     assert len(edges) == 2
     consumed = next(e for e in edges if e["type"] == "CONSUMED_BY")
     produced = next(e for e in edges if e["type"] == "PRODUCED_BY")
-    assert consumed["source"] == "airflow_prod.etl_orders_daily"
+    assert consumed["source"] == "snowflake://account.region.raw_db.sales.orders_raw"
+    assert consumed["target"] == "airflow_prod.etl_orders_daily"
     assert produced["source"] == "airflow_prod.etl_orders_daily"
