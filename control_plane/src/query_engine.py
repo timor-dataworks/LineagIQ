@@ -25,7 +25,7 @@ class DuckDBQueryEngine:
         and relationships starting from `start_node_id`.
         """
         if not os.path.exists(self.nodes_file) or not os.path.exists(self.edges_file):
-            return {"impacted_nodes": [], "edges": [], "root_node": None}
+            return {"impacted_nodes": [], "edges": [], "root_node": None, "depth_reached": 0}
 
         con = duckdb.connect(database=":memory:")
 

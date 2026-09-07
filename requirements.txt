@@ -2,3 +2,6 @@
 
 # Collection Agent
 -r collection_agent/requirements.txt
+
+# Control Plane
+-r control_plane/requirements.txt

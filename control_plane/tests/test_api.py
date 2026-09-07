@@ -34,6 +34,23 @@ def test_blast_radius_api(tmp_path):
     assert "LINEAGIQ GRAPHRAG PROMPT" in data["synthesized_prompt"]
 
 
+def test_blast_radius_api_empty_path(tmp_path):
+    response = client.post(
+        "/api/v1/tenants/empty_tenant/blast-radius",
+        json={
+            "node_id": "non_existent_node",
+            "max_depth": 3,
+            "data_path": str(tmp_path / "non_existent"),
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["tenant_id"] == "empty_tenant"
+    assert data["depth_reached"] == 0
+    assert data["impacted_nodes_count"] == 0
+
+
 def test_discovery_api(tmp_path):
     ds_node = DatasetNode(id="analytics.orders", name="orders", description="Cleaned orders")
     payload = GraphPayload(nodes=[ds_node], edges=[])
