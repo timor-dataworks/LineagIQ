@@ -16,17 +16,26 @@ from collection_agent.src.transform.models import (
 class GraphBuilder:
     """
     Graph Builder normalizes raw extractor payloads into validated Pydantic
-    Node and Edge models, maintaining deduplicated collections.
+    Node and Edge models, maintaining deduplicated collections and resolving table aliases.
     """
 
     def __init__(self):
         self._nodes: Dict[str, Node] = {}
         self._edges: Dict[str, Edge] = {}
+        self._alias_map: Dict[str, str] = {}
+
+    def register_alias(self, alias: str, canonical_id: str) -> None:
+        if alias and canonical_id:
+            self._alias_map[alias.lower()] = canonical_id
+
+    def resolve_id(self, raw_id: str) -> str:
+        if not raw_id:
+            return raw_id
+        return self._alias_map.get(raw_id.lower(), raw_id)
 
     def add_node(self, node: Node) -> None:
-        """Add or update a node in the graph registry."""
+        """Add or update a node in the graph registry and register canonical aliases."""
         if node.id in self._nodes:
-            # Merge properties if node already exists
             existing = self._nodes[node.id]
             existing.properties.update(node.properties)
             if node.description and not existing.description:
@@ -34,15 +43,37 @@ class GraphBuilder:
         else:
             self._nodes[node.id] = node
 
+        # Register aliases for dataset and column nodes
+        self.register_alias(node.id, node.id)
+        if isinstance(node, DatasetNode):
+            self.register_alias(node.name, node.id)
+            if node.schema_name:
+                self.register_alias(f"{node.schema_name}.{node.name}", node.id)
+            if node.database and node.schema_name:
+                self.register_alias(f"{node.database}.{node.schema_name}.{node.name}", node.id)
+        elif isinstance(node, ColumnNode):
+            self.register_alias(f"{node.dataset_id}.{node.name}", node.id)
+
     def add_nodes(self, nodes: List[Node]) -> None:
         for n in nodes:
             self.add_node(n)
 
     def add_edge(self, edge: Edge) -> None:
         """Add an edge avoiding exact source-target-type duplicates."""
-        edge_key = f"{edge.source_id}->{edge.type.value}->{edge.target_id}"
+        resolved_source = self.resolve_id(edge.source_id)
+        resolved_target = self.resolve_id(edge.target_id)
+        
+        edge_key = f"{resolved_source}->{edge.type.value}->{resolved_target}"
+        
+        resolved_edge = Edge(
+            source_id=resolved_source,
+            target_id=resolved_target,
+            type=edge.type,
+            properties=edge.properties,
+        )
+
         if edge_key not in self._edges:
-            self._edges[edge_key] = edge
+            self._edges[edge_key] = resolved_edge
         else:
             self._edges[edge_key].properties.update(edge.properties)
 
