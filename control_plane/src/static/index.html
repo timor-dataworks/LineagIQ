@@ -363,7 +363,7 @@
           color: {
             background: color.background,
             border: 'transparent',
-            highlight: { background: color.highlight, border: '#ffffff' }
+            highlight: { background: color.highlight, border: 'transparent' }
           },
           font: { color: '#ffffff', size: 13, face: 'Inter', weight: '600' },
           rawNode: n
@@ -512,12 +512,12 @@
         const updatedNodes = currentNodes.map(n => {
           const isImpacted = impactedIds.has(n.id);
           const color = isImpacted 
-            ? { background: '#ef4444', border: '#ffffff', highlight: { background: '#ffffff', border: '#ef4444' } }
+            ? { background: '#b91c1c', border: '#ef4444', highlight: { background: '#dc2626', border: '#ef4444' } }
             : { background: '#1e293b', border: 'transparent' };
           return {
             id: n.id,
             color: color,
-            opacity: isImpacted ? 1.0 : 0.2
+            opacity: isImpacted ? 1.0 : 0.25
           };
         });
 
