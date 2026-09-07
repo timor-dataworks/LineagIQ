@@ -1,0 +1,25 @@
+{
+  "nodes": {
+    "model.jaffle_shop.stg_customers": {
+      "metadata": {
+        "type": "BASE TABLE",
+        "database": "raw_db",
+        "schema": "analytics",
+        "name": "stg_customers",
+        "owner": "analytics_admin"
+      },
+      "columns": {
+        "customer_id": {
+          "type": "NUMBER",
+          "comment": "Primary key",
+          "index": 1
+        },
+        "first_name": {
+          "type": "VARCHAR",
+          "comment": "Customer first name",
+          "index": 2
+        }
+      }
+    }
+  }
+}

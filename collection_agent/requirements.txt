@@ -1,0 +1,19 @@
+# LineagIQ Collection Agent Dependencies
+
+# Core Data Modeling & Normalization
+pydantic>=2.10.0
+
+# Columnar Storage & Vector Engine
+pyarrow>=14.0.0
+pandas>=2.0.0
+lancedb>=0.4.0
+
+# Local In-Process Vector Embedding
+onnxruntime>=1.15.0
+tokenizers>=0.15.0
+
+# Cloud Direct Lake Sync
+boto3>=1.28.0
+
+# Testing & Verification
+pytest>=8.0.0

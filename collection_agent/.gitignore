@@ -1,0 +1,18 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Environments & IDEs
+.venv/
+env/
+venv/
+.idea/
+.vscode/
+
+# Local data & temporary output artifacts
+/tmp/
+*.parquet
+*.lance/
+.DS_Store

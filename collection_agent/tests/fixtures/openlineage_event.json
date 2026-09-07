@@ -1,0 +1,23 @@
+{
+  "eventType": "COMPLETE",
+  "eventTime": "2026-09-07T10:15:00.000Z",
+  "run": {
+    "runId": "4c9e830e-5407-4f6c-8291-a1b7e3f89021"
+  },
+  "job": {
+    "namespace": "airflow_prod",
+    "name": "etl_orders_daily"
+  },
+  "inputs": [
+    {
+      "namespace": "snowflake://account.region",
+      "name": "raw_db.sales.orders_raw"
+    }
+  ],
+  "outputs": [
+    {
+      "namespace": "snowflake://account.region",
+      "name": "analytics_db.sales.fct_orders"
+    }
+  ]
+}

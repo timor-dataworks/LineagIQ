@@ -1,0 +1,11 @@
+# LineagIQ Control Plane Dependencies
+
+fastapi>=0.115.0
+uvicorn>=0.30.0
+duckdb>=1.1.0
+pyarrow>=14.0.0
+pandas>=2.0.0
+lancedb>=0.4.0
+pydantic>=2.10.0
+pytest>=8.0.0
+httpx>=0.27.0

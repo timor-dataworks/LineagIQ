@@ -1,0 +1,58 @@
+{
+  "tables": [
+    {
+      "table_catalog": "PROD_DB",
+      "table_schema": "PUBLIC",
+      "table_name": "USERS",
+      "table_type": "BASE TABLE"
+    },
+    {
+      "table_catalog": "PROD_DB",
+      "table_schema": "PUBLIC",
+      "table_name": "TRANSACTIONS",
+      "table_type": "BASE TABLE"
+    }
+  ],
+  "columns": [
+    {
+      "table_catalog": "PROD_DB",
+      "table_schema": "PUBLIC",
+      "table_name": "USERS",
+      "column_name": "ID",
+      "data_type": "INTEGER",
+      "is_nullable": "NO",
+      "ordinal_position": 1
+    },
+    {
+      "table_catalog": "PROD_DB",
+      "table_schema": "PUBLIC",
+      "table_name": "USERS",
+      "column_name": "EMAIL",
+      "data_type": "VARCHAR",
+      "is_nullable": "YES",
+      "ordinal_position": 2
+    },
+    {
+      "table_catalog": "PROD_DB",
+      "table_schema": "PUBLIC",
+      "table_name": "TRANSACTIONS",
+      "column_name": "USER_ID",
+      "data_type": "INTEGER",
+      "is_nullable": "NO",
+      "ordinal_position": 1
+    }
+  ],
+  "foreign_keys": [
+    {
+      "fk_catalog": "PROD_DB",
+      "fk_schema": "PUBLIC",
+      "fk_table": "TRANSACTIONS",
+      "fk_column": "USER_ID",
+      "pk_catalog": "PROD_DB",
+      "pk_schema": "PUBLIC",
+      "pk_table": "USERS",
+      "pk_column": "ID",
+      "constraint_name": "FK_TXN_USERS"
+    }
+  ]
+}

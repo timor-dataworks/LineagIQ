@@ -1,0 +1,22 @@
+# Python bytecode & runtime cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+
+# IDE & OS files
+.DS_Store
+.idea/
+.vscode/
+
+# Local data & temporary output artifacts
+/tmp/
+*.parquet
+*.lance/
+*.log

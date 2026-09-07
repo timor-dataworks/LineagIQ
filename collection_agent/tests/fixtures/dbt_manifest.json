@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "dbt_version": "1.7.0",
+    "project_name": "jaffle_shop"
+  },
+  "nodes": {
+    "model.jaffle_shop.stg_customers": {
+      "resource_type": "model",
+      "name": "stg_customers",
+      "schema": "analytics",
+      "database": "raw_db",
+      "description": "Staged customer records",
+      "meta": {
+        "owner": "data-team"
+      },
+      "columns": {
+        "customer_id": {
+          "name": "customer_id",
+          "description": "Primary key for customers"
+        },
+        "first_name": {
+          "name": "first_name",
+          "description": "First name of customer"
+        }
+      },
+      "depends_on": {
+        "nodes": ["source.jaffle_shop.raw_customers"]
+      }
+    },
+    "model.jaffle_shop.orders": {
+      "resource_type": "model",
+      "name": "orders",
+      "schema": "analytics",
+      "database": "raw_db",
+      "description": "Cleaned order events",
+      "meta": {
+        "owner": "data-team"
+      },
+      "columns": {
+        "order_id": {
+          "name": "order_id"
+        },
+        "customer_id": {
+          "name": "customer_id"
+        }
+      },
+      "depends_on": {
+        "nodes": ["model.jaffle_shop.stg_customers"]
+      }
+    }
+  }
+}

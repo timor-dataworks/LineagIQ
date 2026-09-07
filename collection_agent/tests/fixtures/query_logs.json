@@ -1,0 +1,14 @@
+[
+  {
+    "query_id": "q-1001",
+    "user_name": "alice_analyst",
+    "query_text": "SELECT u.EMAIL, t.AMOUNT FROM PROD_DB.PUBLIC.USERS JOIN PROD_DB.PUBLIC.TRANSACTIONS ON USERS.ID = TRANSACTIONS.USER_ID",
+    "start_time": "2026-09-07T10:00:00Z"
+  },
+  {
+    "query_id": "q-1002",
+    "user_name": "bob_engineer",
+    "query_text": "SELECT * FROM analytics.stg_customers",
+    "start_time": "2026-09-07T10:05:00Z"
+  }
+]

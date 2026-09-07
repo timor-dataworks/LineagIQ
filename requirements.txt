@@ -1,0 +1,4 @@
+# LineagIQ Root Dependencies
+
+# Collection Agent
+-r collection_agent/requirements.txt
