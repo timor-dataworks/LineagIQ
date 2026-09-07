@@ -376,8 +376,15 @@
           to: e.target_id,
           label: e.type,
           arrows: { to: { enabled: true, scaleFactor: 0.8 } },
-          color: { color: 'rgba(255, 255, 255, 0.45)', highlight: '#00f0ff' },
-          font: { color: '#cbd5e1', size: 10, align: 'middle' },
+          color: { color: 'rgba(255, 255, 255, 0.5)', highlight: '#00f0ff' },
+          font: { 
+            color: '#ffffff', 
+            size: 11, 
+            face: 'Inter', 
+            align: 'middle',
+            strokeWidth: 0,
+            background: 'rgba(15, 23, 42, 0.85)'
+          },
           smooth: isHierarchical ? { type: 'cubicBezier', forceDirection: 'horizontal' } : { type: 'continuous' }
         };
       });
