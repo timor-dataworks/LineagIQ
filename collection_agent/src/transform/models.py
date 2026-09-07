@@ -20,6 +20,7 @@ class EdgeType(str, Enum):
     JOINS_WITH = "JOINS_WITH"
     DISPLAYED_IN = "DISPLAYED_IN"
     GOVERNED_BY = "GOVERNED_BY"
+    BELONGS_TO = "BELONGS_TO"
 
 
 class Node(BaseModel):

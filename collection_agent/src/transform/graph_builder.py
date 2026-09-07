@@ -75,7 +75,7 @@ class GraphBuilder:
                 )
                 self.add_node(ds_node)
 
-                # Extract Column nodes
+                # Extract Column nodes and linkage edges
                 for col_name in node_raw.get("columns", []):
                     col_id = f"{node_id}.{col_name}"
                     col_node = ColumnNode(
@@ -84,6 +84,11 @@ class GraphBuilder:
                         dataset_id=node_id,
                     )
                     self.add_node(col_node)
+                    self.add_edge(Edge(
+                        source_id=col_id,
+                        target_id=node_id,
+                        type=EdgeType.BELONGS_TO,
+                    ))
 
             elif node_type == "Pipeline":
                 pipe_node = PipelineNode(
@@ -132,6 +137,11 @@ class GraphBuilder:
                 ordinal_position=col.get("ordinal_position"),
             )
             self.add_node(col_node)
+            self.add_edge(Edge(
+                source_id=col["id"],
+                target_id=col["dataset_id"],
+                type=EdgeType.BELONGS_TO,
+            ))
 
         if foreign_keys:
             for fk in foreign_keys:
