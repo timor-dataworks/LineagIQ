@@ -17,7 +17,7 @@
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: #0b0f19;
-      color: #e2e8f0;
+      color: #f8fafc;
       height: 100vh;
       overflow: hidden;
       display: flex;
@@ -26,7 +26,7 @@
     /* Header Bar */
     header {
       height: 64px;
-      background: rgba(15, 23, 42, 0.85);
+      background: rgba(15, 23, 42, 0.9);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       display: flex;
@@ -57,29 +57,31 @@
     .controls {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
-    input, button {
+    input, select, button {
       font-family: inherit;
-      font-size: 14px;
+      font-size: 13px;
       border-radius: 8px;
       outline: none;
     }
-    input[type="text"] {
-      background: rgba(30, 41, 59, 0.8);
+    input[type="text"], select {
+      background: rgba(30, 41, 59, 0.9);
       border: 1px solid rgba(255, 255, 255, 0.15);
       color: #fff;
-      padding: 8px 14px;
-      width: 220px;
+      padding: 8px 12px;
       transition: all 0.2s;
     }
-    input[type="text"]:focus {
+    select {
+      cursor: pointer;
+    }
+    input[type="text"]:focus, select:focus {
       border-color: #00f0ff;
       box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
     }
     .btn {
       background: linear-gradient(135deg, #00f0ff, #0072ff);
-      color: #000;
+      color: #ffffff;
       font-weight: 600;
       border: none;
       padding: 8px 16px;
@@ -116,8 +118,8 @@
     }
     /* Sidebar Details Panel */
     .sidebar {
-      width: 360px;
-      background: rgba(15, 23, 42, 0.9);
+      width: 380px;
+      background: rgba(15, 23, 42, 0.95);
       backdrop-filter: blur(16px);
       border-left: 1px solid rgba(255, 255, 255, 0.1);
       padding: 24px;
@@ -164,7 +166,7 @@
       letter-spacing: 0.5px;
     }
     .detail-value {
-      font-size: 14px;
+      font-size: 13px;
       color: #cbd5e1;
       word-break: break-all;
     }
@@ -173,21 +175,23 @@
       padding: 10px;
       border-radius: 6px;
       font-family: monospace;
-      font-size: 12px;
+      font-size: 11px;
       color: #38bdf8;
       border: 1px solid rgba(255, 255, 255, 0.05);
+      max-height: 180px;
+      overflow-y: auto;
     }
 
-    /* Legend */
+    /* Legend Overlay */
     .legend {
       position: absolute;
       bottom: 24px;
       left: 24px;
-      background: rgba(15, 23, 42, 0.85);
+      background: rgba(15, 23, 42, 0.9);
       backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 12px;
-      padding: 14px 18px;
+      padding: 12px 18px;
       display: flex;
       gap: 16px;
       z-index: 5;
@@ -211,14 +215,24 @@
   <header>
     <div class="brand">
       <span>LineagIQ</span>
-      <span class="brand-badge">Control Plane</span>
+      <span class="brand-badge">Graph DAG Visualizer</span>
     </div>
 
     <div class="controls">
-      <input type="text" id="tenant-input" value="demo_tenant" placeholder="Tenant ID">
-      <input type="text" id="data-path-input" value="/tmp/tenants/demo_tenant" placeholder="Data Path (optional)">
-      <button class="btn" onclick="loadGraph()">Load Graph</button>
-      <input type="text" id="search-input" placeholder="Filter node name..." oninput="filterGraph()">
+      <select id="view-mode" onchange="filterGraph()">
+        <option value="high_level">High-Level Lineage (Datasets & Pipelines)</option>
+        <option value="all">Full Detail (Include Columns & Belongings)</option>
+      </select>
+
+      <select id="layout-mode" onchange="toggleLayout()">
+        <option value="hierarchical">DAG Lineage Layout (Left → Right)</option>
+        <option value="physics">Organic Force Layout</option>
+      </select>
+
+      <input type="text" id="tenant-input" value="demo_tenant" style="width: 120px;" placeholder="Tenant ID">
+      <input type="text" id="data-path-input" value="/tmp/tenants/demo_tenant" style="width: 160px;" placeholder="Data Path">
+      <button class="btn" onclick="loadGraph()">Load</button>
+      <input type="text" id="search-input" style="width: 140px;" placeholder="Filter name..." oninput="filterGraph()">
     </div>
   </header>
 
@@ -238,7 +252,7 @@
 
       <div class="detail-group">
         <span class="detail-label">Description</span>
-        <span class="detail-value" id="panel-node-desc">Click on any node in the knowledge graph to view attributes, lineage properties, and blast-radius.</span>
+        <span class="detail-value" id="panel-node-desc">Click on any dataset or pipeline node to view lineage details and operational dependencies.</span>
       </div>
 
       <div class="detail-group">
@@ -254,10 +268,10 @@
 
     <!-- Legend Overlay -->
     <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background: #00f0ff; box-shadow: 0 0 8px #00f0ff;"></div> Dataset</div>
-      <div class="legend-item"><div class="legend-dot" style="background: #a855f7; box-shadow: 0 0 8px #a855f7;"></div> Column</div>
-      <div class="legend-item"><div class="legend-dot" style="background: #ffaa00; box-shadow: 0 0 8px #ffaa00;"></div> Pipeline</div>
-      <div class="legend-item"><div class="legend-dot" style="background: #00ff99; box-shadow: 0 0 8px #00ff99;"></div> User</div>
+      <div class="legend-item"><div class="legend-dot" style="background: #00f0ff; box-shadow: 0 0 8px #00f0ff;"></div> Dataset / Table</div>
+      <div class="legend-item"><div class="legend-dot" style="background: #ffaa00; box-shadow: 0 0 8px #ffaa00;"></div> Pipeline / Job</div>
+      <div class="legend-item"><div class="legend-dot" style="background: #00ff99; box-shadow: 0 0 8px #00ff99;"></div> User / Consumer</div>
+      <div class="legend-item" id="legend-column" style="display: none;"><div class="legend-dot" style="background: #a855f7; box-shadow: 0 0 8px #a855f7;"></div> Column</div>
     </div>
   </div>
 
@@ -270,11 +284,11 @@
     let selectedNodeId = null;
 
     const typeColors = {
-      'Dataset': { background: '#00f0ff', border: '#00c3d0', highlight: '#ffffff' },
-      'Column': { background: '#a855f7', border: '#7e22ce', highlight: '#ffffff' },
-      'Pipeline': { background: '#ffaa00', border: '#d97706', highlight: '#ffffff' },
-      'User': { background: '#00ff99', border: '#059669', highlight: '#ffffff' },
-      'BusinessTerm': { background: '#ff0055', border: '#be123c', highlight: '#ffffff' }
+      'Dataset': { background: '#0e7490', border: 'transparent', highlight: '#06b6d4' },
+      'Column': { background: '#6b21a8', border: 'transparent', highlight: '#a855f7' },
+      'Pipeline': { background: '#b45309', border: 'transparent', highlight: '#f59e0b' },
+      'User': { background: '#047857', border: 'transparent', highlight: '#10b981' },
+      'BusinessTerm': { background: '#9f1239', border: 'transparent', highlight: '#f43f5e' }
     };
 
     async function loadGraph() {
@@ -294,41 +308,64 @@
         rawNodes = data.nodes || [];
         rawEdges = data.edges || [];
 
-        renderNetwork(rawNodes, rawEdges);
+        filterGraph();
       } catch (err) {
         alert(`Error loading graph: ${err.message}`);
       }
     }
 
+    function filterGraph() {
+      const viewMode = document.getElementById('view-mode').value;
+      const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+
+      document.getElementById('legend-column').style.display = (viewMode === 'all') ? 'flex' : 'none';
+
+      let visibleNodes = [...rawNodes];
+
+      // View Mode Filtering (High-Level Lineage vs All)
+      if (viewMode === 'high_level') {
+        visibleNodes = visibleNodes.filter(n => n.type !== 'Column');
+      }
+
+      // Name Filter
+      if (searchTerm) {
+        visibleNodes = visibleNodes.filter(n => 
+          (n.name && n.name.toLowerCase().includes(searchTerm)) || 
+          (n.id && n.id.toLowerCase().includes(searchTerm)) || 
+          (n.type && n.type.toLowerCase().includes(searchTerm))
+        );
+      }
+
+      const visibleIds = new Set(visibleNodes.map(n => n.id));
+      let visibleEdges = rawEdges.filter(e => visibleIds.has(e.source_id) && visibleIds.has(e.target_id));
+
+      if (viewMode === 'high_level') {
+        visibleEdges = visibleEdges.filter(e => e.type !== 'BELONGS_TO');
+      }
+
+      renderNetwork(visibleNodes, visibleEdges);
+    }
+
     function renderNetwork(nodesData, edgesData) {
-      const knownNodeIds = new Set(nodesData.map(n => n.id));
-      const allNodes = [...nodesData];
+      const isHierarchical = (document.getElementById('layout-mode').value === 'hierarchical');
 
-      // Insert stubs for any missing node IDs referenced in edges
-      edgesData.forEach(e => {
-        if (!knownNodeIds.has(e.source_id)) {
-          knownNodeIds.add(e.source_id);
-          allNodes.push({ id: e.source_id, name: e.source_id.split('.').pop(), type: 'Dataset', description: 'External/Source Node' });
-        }
-        if (!knownNodeIds.has(e.target_id)) {
-          knownNodeIds.add(e.target_id);
-          allNodes.push({ id: e.target_id, name: e.target_id.split('.').pop(), type: 'Dataset', description: 'External/Target Node' });
-        }
-      });
-
-      const formattedNodes = allNodes.map(n => {
-        const color = typeColors[n.type] || { background: '#94a3b8', border: '#64748b' };
+      const formattedNodes = nodesData.map(n => {
+        const color = typeColors[n.type] || { background: '#334155', border: 'transparent' };
+        const shape = n.type === 'Dataset' ? 'box' : (n.type === 'Pipeline' ? 'ellipse' : 'dot');
         return {
           id: n.id,
           label: n.name || n.id,
-          shape: 'dot',
-          size: n.type === 'Dataset' ? 18 : (n.type === 'Pipeline' ? 16 : (n.type === 'User' ? 14 : 10)),
+          shape: shape,
+          size: n.type === 'Dataset' ? 20 : (n.type === 'Pipeline' ? 18 : 12),
+          margin: 12,
+          borderWidth: 0,
+          borderWidthSelected: 2,
           color: {
             background: color.background,
-            border: color.border,
-            highlight: { background: '#ffffff', border: color.background }
+            border: 'transparent',
+            highlight: { background: color.highlight, border: '#ffffff' }
           },
-          font: { color: '#f8fafc', size: 12, face: 'Inter' },
+          font: { color: '#ffffff', size: 13, face: 'Inter', weight: '600' },
           rawNode: n
         };
       });
@@ -338,9 +375,10 @@
           from: e.source_id,
           to: e.target_id,
           label: e.type,
-          arrows: 'to',
-          color: { color: 'rgba(255, 255, 255, 0.3)', highlight: '#00f0ff' },
-          font: { color: '#94a3b8', size: 10, align: 'middle' }
+          arrows: { to: { enabled: true, scaleFactor: 0.8 } },
+          color: { color: 'rgba(255, 255, 255, 0.45)', highlight: '#00f0ff' },
+          font: { color: '#cbd5e1', size: 10, align: 'middle' },
+          smooth: isHierarchical ? { type: 'cubicBezier', forceDirection: 'horizontal' } : { type: 'continuous' }
         };
       });
 
@@ -349,23 +387,32 @@
 
       const container = document.getElementById('network-canvas');
       const data = { nodes: nodesDataSet, edges: edgesDataSet };
+      
       const options = {
         nodes: {
-          borderWidth: 2,
-          shadow: true
+          borderWidth: 0,
+          shadow: false
         },
         edges: {
           width: 2,
-          shadow: true,
-          smooth: { type: 'continuous' }
+          shadow: false
+        },
+        layout: {
+          hierarchical: {
+            enabled: isHierarchical,
+            direction: 'LR',
+            sortMethod: 'directed',
+            nodeSpacing: 160,
+            levelSeparation: 220
+          }
         },
         physics: {
-          enabled: true,
+          enabled: !isHierarchical,
           solver: 'forceAtlas2Based',
           forceAtlas2Based: {
             gravitationalConstant: -40,
             centralGravity: 0.01,
-            springLength: 90,
+            springLength: 100,
             springConstant: 0.08
           },
           stabilization: { iterations: 100 }
@@ -383,15 +430,21 @@
       network.on("selectNode", function (params) {
         if (params.nodes.length > 0) {
           selectedNodeId = params.nodes[0];
-          const nodeObj = allNodes.find(n => n.id === selectedNodeId);
+          const nodeObj = nodesData.find(n => n.id === selectedNodeId);
           displayNodeDetails(nodeObj);
+          highlightConnected(selectedNodeId);
         }
       });
 
       network.on("deselectNode", function () {
         selectedNodeId = null;
         resetSidebar();
+        resetGraphHighlight();
       });
+    }
+
+    function toggleLayout() {
+      filterGraph();
     }
 
     function displayNodeDetails(node) {
@@ -409,10 +462,25 @@
       document.getElementById('blast-btn').style.display = 'block';
     }
 
+    function highlightConnected(nodeId) {
+      const connectedNodes = new Set(network.getConnectedNodes(nodeId));
+      connectedNodes.add(nodeId);
+
+      const allNodes = nodesDataSet.get();
+      const updatedNodes = allNodes.map(n => {
+        const isConnected = connectedNodes.has(n.id);
+        return {
+          id: n.id,
+          opacity: isConnected ? 1.0 : 0.15
+        };
+      });
+      nodesDataSet.update(updatedNodes);
+    }
+
     function resetSidebar() {
       document.getElementById('panel-node-name').innerText = 'Select a Node';
       document.getElementById('panel-node-id').innerText = '-';
-      document.getElementById('panel-node-desc').innerText = 'Click on any node in the knowledge graph to view attributes.';
+      document.getElementById('panel-node-desc').innerText = 'Click on any dataset or pipeline node to view lineage details.';
       document.getElementById('panel-node-props').innerText = '{}';
       document.getElementById('panel-node-type').style.display = 'none';
       document.getElementById('blast-btn').style.display = 'none';
@@ -433,16 +501,16 @@
         
         const impactedIds = new Set((result.impacted_nodes || []).map(n => n.id));
         
-        // Highlight impacted nodes in glowing red
         const currentNodes = nodesDataSet.get();
         const updatedNodes = currentNodes.map(n => {
           const isImpacted = impactedIds.has(n.id);
           const color = isImpacted 
-            ? { background: '#ff3366', border: '#ffffff', highlight: { background: '#ffffff', border: '#ff3366' } }
-            : { background: 'rgba(51, 65, 85, 0.4)', border: 'rgba(255,255,255,0.1)' };
+            ? { background: '#ef4444', border: '#ffffff', highlight: { background: '#ffffff', border: '#ef4444' } }
+            : { background: '#1e293b', border: 'transparent' };
           return {
             id: n.id,
-            color: color
+            color: color,
+            opacity: isImpacted ? 1.0 : 0.2
           };
         });
 
@@ -453,26 +521,8 @@
       }
     }
 
-    function filterGraph() {
-      const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
-      if (!rawNodes.length) return;
-
-      if (!searchTerm) {
-        renderNetwork(rawNodes, rawEdges);
-        return;
-      }
-
-      const filteredNodes = rawNodes.filter(n => 
-        (n.name && n.name.toLowerCase().includes(searchTerm)) || 
-        (n.id && n.id.toLowerCase().includes(searchTerm)) || 
-        (n.type && n.type.toLowerCase().includes(searchTerm))
-      );
-
-      renderNetwork(filteredNodes, rawEdges);
-    }
-
     function resetGraphHighlight() {
-      if (rawNodes.length) renderNetwork(rawNodes, rawEdges);
+      filterGraph();
       resetSidebar();
     }
 
