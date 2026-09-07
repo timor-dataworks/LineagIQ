@@ -3,7 +3,7 @@
 LineagIQ models an enterprise data landscape into a contextual knowledge graph. It decouples the core semantic and graph engine from tenant-specific operational data using a two-tier architecture:
 
 1. **Stateless Ingestion Agent (`collection_agent`)**: An ephemeral edge metadata collector that extracts, embeds (via local ONNX INT8), formats (Parquet/LanceDB), and syncs metadata inside the customer environment.
-2. **Serverless S3 Control Plane (`control_plane`)**: A multi-tenant query engine powered by DuckDB and LanceDB exposing FastAPI endpoints for GraphRAG prompt synthesis (downstream blast-radius & semantic discovery).
+2. **Serverless S3 Control Plane (`control_plane`)**: A multi-tenant query engine powered by DuckDB and LanceDB exposing FastAPI endpoints and Agentic AI tools for GraphRAG prompt synthesis (downstream blast-radius & semantic discovery).
 
 ---
 
@@ -21,12 +21,44 @@ LineagIQ/
 ├── control_plane/              # Serverless Query Plane & GraphRAG API
 │   ├── README.md               # Control Plane documentation
 │   ├── requirements.txt        # Control plane dependencies
-│   ├── src/                    # DuckDB Query Engine, Prompt Synthesizer, FastAPI App
+│   ├── src/                    # DuckDB Query Engine, Prompt Synthesizer, Agent Tools, FastAPI App
 │   └── tests/                  # Pytest integration tests
 │
 ├── documentation/              # High-level developer & architectural specs
 │   └── project overview.md
 └── requirements.txt            # Root dependencies
+```
+
+---
+
+## AI Agent & LLM Integration (Approach 2: Retriever Tools)
+
+LineagIQ Control Plane includes pre-built **Agentic Retriever Tools** ([`control_plane/src/agent_tools.py`](file:///Users/timor/projects/dataworks/LineagIQ/control_plane/src/agent_tools.py)) that enable LLM agents (LangChain, AutoGen, LlamaIndex) to perform automated blast-radius impact analysis and semantic data discovery.
+
+### Python Code Example:
+
+```python
+from openai import OpenAI
+from control_plane.src.agent_tools import get_dataset_blast_radius, search_enterprise_data_catalog
+
+# 1. Retrieve Graph Context & Synthesized Prompt from LineagIQ Control Plane
+blast_radius_prompt = get_dataset_blast_radius(
+    tenant_id="demo_tenant",
+    dataset_id="model.jaffle_shop.stg_customers",
+    data_path="/tmp/tenants/demo_tenant"
+)
+
+# 2. Dispatch Context to LLM Provider
+client = OpenAI(api_key="your-openai-api-key")
+completion = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are LineagIQ AI Agent, an expert enterprise data architect."},
+        {"role": "user", "content": blast_radius_prompt}
+    ]
+)
+
+print(completion.choices[0].message.content)
 ```
 
 ---
@@ -111,7 +143,7 @@ Open your web browser to test interactive endpoints:
 ---
 
 ### 6. Run Full Test Suite
-Run all 28 unit and integration tests across `collection_agent` and `control_plane`:
+Run all 31 unit and integration tests across `collection_agent` and `control_plane`:
 
 ```bash
 python3 -m pytest collection_agent/tests/ control_plane/tests/
