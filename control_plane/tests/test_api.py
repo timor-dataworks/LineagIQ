@@ -12,6 +12,25 @@ def test_health_check_endpoint():
     assert response.json()["status"] == "ok"
 
 
+def test_graph_visualizer_page():
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "LineagIQ Control Plane - Knowledge Graph Visualizer" in response.text
+
+
+def test_get_tenant_graph(tmp_path):
+    ds_node = DatasetNode(id="analytics.orders", name="orders", description="Cleaned orders")
+    payload = GraphPayload(nodes=[ds_node], edges=[])
+    writer = ArtifactWriter()
+    writer.write_all(payload, str(tmp_path))
+
+    response = client.get(f"/api/v1/tenants/tenant123/graph?data_path={tmp_path}")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["nodes"]) == 1
+    assert data["nodes"][0]["name"] == "orders"
+
+
 def test_blast_radius_api(tmp_path):
     ds_node = DatasetNode(id="analytics.orders", name="orders", description="Cleaned orders")
     payload = GraphPayload(nodes=[ds_node], edges=[])

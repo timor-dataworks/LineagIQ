@@ -103,3 +103,17 @@ class DuckDBQueryEngine:
 
         results_df = con.execute(query).df()
         return results_df.to_dict(orient="records")
+
+    def get_full_graph(self) -> Dict[str, Any]:
+        """Returns all nodes and edges for tenant visualization."""
+        if not os.path.exists(self.nodes_file) or not os.path.exists(self.edges_file):
+            return {"nodes": [], "edges": []}
+
+        con = duckdb.connect(database=":memory:")
+        nodes_df = con.execute(f"SELECT id, type, name, description, properties FROM read_parquet('{self.nodes_file}')").df()
+        edges_df = con.execute(f"SELECT source_id, target_id, type, properties FROM read_parquet('{self.edges_file}')").df()
+
+        return {
+            "nodes": nodes_df.to_dict(orient="records"),
+            "edges": edges_df.to_dict(orient="records"),
+        }

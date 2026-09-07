@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LineagIQ Control Plane - Knowledge Graph Visualizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #0b0f19;
+      color: #e2e8f0;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Header Bar */
+    header {
+      height: 64px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 10;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 20px;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+    }
+    .brand-badge {
+      background: linear-gradient(135deg, #00f0ff, #7000ff);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    input, select, button {
+      font-family: inherit;
+      font-size: 14px;
+      border-radius: 8px;
+      outline: none;
+    }
+    input[type="text"] {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 8px 14px;
+      width: 220px;
+      transition: all 0.2s;
+    }
+    input[type="text"]:focus {
+      border-color: #00f0ff;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+    }
+    .btn {
+      background: linear-gradient(135deg, #00f0ff, #0072ff);
+      color: #000;
+      font-weight: 600;
+      border: none;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(0, 240, 255, 0.25);
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(0, 240, 255, 0.4);
+    }
+    .btn-secondary {
+      background: rgba(51, 65, 85, 0.8);
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: none;
+    }
+    .btn-secondary:hover {
+      background: rgba(71, 85, 105, 1);
+      color: #fff;
+    }
+    /* Main Layout */
+    .main-container {
+      display: flex;
+      flex: 1;
+      position: relative;
+    }
+    #network-canvas {
+      flex: 1;
+      height: 100%;
+      background: radial-gradient(circle at 50% 50%, #111827 0%, #0b0f19 100%);
+    }
+    /* Sidebar Details Panel */
+    .sidebar {
+      width: 360px;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(16px);
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      z-index: 5;
+    }
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 12px;
+    }
+    .sidebar-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #f8fafc;
+    }
+    .node-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 12px;
+      text-transform: uppercase;
+    }
+    .badge-Dataset { background: rgba(0, 240, 255, 0.2); color: #00f0ff; border: 1px solid #00f0ff; }
+    .badge-Column { background: rgba(112, 0, 255, 0.2); color: #b87dff; border: 1px solid #7000ff; }
+    .badge-Pipeline { background: rgba(255, 170, 0, 0.2); color: #ffaa00; border: 1px solid #ffaa00; }
+    .badge-User { background: rgba(0, 255, 153, 0.2); color: #00ff99; border: 1px solid #00ff99; }
+    
+    .detail-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .detail-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #94a3b8;
+      letter-spacing: 0.5px;
+    }
+    .detail-value {
+      font-size: 14px;
+      color: #cbd5e1;
+      word-break: break-all;
+    }
+    .code-block {
+      background: #020617;
+      padding: 10px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #38bdf8;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Legend */
+    .legend {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex;
+      gap: 16px;
+      z-index: 5;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <span>LineagIQ</span>
+      <span class="brand-badge">Control Plane</span>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="tenant-input" value="demo_tenant" placeholder="Tenant ID">
+      <input type="text" id="data-path-input" value="/tmp/tenants/demo_tenant" placeholder="Data Path (optional)">
+      <button class="btn" onclick="loadGraph()">Load Graph</button>
+      <input type="text" id="search-input" placeholder="Filter node name..." oninput="filterGraph()">
+    </div>
+  </header>
+
+  <div class="main-container">
+    <div id="network-canvas"></div>
+
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title" id="panel-node-name">Select a Node</span>
+        <span class="node-badge badge-Dataset" id="panel-node-type" style="display: none;">Dataset</span>
+      </div>
+
+      <div class="detail-group">
+        <span class="detail-label">Node ID</span>
+        <span class="detail-value code-block" id="panel-node-id">-</span>
+      </div>
+
+      <div class="detail-group">
+        <span class="detail-label">Description</span>
+        <span class="detail-value" id="panel-node-desc">Click on any node in the knowledge graph to view attributes, lineage properties, and blast-radius.</span>
+      </div>
+
+      <div class="detail-group">
+        <span class="detail-label">Properties</span>
+        <div class="code-block" id="panel-node-props">{}</div>
+      </div>
+
+      <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px;">
+        <button class="btn" id="blast-btn" style="display: none;" onclick="triggerBlastRadius()">⚡ Compute Downstream Blast Radius</button>
+        <button class="btn btn-secondary" onclick="resetGraphHighlight()">Reset View</button>
+      </div>
+    </div>
+
+    <!-- Legend Overlay -->
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background: #00f0ff; box-shadow: 0 0 8px #00f0ff;"></div> Dataset</div>
+      <div class="legend-item"><div class="legend-dot" style="background: #a855f7; box-shadow: 0 0 8px #a855f7;"></div> Column</div>
+      <div class="legend-item"><div class="legend-dot" style="background: #ffaa00; box-shadow: 0 0 8px #ffaa00;"></div> Pipeline</div>
+      <div class="legend-item"><div class="legend-dot" style="background: #00ff99; box-shadow: 0 0 8px #00ff99;"></div> User</div>
+    </div>
+  </div>
+
+  <script>
+    let network = null;
+    let nodesDataSet = null;
+    let edgesDataSet = null;
+    let rawNodes = [];
+    let rawEdges = [];
+    let selectedNodeId = null;
+
+    const typeColors = {
+      'Dataset': { background: '#00f0ff', border: '#00c3d0', highlight: '#ffffff' },
+      'Column': { background: '#a855f7', border: '#7e22ce', highlight: '#ffffff' },
+      'Pipeline': { background: '#ffaa00', border: '#d97706', highlight: '#ffffff' },
+      'User': { background: '#00ff99', border: '#059669', highlight: '#ffffff' },
+      'BusinessTerm': { background: '#ff0055', border: '#be123c', highlight: '#ffffff' }
+    };
+
+    async function loadGraph() {
+      const tenantId = document.getElementById('tenant-input').value.trim() || 'demo_tenant';
+      const dataPath = document.getElementById('data-path-input').value.trim();
+
+      let url = `/api/v1/tenants/${tenantId}/graph`;
+      if (dataPath) {
+        url += `?data_path=${encodeURIComponent(dataPath)}`;
+      }
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to fetch graph payload");
+        const data = await response.json();
+        
+        rawNodes = data.nodes || [];
+        rawEdges = data.edges || [];
+
+        renderNetwork(rawNodes, rawEdges);
+      } catch (err) {
+        alert(`Error loading graph: ${err.message}`);
+      }
+    }
+
+    function renderNetwork(nodesData, edgesData) {
+      const formattedNodes = nodesData.map(n => {
+        const color = typeColors[n.type] || { background: '#94a3b8', border: '#64748b' };
+        return {
+          id: n.id,
+          label: n.name,
+          shape: n.type === 'Dataset' ? 'database' : (n.type === 'Pipeline' ? 'gears' : 'dot'),
+          size: n.type === 'Dataset' ? 22 : (n.type === 'Pipeline' ? 20 : 14),
+          color: {
+            background: color.background,
+            border: color.border,
+            highlight: { background: color.highlight, border: color.background }
+          },
+          font: { color: '#f8fafc', size: 12, face: 'Inter' },
+          rawNode: n
+        };
+      });
+
+      const formattedEdges = edgesData.map(e => {
+        return {
+          from: e.source_id,
+          to: e.target_id,
+          label: e.type,
+          arrows: 'to',
+          color: { color: 'rgba(255, 255, 255, 0.25)', highlight: '#00f0ff' },
+          font: { color: '#94a3b8', size: 10, align: 'middle' }
+        };
+      });
+
+      nodesDataSet = new vis.DataSet(formattedNodes);
+      edgesDataSet = new vis.DataSet(formattedEdges);
+
+      const container = document.getElementById('network-canvas');
+      const data = { nodes: nodesDataSet, edges: edgesDataSet };
+      const options = {
+        physics: {
+          stabilization: true,
+          barnesHut: { gravitationalConstant: -3000, springLength: 120 }
+        },
+        interaction: { hover: true, tooltipDelay: 200 }
+      };
+
+      if (network) network.destroy();
+      network = new vis.Network(container, data, options);
+
+      network.on("selectNode", function (params) {
+        if (params.nodes.length > 0) {
+          selectedNodeId = params.nodes[0];
+          const nodeObj = rawNodes.find(n => n.id === selectedNodeId);
+          displayNodeDetails(nodeObj);
+        }
+      });
+
+      network.on("deselectNode", function () {
+        selectedNodeId = null;
+        resetSidebar();
+      });
+    }
+
+    function displayNodeDetails(node) {
+      if (!node) return;
+      document.getElementById('panel-node-name').innerText = node.name;
+      document.getElementById('panel-node-id').innerText = node.id;
+      document.getElementById('panel-node-desc').innerText = node.description || 'No description available.';
+      document.getElementById('panel-node-props').innerText = typeof node.properties === 'string' ? node.properties : JSON.stringify(node.properties, null, 2);
+
+      const badge = document.getElementById('panel-node-type');
+      badge.innerText = node.type;
+      badge.className = `node-badge badge-${node.type}`;
+      badge.style.display = 'inline-block';
+
+      document.getElementById('blast-btn').style.display = 'block';
+    }
+
+    function resetSidebar() {
+      document.getElementById('panel-node-name').innerText = 'Select a Node';
+      document.getElementById('panel-node-id').innerText = '-';
+      document.getElementById('panel-node-desc').innerText = 'Click on any node in the knowledge graph to view attributes.';
+      document.getElementById('panel-node-props').innerText = '{}';
+      document.getElementById('panel-node-type').style.display = 'none';
+      document.getElementById('blast-btn').style.display = 'none';
+    }
+
+    async function triggerBlastRadius() {
+      if (!selectedNodeId) return;
+      const tenantId = document.getElementById('tenant-input').value.trim() || 'demo_tenant';
+      const dataPath = document.getElementById('data-path-input').value.trim();
+
+      try {
+        const response = await fetch(`/api/v1/tenants/${tenantId}/blast-radius`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ node_id: selectedNodeId, max_depth: 5, data_path: dataPath })
+        });
+        const result = await response.json();
+        
+        const impactedIds = new Set((result.impacted_nodes || []).map(n => n.id));
+        
+        // Highlight impacted nodes in glowing red
+        const updatedNodes = rawNodes.map(n => {
+          const isImpacted = impactedIds.has(n.id);
+          const color = isImpacted 
+            ? { background: '#ff3366', border: '#ffffff', highlight: { background: '#ffffff', border: '#ff3366' } }
+            : { background: 'rgba(51, 65, 85, 0.4)', border: 'rgba(255,255,255,0.1)' };
+          return {
+            id: n.id,
+            color: color
+          };
+        });
+
+        nodesDataSet.update(updatedNodes);
+        alert(`Blast Radius Calculation Complete!\n${result.impacted_nodes_count} downstream assets impacted.`);
+      } catch (err) {
+        alert(`Error calculating blast radius: ${err.message}`);
+      }
+    }
+
+    function filterGraph() {
+      const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+      if (!rawNodes.length) return;
+
+      if (!searchTerm) {
+        renderNetwork(rawNodes, rawEdges);
+        return;
+      }
+
+      const filteredNodes = rawNodes.filter(n => 
+        n.name.toLowerCase().includes(searchTerm) || 
+        n.id.toLowerCase().includes(searchTerm) || 
+        n.type.toLowerCase().includes(searchTerm)
+      );
+
+      const filteredIds = new Set(filteredNodes.map(n => n.id));
+      const filteredEdges = rawEdges.filter(e => filteredIds.has(e.source_id) && filteredIds.has(e.target_id));
+
+      renderNetwork(filteredNodes, filteredEdges);
+    }
+
+    function resetGraphHighlight() {
+      if (rawNodes.length) renderNetwork(rawNodes, rawEdges);
+      resetSidebar();
+    }
+
+    // Load initial graph on page load
+    window.addEventListener('DOMContentLoaded', loadGraph);
+  </script>
+</body>
+</html>
