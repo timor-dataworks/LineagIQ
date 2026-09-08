@@ -4,16 +4,24 @@ from typing import Dict, Any, List
 
 class QueryLogExtractor:
     """
-    Extractor for operational query logs (QUERY_HISTORY / ACCESS_HISTORY).
-    Infers user dataset access and column-level joins.
+    Extractor for operational database query logs (`QUERY_HISTORY` / `ACCESS_HISTORY`).
+
+    Parses SQL execution logs to extract user table access events (`CONSUMED_BY`)
+    and column-level join predicates (`JOINS_WITH`).
     """
 
     def parse_user_access(self, query_rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Parses query execution records to extract user dataset consumption patterns.
+
+        :param query_rows: List of query log dictionary records.
+        :return: List of access edge dictionaries linking dataset tables to user IDs (`user:<username>`).
+        """
         access_edges = []
         for row in query_rows:
             user = row.get("user_name")
             query_text = row.get("query_text", "")
-            # Simple regex search for FROM/JOIN tables in SQL text
+            # Extract table references following FROM or JOIN keywords
             tables = re.findall(r'(?:FROM|JOIN)\s+([a-zA-Z0-9_\.]+)', query_text, re.IGNORECASE)
             for tbl in set(tables):
                 access_edges.append({
@@ -26,10 +34,16 @@ class QueryLogExtractor:
         return access_edges
 
     def parse_join_predicates(self, query_rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Parses query text to extract explicit column equality join conditions (e.g., `t1.id = t2.user_id`).
+
+        :param query_rows: List of query log dictionary records.
+        :return: List of join edge dictionaries (`JOINS_WITH`) linking column identifiers.
+        """
         join_edges = []
         for row in query_rows:
             query_text = row.get("query_text", "")
-            # Find equality join conditions e.g. a.col1 = b.col2
+            # Match equality join predicates (e.g., table1.col1 = table2.col2)
             joins = re.findall(r'([a-zA-Z0-9_\.]+\.[a-zA-Z0-9_]+)\s*=\s*([a-zA-Z0-9_\.]+\.[a-zA-Z0-9_]+)', query_text)
             for col1, col2 in joins:
                 join_edges.append({

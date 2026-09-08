@@ -4,16 +4,25 @@ from typing import Dict, Any, List
 
 class DbtExtractor:
     """
-    Extractor for dbt compilation artifacts (manifest.json and catalog.json).
+    Extractor for dbt compilation and execution artifacts (`manifest.json` and `catalog.json`).
+
+    Extracts models, seeds, sources, column attributes, and dbt graph lineage dependencies.
     """
 
     def parse_manifest(self, manifest_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Parses dbt `manifest.json` data to extract dataset and pipeline model metadata.
+
+        :param manifest_data: Loaded JSON contents of dbt manifest.json.
+        :return: List of raw extracted node metadata dictionaries.
+        """
         nodes = []
         raw_nodes = manifest_data.get("nodes", {})
-        
+
         for node_id, node_info in raw_nodes.items():
-            if node_info.get("resource_type") in ("model", "seed", "source"):
-                node_type = "Dataset" if node_info.get("resource_type") in ("model", "seed", "source") else "Pipeline"
+            resource_type = node_info.get("resource_type")
+            if resource_type in ("model", "seed", "source"):
+                node_type = "Dataset"
                 extracted_node = {
                     "id": node_id,
                     "type": node_type,
@@ -29,13 +38,19 @@ class DbtExtractor:
         return nodes
 
     def parse_catalog(self, catalog_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Parses dbt `catalog.json` output to extract physical schema types and column definitions.
+
+        :param catalog_data: Loaded JSON contents of dbt catalog.json.
+        :return: List of catalog node dictionaries with detailed column metadata.
+        """
         catalog_nodes = []
         raw_nodes = catalog_data.get("nodes", {})
-        
+
         for node_id, node_info in raw_nodes.items():
             metadata = node_info.get("metadata", {})
             columns_info = node_info.get("columns", {})
-            
+
             catalog_node = {
                 "id": node_id,
                 "type": metadata.get("type"),
@@ -57,9 +72,15 @@ class DbtExtractor:
         return catalog_nodes
 
     def extract_lineage(self, manifest_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Extracts parent-child dataset lineage dependencies (`depends_on.nodes`) from `manifest.json`.
+
+        :param manifest_data: Loaded JSON contents of dbt manifest.json.
+        :return: List of edge dictionaries with `source`, `target`, and `type` ('DERIVED_FROM').
+        """
         edges = []
         raw_nodes = manifest_data.get("nodes", {})
-        
+
         for node_id, node_info in raw_nodes.items():
             depends_on = node_info.get("depends_on", {}).get("nodes", [])
             for dep_id in depends_on:

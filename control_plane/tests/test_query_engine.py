@@ -52,7 +52,7 @@ def test_duckdb_blast_radius_traversal(tmp_path):
     assert "dbt.orders" in prompt
 
 
-def test_lancedb_vector_semantic_search(tmp_path):
+def test_duckdb_vector_semantic_search(tmp_path):
     from collection_agent.src.embedder.local_embedder import LocalEmbedder
 
     ds = DatasetNode(id="db.users", name="users", description="User dimension dataset")
@@ -248,6 +248,38 @@ def test_duckdb_vss_vector_store(tmp_path):
     results = vstore.search_vectors(query_vec, top_k=5)
 
     assert len(results) > 0
+
+
+def test_semantic_search_raw_customers_edge_node_ranking(tmp_path):
+    from collection_agent.src.embedder.local_embedder import LocalEmbedder
+    from collection_agent.src.transform.graph_builder import GraphBuilder
+
+    builder = GraphBuilder()
+    stg_ds = DatasetNode(id="model.jaffle_shop.stg_customers", name="stg_customers", description="Staged customer records")
+    builder.add_node(stg_ds)
+
+    # Add lineage edge referencing implicit external source node source.jaffle_shop.raw_customers
+    builder.add_edge(Edge(
+        source_id="source.jaffle_shop.raw_customers",
+        target_id="model.jaffle_shop.stg_customers",
+        type=EdgeType.DERIVED_FROM
+    ))
+
+    payload = builder.to_payload()
+    embedder = LocalEmbedder()
+    payload = embedder.embed_payload(payload)
+
+    writer = ArtifactWriter()
+    writer.write_all(payload, str(tmp_path))
+
+    engine = DuckDBQueryEngine(data_base_path=str(tmp_path))
+    results = engine.search_semantic_assets("raw_customers", top_k=5)
+
+    assert len(results) > 0
+    # Must rank source.jaffle_shop.raw_customers first
+    assert results[0]["id"] == "source.jaffle_shop.raw_customers"
+    assert results[0]["name"] == "raw_customers"
+
 
 
 

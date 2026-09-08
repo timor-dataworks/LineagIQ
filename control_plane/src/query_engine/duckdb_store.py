@@ -225,6 +225,7 @@ class DuckDBGraphStore(BaseGraphStore):
         for t in terms:
             t_escaped = t.replace("'", "''")
             where_clauses.append(f"LOWER(name) LIKE '%{t_escaped}%'")
+            where_clauses.append(f"LOWER(id) LIKE '%{t_escaped}%'")
             where_clauses.append(f"LOWER(COALESCE(description, '')) LIKE '%{t_escaped}%'")
             where_clauses.append(f"LOWER(type) LIKE '%{t_escaped}%'")
             where_clauses.append(f"LOWER(CAST(properties AS VARCHAR)) LIKE '%{t_escaped}%'")

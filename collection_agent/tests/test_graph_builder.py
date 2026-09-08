@@ -82,3 +82,26 @@ def test_graph_builder_openlineage_ingestion():
 
     assert len(payload.nodes) == 3  # 1 pipeline + 2 datasets
     assert len(payload.edges) == 2
+
+
+def test_column_alias_resolution_for_unqualified_names():
+    from collection_agent.src.transform.models import DatasetNode, ColumnNode, Edge, EdgeType
+
+    builder = GraphBuilder()
+    ds = DatasetNode(id="PROD_DB.PUBLIC.USERS", name="USERS", schema_name="PUBLIC", database="PROD_DB")
+    col = ColumnNode(id="PROD_DB.PUBLIC.USERS.ID", name="ID", dataset_id="PROD_DB.PUBLIC.USERS")
+
+    builder.add_node(ds)
+    builder.add_node(col)
+
+    # Edge referencing short alias USERS.ID
+    builder.add_edge(Edge(source_id="USERS.ID", target_id="PROD_DB.PUBLIC.TRANSACTIONS.USER_ID", type=EdgeType.JOINS_WITH))
+
+    payload = builder.to_payload()
+    node_ids = {n.id for n in payload.nodes}
+
+    # Must resolve USERS.ID -> PROD_DB.PUBLIC.USERS.ID without creating duplicate USERS.ID node
+    assert "USERS.ID" not in node_ids
+    assert "PROD_DB.PUBLIC.USERS.ID" in node_ids
+    assert payload.edges[0].source_id == "PROD_DB.PUBLIC.USERS.ID"
+

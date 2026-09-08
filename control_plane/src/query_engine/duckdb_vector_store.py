@@ -24,7 +24,9 @@ class DuckDBVectorStore(BaseVectorStore):
         parquet_files = glob.glob(os.path.join(self.data_base_path, "**", "*.parquet"), recursive=True)
         return parquet_files[0] if parquet_files else ""
 
-    def search_vectors(self, query_vector: List[float], top_k: int = 5) -> List[str]:
+    def search_vectors(
+        self, query_vector: List[float], top_k: int = 5, max_distance: float = 0.75
+    ) -> List[str]:
         p_file = self._resolve_parquet_file()
         if not p_file or not os.path.exists(p_file):
             return []
@@ -42,12 +44,12 @@ class DuckDBVectorStore(BaseVectorStore):
             query = f"""
             SELECT id, array_cosine_distance(CAST(vector AS FLOAT[{dim}]), CAST(? AS FLOAT[{dim}])) AS distance
             FROM read_parquet('{p_file_escaped}')
-            WHERE vector IS NOT NULL
+            WHERE vector IS NOT NULL AND array_cosine_distance(CAST(vector AS FLOAT[{dim}]), CAST(? AS FLOAT[{dim}])) <= {max_distance}
             ORDER BY distance ASC
-            LIMIT {top_k * 2};
+            LIMIT {top_k};
             """
 
-            results_df = con.execute(query, [query_vector]).df()
+            results_df = con.execute(query, [query_vector, query_vector]).df()
             records = results_df.to_dict(orient="records")
 
             node_ids = []

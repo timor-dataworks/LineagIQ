@@ -15,26 +15,64 @@ from collection_agent.src.transform.models import (
 
 class GraphBuilder:
     """
-    Graph Builder normalizes raw extractor payloads into validated Pydantic
-    Node and Edge models, maintaining deduplicated collections and resolving table aliases.
+    Graph Builder normalizes raw metadata extractor outputs into validated Pydantic
+    `Node` and `Edge` models, maintaining deduplicated collections and resolving entity aliases.
     """
 
     def __init__(self):
+        """Initializes empty graph collections and alias mapping dictionary."""
         self._nodes: Dict[str, Node] = {}
         self._edges: Dict[str, Edge] = {}
         self._alias_map: Dict[str, str] = {}
 
     def register_alias(self, alias: str, canonical_id: str) -> None:
+        """
+        Registers an entity alias mapping (case-insensitive) to a canonical node ID.
+
+        :param alias: Table, view, or column alias string (e.g., 'USERS', 'users.id').
+        :param canonical_id: Canonical target node ID (e.g., 'PROD_DB.PUBLIC.USERS.ID').
+        """
         if alias and canonical_id:
             self._alias_map[alias.lower()] = canonical_id
 
     def resolve_id(self, raw_id: str) -> str:
+        """
+        Resolves raw dataset or column identifiers to canonical node IDs using registered aliases.
+
+        Handles:
+        1. Direct alias lookups (e.g., 'stg_customers' -> 'model.jaffle_shop.stg_customers').
+        2. Unqualified column aliases (e.g., 'USERS.ID' -> 'PROD_DB.PUBLIC.USERS.ID').
+
+        :param raw_id: Input identifier string.
+        :return: Canonical target node ID.
+        """
         if not raw_id:
             return raw_id
-        return self._alias_map.get(raw_id.lower(), raw_id)
+
+        lowered = raw_id.lower()
+        if lowered in self._alias_map:
+            return self._alias_map[lowered]
+
+        # Resolve table.column or schema.table.column aliases to canonical column ID
+        if "." in raw_id:
+            parts = raw_id.split(".")
+            col_name = parts[-1]
+            prefix = ".".join(parts[:-1])
+            resolved_prefix = self._alias_map.get(prefix.lower())
+            if resolved_prefix:
+                candidate_col_id = f"{resolved_prefix}.{col_name}"
+                if candidate_col_id.lower() in self._alias_map:
+                    return self._alias_map[candidate_col_id.lower()]
+                return candidate_col_id
+
+        return raw_id
 
     def add_node(self, node: Node) -> None:
-        """Add or update a node in the graph registry and register canonical aliases."""
+        """
+        Adds or merges a graph node into the registry and updates alias maps.
+
+        :param node: Node instance (DatasetNode, ColumnNode, PipelineNode, UserTeamNode, etc.).
+        """
         if node.id in self._nodes:
             existing = self._nodes[node.id]
             existing.properties.update(node.properties)
@@ -52,16 +90,57 @@ class GraphBuilder:
             if node.database and node.schema_name:
                 self.register_alias(f"{node.database}.{node.schema_name}.{node.name}", node.id)
         elif isinstance(node, ColumnNode):
+            self.register_alias(node.id, node.id)
             self.register_alias(f"{node.dataset_id}.{node.name}", node.id)
+            if node.dataset_id in self._nodes:
+                ds = self._nodes[node.dataset_id]
+                if isinstance(ds, DatasetNode):
+                    if ds.name:
+                        self.register_alias(f"{ds.name}.{node.name}", node.id)
+                    if ds.schema_name and ds.name:
+                        self.register_alias(f"{ds.schema_name}.{ds.name}.{node.name}", node.id)
 
     def add_nodes(self, nodes: List[Node]) -> None:
+        """Batch registers a list of nodes."""
         for n in nodes:
             self.add_node(n)
 
+    def _ensure_node_exists(self, node_id: str) -> None:
+        """
+        Synthesizes a Dataset or Pipeline node if an edge endpoint is not already registered.
+
+        :param node_id: Target node ID referenced by an edge.
+        """
+        resolved_id = self.resolve_id(node_id)
+        if resolved_id not in self._nodes:
+            name = resolved_id.split(".")[-1] if "." in resolved_id else resolved_id
+            is_dataset = any(k in resolved_id.lower() for k in ["source", "raw", "db.", "table", "model", "stg", "fct", "dim", "users", "orders", "customers"])
+            ntype = NodeType.DATASET if is_dataset else NodeType.PIPELINE
+            if ntype == NodeType.DATASET:
+                synth_node = DatasetNode(
+                    id=resolved_id,
+                    name=name,
+                    description=f"External Data Asset ({resolved_id})"
+                )
+            else:
+                synth_node = PipelineNode(
+                    id=resolved_id,
+                    name=name,
+                    description=f"External Pipeline ({resolved_id})"
+                )
+            self.add_node(synth_node)
+
     def add_edge(self, edge: Edge) -> None:
-        """Add an edge avoiding exact source-target-type duplicates."""
+        """
+        Adds a lineage relationship edge, avoiding exact duplicates and resolving endpoint aliases.
+
+        :param edge: Edge instance to add.
+        """
         resolved_source = self.resolve_id(edge.source_id)
         resolved_target = self.resolve_id(edge.target_id)
+        
+        self._ensure_node_exists(resolved_source)
+        self._ensure_node_exists(resolved_target)
         
         edge_key = f"{resolved_source}->{edge.type.value}->{resolved_target}"
         
@@ -78,6 +157,7 @@ class GraphBuilder:
             self._edges[edge_key].properties.update(edge.properties)
 
     def add_edges(self, edges: List[Edge]) -> None:
+        """Batch registers a list of edges."""
         for e in edges:
             self.add_edge(e)
 
@@ -87,7 +167,13 @@ class GraphBuilder:
         catalog_nodes: Optional[List[Dict[str, Any]]] = None,
         lineage_edges: Optional[List[Dict[str, Any]]] = None,
     ) -> None:
-        """Build graph nodes and edges from raw dbt extractor outputs."""
+        """
+        Normalizes and ingests dbt extractor output nodes, catalog metadata, and lineage edges.
+
+        :param manifest_nodes: Extracted model and seed nodes from dbt manifest.
+        :param catalog_nodes: Extracted column catalog nodes from dbt catalog.
+        :param lineage_edges: Extracted parent-child lineage dependencies.
+        """
         catalog_map = {c["id"]: c for c in (catalog_nodes or [])}
 
         for node_raw in manifest_nodes:
@@ -151,7 +237,13 @@ class GraphBuilder:
         columns: List[Dict[str, Any]],
         foreign_keys: Optional[List[Dict[str, Any]]] = None,
     ) -> None:
-        """Build graph nodes and edges from SQL INFORMATION_SCHEMA extractor outputs."""
+        """
+        Normalizes and ingests SQL INFORMATION_SCHEMA extractor tables, columns, and foreign keys.
+
+        :param tables: Extracted table rows.
+        :param columns: Extracted column rows.
+        :param foreign_keys: Extracted foreign key constraint rows.
+        """
         for tbl in tables:
             ds_node = DatasetNode(
                 id=tbl["id"],
@@ -201,7 +293,12 @@ class GraphBuilder:
         access_edges: List[Dict[str, Any]],
         join_edges: Optional[List[Dict[str, Any]]] = None,
     ) -> None:
-        """Build graph edges and User nodes from query log extractor outputs."""
+        """
+        Normalizes and ingests query access logs, creating User nodes and CONSUMED_BY / JOINS_WITH edges.
+
+        :param access_edges: Extracted user dataset access edges.
+        :param join_edges: Extracted column equality join edges.
+        """
         for acc in access_edges:
             user_id = acc["target"]
             user_node = UserTeamNode(
@@ -232,7 +329,11 @@ class GraphBuilder:
                 self.add_edge(edge)
 
     def ingesting_openlineage(self, event_data: Dict[str, Any]) -> None:
-        """Build graph nodes and edges from parsed OpenLineage event outputs."""
+        """
+        Normalizes and ingests parsed OpenLineage run events.
+
+        :param event_data: Parsed OpenLineage event dictionary.
+        """
         pipeline_id = event_data["pipeline_id"]
         pipeline_node = PipelineNode(
             id=pipeline_id,
@@ -264,7 +365,11 @@ class GraphBuilder:
             self.add_edge(edge)
 
     def to_payload(self) -> GraphPayload:
-        """Return assembled GraphPayload containing all nodes and edges."""
+        """
+        Assembles all registered nodes and edges into a finalized GraphPayload container.
+
+        :return: GraphPayload object ready for vector embedding and Parquet serialization.
+        """
         return GraphPayload(
             nodes=list(self._nodes.values()),
             edges=list(self._edges.values()),

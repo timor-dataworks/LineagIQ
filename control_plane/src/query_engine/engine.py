@@ -43,18 +43,28 @@ class DuckDBQueryEngine:
         self, query_text: str, top_k: int = 5
     ) -> List[Dict[str, Any]]:
         """
-        Executes vector search via `vector_store` with `graph_store` keyword search fallback,
-        automatically resolving parent dataset nodes for matched column attributes.
+        Executes hybrid search combining term match search via `graph_store`
+        and vector similarity search via `vector_store`, automatically resolving
+        parent dataset nodes for matched column attributes.
         """
         query_vec = self.embedder.embed_text(query_text)
         vector_node_ids = self.vector_store.search_vectors(query_vec, top_k=top_k)
 
         matched_nodes = []
-        if vector_node_ids:
-            matched_nodes = self.graph_store.get_nodes_by_ids(vector_node_ids)
+        seen_ids = set()
 
-        if not matched_nodes:
-            matched_nodes = self.graph_store.search_nodes_by_terms(query_text, top_k=top_k)
+        if vector_node_ids:
+            vector_nodes = self.graph_store.get_nodes_by_ids(vector_node_ids)
+            for v_node in vector_nodes:
+                if v_node["id"] not in seen_ids:
+                    seen_ids.add(v_node["id"])
+                    matched_nodes.append(v_node)
+
+        term_matched_nodes = self.graph_store.search_nodes_by_terms(query_text, top_k=top_k)
+        for t_node in term_matched_nodes:
+            if t_node["id"] not in seen_ids:
+                seen_ids.add(t_node["id"])
+                matched_nodes.append(t_node)
 
         # Automatically resolve parent dataset nodes for matched Column nodes
         node_ids = {n["id"] for n in matched_nodes}
@@ -74,6 +84,9 @@ class DuckDBQueryEngine:
 
         if parent_dataset_ids:
             parent_nodes = self.graph_store.get_nodes_by_ids(list(parent_dataset_ids))
-            matched_nodes.extend(parent_nodes)
+            for p_node in parent_nodes:
+                if p_node["id"] not in seen_ids:
+                    seen_ids.add(p_node["id"])
+                    matched_nodes.append(p_node)
 
         return matched_nodes[:top_k * 2]

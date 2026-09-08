@@ -79,7 +79,7 @@ def run_pipeline(
     Executes end-to-end Collection Agent pipeline:
     1. Metadata Extraction & Graph Normalization
     2. Local Vector Embedding
-    3. Parquet & LanceDB Artifact Serialization
+    3. Parquet & DuckDB VSS Vector Artifact Serialization
     4. Optional Multi-part S3 Lake Sync
     """
     target_dir = output_dir or tempfile.mkdtemp(prefix="lineagiq_collection_")
@@ -126,7 +126,7 @@ def run_pipeline(
     payload = builder.to_payload()
     payload = embedder.embed_payload(payload)
 
-    # Write Parquet and LanceDB artifacts
+    # Write Parquet and DuckDB VSS vector artifacts
     writer = ArtifactWriter()
     artifacts = writer.write_all(payload, target_dir)
 

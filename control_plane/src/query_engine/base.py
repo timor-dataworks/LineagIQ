@@ -39,6 +39,8 @@ class BaseVectorStore(ABC):
     """Abstract interface for vector index search engines (LanceDB, Qdrant, Pinecone, etc.)."""
 
     @abstractmethod
-    def search_vectors(self, query_vector: List[float], top_k: int = 5) -> List[str]:
-        """Searches vector index and returns list of matching node IDs."""
+    def search_vectors(
+        self, query_vector: List[float], top_k: int = 5, max_distance: float = 0.75
+    ) -> List[str]:
+        """Searches vector index and returns list of matching node IDs satisfying max_distance."""
         pass

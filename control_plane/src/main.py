@@ -18,7 +18,7 @@ STATIC_INDEX_FILE = STATIC_DIR / "index.html"
 
 app = FastAPI(
     title="LineagIQ Control Plane & GraphRAG API",
-    description="Multi-tenant GraphRAG query engine over S3 Parquet and LanceDB indices.",
+    description="Multi-tenant GraphRAG query engine over S3 Parquet and DuckDB VSS indices.",
     version="1.0.0",
 )
 
