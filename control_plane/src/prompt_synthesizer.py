@@ -2,9 +2,10 @@ from typing import Dict, Any, List, Optional
 
 
 class PromptSynthesizer:
-    """
-    Prompt Synthesizer builds context-rich, structured prompts for downstream LLM
-    reasoning regarding Blast Radius, Root Cause Analysis, and Data Discovery.
+    """Prompt Synthesizer builds context-rich, structured prompts for downstream LLM reasoning.
+
+    Generates formatted GraphRAG prompts tailored for Blast Radius Analysis,
+    Upstream Root Cause Analysis, and Semantic Data Discovery.
     """
 
     def synthesize_blast_radius_prompt(
@@ -13,8 +14,16 @@ class PromptSynthesizer:
         impacted_nodes: List[Dict[str, Any]],
         edges: List[Dict[str, Any]],
     ) -> str:
-        """
-        Synthesizes a structured GraphRAG Prompt for downstream blast-radius analysis.
+        """Synthesizes a structured GraphRAG Prompt for downstream blast-radius analysis.
+
+        Args:
+            start_node: Target node dictionary (name, type, id) under assessment.
+            impacted_nodes: List of downstream node dictionaries impacted by target.
+            edges: List of directed lineage traversal edge dictionaries.
+
+        Returns:
+            Formatted text string prompt containing system headers, asset summary,
+            traversal details, and AI task instructions.
         """
         target_name = start_node["name"] if start_node else "Target Asset"
         target_type = start_node["type"] if start_node else "Unknown"
@@ -23,8 +32,8 @@ class PromptSynthesizer:
         # Categorize impacted nodes by type
         by_type: Dict[str, List[str]] = {}
         for n in impacted_nodes:
-            ntype = n["type"]
-            by_type.setdefault(ntype, []).append(f"{n['name']} (ID: {n['id']})")
+            ntype = n.get("type", "Unknown")
+            by_type.setdefault(ntype, []).append(f"{n.get('name', 'N/A')} (ID: {n.get('id', 'N/A')})")
 
         prompt_lines = [
             "================================================================================",
@@ -70,22 +79,29 @@ class PromptSynthesizer:
         query_text: str,
         matched_nodes: List[Dict[str, Any]],
     ) -> str:
-        """
-        Synthesizes a structured GraphRAG Prompt for semantic asset discovery.
+        """Synthesizes a structured GraphRAG Prompt for semantic asset discovery.
+
+        Args:
+            query_text: Original natural language discovery query from user.
+            matched_nodes: List of asset node dictionaries retrieved from hybrid search.
+
+        Returns:
+            Formatted text string prompt detailing user query, matched graph assets,
+            and task instructions for catalog exploration.
         """
         prompt_lines = [
             "================================================================================",
             "LINEAGIQ GRAPHRAG PROMPT: SEMANTIC DATA DISCOVERY & GOVERNANCE",
             "================================================================================",
             "",
-            f"### USER DISCOVERY QUERY: \"{query_text}\"",
+            f'### USER DISCOVERY QUERY: "{query_text}"',
             "",
             f"### MATCHED GRAPH CONTEXT ({len(matched_nodes)} assets found):",
         ]
 
         for n in matched_nodes:
-            prompt_lines.append(f"\n* Asset: {n['name']} [{n['type']}]")
-            prompt_lines.append(f"  ID: {n['id']}")
+            prompt_lines.append(f"\n* Asset: {n.get('name', 'N/A')} [{n.get('type', 'Unknown')}]")
+            prompt_lines.append(f"  ID: {n.get('id', 'N/A')}")
             if n.get("description"):
                 prompt_lines.append(f"  Description: {n['description']}")
             if n.get("properties"):
@@ -109,8 +125,16 @@ class PromptSynthesizer:
         upstream_nodes: List[Dict[str, Any]],
         edges: List[Dict[str, Any]],
     ) -> str:
-        """
-        Synthesizes a structured GraphRAG Prompt for upstream root cause analysis.
+        """Synthesizes a structured GraphRAG Prompt for upstream root cause analysis.
+
+        Args:
+            target_node: Target asset node dictionary (name, type, id) under assessment.
+            upstream_nodes: List of upstream source/dependency node dictionaries.
+            edges: List of directed upstream lineage edge dictionaries.
+
+        Returns:
+            Formatted text string prompt containing system headers, asset summary,
+            upstream dependencies, traversal edges, and AI troubleshooting instructions.
         """
         target_name = target_node["name"] if target_node else "Target Asset"
         target_type = target_node["type"] if target_node else "Unknown"
@@ -119,8 +143,8 @@ class PromptSynthesizer:
         # Categorize upstream nodes by type
         by_type: Dict[str, List[str]] = {}
         for n in upstream_nodes:
-            ntype = n["type"]
-            by_type.setdefault(ntype, []).append(f"{n['name']} (ID: {n['id']})")
+            ntype = n.get("type", "Unknown")
+            by_type.setdefault(ntype, []).append(f"{n.get('name', 'N/A')} (ID: {n.get('id', 'N/A')})")
 
         prompt_lines = [
             "================================================================================",
@@ -160,4 +184,5 @@ class PromptSynthesizer:
         ])
 
         return "\n".join(prompt_lines)
+
 

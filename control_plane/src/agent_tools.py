@@ -1,15 +1,20 @@
 import os
+from typing import Optional
 import requests
-from typing import Dict, Any, Optional
 
 from control_plane.src.query_engine import DuckDBQueryEngine
 from control_plane.src.prompt_synthesizer import PromptSynthesizer
 
 
 class LineagIQGraphRAGClient:
-    """
-    Client for interacting with LineagIQ Control Plane directly in-process
-    or via REST API for Agentic AI workflows.
+    """Client for interacting with LineagIQ Control Plane directly in-process or via REST API.
+
+    Provides methods to query blast radius and semantic asset discovery prompts for
+    Agentic AI integration workflows.
+
+    Args:
+        base_url: Base URL endpoint for LineagIQ Control Plane REST API.
+            Defaults to environment variable `LINEAGIQ_CONTROL_PLANE_URL` or `http://localhost:8000`.
     """
 
     def __init__(self, base_url: Optional[str] = None):
@@ -22,9 +27,18 @@ class LineagIQGraphRAGClient:
         max_depth: int = 5,
         data_path: Optional[str] = None,
     ) -> str:
-        """
-        Queries downstream blast radius and returns a high-context GraphRAG prompt.
+        """Queries downstream blast radius and returns a high-context GraphRAG prompt.
+
         Attempts in-process DuckDB query if data_path exists locally, or falls back to REST API.
+
+        Args:
+            tenant_id: Tenant Identifier string.
+            node_id: Unique asset identifier for target node.
+            max_depth: Maximum lineage traversal depth. Defaults to 5.
+            data_path: Optional local path to tenant Parquet dataset directory.
+
+        Returns:
+            Synthesized GraphRAG prompt string ready for LLM prompt context injection.
         """
         if data_path and os.path.exists(data_path):
             engine = DuckDBQueryEngine(data_base_path=data_path)
@@ -52,9 +66,18 @@ class LineagIQGraphRAGClient:
         top_k: int = 5,
         data_path: Optional[str] = None,
     ) -> str:
-        """
-        Queries semantic data discovery and returns a high-context GraphRAG prompt.
+        """Queries semantic data discovery and returns a high-context GraphRAG prompt.
+
         Attempts in-process DuckDB query if data_path exists locally, or falls back to REST API.
+
+        Args:
+            tenant_id: Tenant Identifier string.
+            query: Natural language asset search query string.
+            top_k: Maximum number of top matching assets to retrieve. Defaults to 5.
+            data_path: Optional local path to tenant Parquet dataset directory.
+
+        Returns:
+            Synthesized GraphRAG discovery prompt string ready for LLM prompt context injection.
         """
         if data_path and os.path.exists(data_path):
             engine = DuckDBQueryEngine(data_base_path=data_path)
@@ -79,9 +102,16 @@ def get_dataset_blast_radius(
     max_depth: int = 5,
     data_path: Optional[str] = None,
 ) -> str:
-    """
-    Agentic Retriever Tool: Calculates operational downstream blast radius for a data asset.
-    Returns structured graph lineage context formatted for LLM evaluation.
+    """Agentic Retriever Tool: Calculates operational downstream blast radius for a data asset.
+
+    Args:
+        tenant_id: Tenant Identifier string.
+        dataset_id: Target dataset node ID to assess downstream impact.
+        max_depth: Maximum lineage traversal depth. Defaults to 5.
+        data_path: Optional local path to tenant Parquet dataset directory.
+
+    Returns:
+        Structured graph lineage context formatted for LLM evaluation.
     """
     client = LineagIQGraphRAGClient()
     return client.get_blast_radius_prompt(
@@ -98,9 +128,16 @@ def search_enterprise_data_catalog(
     top_k: int = 5,
     data_path: Optional[str] = None,
 ) -> str:
-    """
-    Agentic Retriever Tool: Searches enterprise datasets, columns, and pipelines.
-    Returns matched asset definitions and schema details formatted for LLM discovery.
+    """Agentic Retriever Tool: Searches enterprise datasets, columns, and pipelines.
+
+    Args:
+        tenant_id: Tenant Identifier string.
+        query: Natural language query for catalog search.
+        top_k: Maximum number of matched assets to return. Defaults to 5.
+        data_path: Optional local path to tenant Parquet dataset directory.
+
+    Returns:
+        Matched asset definitions and schema details formatted for LLM discovery.
     """
     client = LineagIQGraphRAGClient()
     return client.get_discovery_prompt(
@@ -109,3 +146,4 @@ def search_enterprise_data_catalog(
         top_k=top_k,
         data_path=data_path,
     )
+

@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 import urllib.request
 import urllib.error
 from pathlib import Path
@@ -12,6 +13,8 @@ from pydantic import BaseModel, Field
 
 from control_plane.src.query_engine import DuckDBQueryEngine
 from control_plane.src.prompt_synthesizer import PromptSynthesizer
+
+logger = logging.getLogger(__name__)
 
 STATIC_DIR = Path(__file__).parent / "static"
 STATIC_INDEX_FILE = STATIC_DIR / "index.html"
@@ -26,16 +29,40 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 def resolve_data_path(tenant_id: str, custom_path: Optional[str] = None) -> str:
-    """Resolves local or S3 tenant data path with environment fallback."""
+    """Resolves local or S3 tenant data path with environment fallback.
+
+    Args:
+        tenant_id: Unique tenant identifier.
+        custom_path: Optional explicit data path passed in API request.
+
+    Returns:
+        Resolved file or directory path string for tenant Parquet datasets.
+    """
     return custom_path or os.getenv("TENANT_DATA_DIR", f"/tmp/tenants/{tenant_id}")
 
 
-def post_json(url: str, payload: Dict[str, Any], headers: Optional[Dict[str, str]] = None, timeout: int = 45) -> Tuple[Optional[Any], Optional[str]]:
-    """Generic JSON POST request helper using standard urllib."""
+def post_json(
+    url: str,
+    payload: Dict[str, Any],
+    headers: Optional[Dict[str, str]] = None,
+    timeout: int = 45,
+) -> Tuple[Optional[Any], Optional[str]]:
+    """Generic JSON POST request helper using standard urllib.
+
+    Args:
+        url: Target HTTP endpoint URL.
+        payload: Data dictionary to serialize as JSON payload.
+        headers: Optional HTTP headers dictionary.
+        timeout: HTTP request timeout in seconds. Defaults to 45.
+
+    Returns:
+        Tuple of (parsed_json_response_dict, error_message_string).
+        On success, second element is None. On failure, first element is None.
+    """
     req_headers = {"Content-Type": "application/json"}
     if headers:
         req_headers.update(headers)
-        
+
     try:
         data_bytes = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(url, data=data_bytes, headers=req_headers)
@@ -63,36 +90,39 @@ def post_json(url: str, payload: Dict[str, Any], headers: Optional[Dict[str, str
                     msg += f": {err_text[:200]}"
             except Exception:
                 msg += f": {err_text[:200]}"
-        print(f"HTTP Error for POST {url}: {msg}")
+        logger.warning(f"HTTP Error for POST {url}: {msg}")
         return None, msg
     except Exception as e:
         err_msg = str(e)
         if "timed out" in err_msg.lower():
             err_msg = f"Request timed out ({timeout}s limit exceeded)"
-        print(f"HTTP POST request warning to {url}: {err_msg}")
+        logger.warning(f"HTTP POST request warning to {url}: {err_msg}")
         return None, err_msg
 
 
 class BlastRadiusRequest(BaseModel):
+    """Payload schema for downstream blast radius analysis request."""
     node_id: str = Field(..., description="Target node ID for blast radius analysis")
     max_depth: int = Field(default=5, ge=1, le=10, description="Max lineage traversal depth")
     data_path: Optional[str] = Field(default=None, description="Local or S3 path to tenant data")
 
 
 class RootCauseRequest(BaseModel):
+    """Payload schema for upstream root cause analysis request."""
     node_id: str = Field(..., description="Target node ID for upstream root cause analysis")
     max_depth: int = Field(default=5, ge=1, le=10, description="Max lineage traversal depth")
     data_path: Optional[str] = Field(default=None, description="Local or S3 path to tenant data")
 
 
-
 class DiscoveryRequest(BaseModel):
+    """Payload schema for semantic asset discovery request."""
     query: str = Field(..., description="Natural language semantic search query")
     top_k: int = Field(default=5, ge=1, le=50, description="Max matched assets to return")
     data_path: Optional[str] = Field(default=None, description="Local or S3 path to tenant data")
 
 
 class ChatRequest(BaseModel):
+    """Payload schema for interactive GraphRAG LLM chat request."""
     message: str = Field(..., description="User query for GraphRAG lineage AI assistant")
     data_path: Optional[str] = Field(default=None, description="Local or S3 path to tenant data")
     openai_api_key: Optional[str] = Field(default=None, description="Optional OpenAI API Key")
@@ -101,14 +131,26 @@ class ChatRequest(BaseModel):
 
 
 @app.get("/healthz")
-def health_check():
+def health_check() -> Dict[str, str]:
+    """Service health check endpoint.
+
+    Returns:
+        Dictionary indicating status 'ok' and service name.
+    """
     return {"status": "ok", "service": "lineagiq-control-plane"}
 
 
 @app.get("/", response_class=HTMLResponse)
 @app.get("/visualizer", response_class=HTMLResponse)
-def get_graph_visualizer():
-    """Serves the Knowledge Graph Visualizer web page."""
+def get_graph_visualizer() -> str:
+    """Serves the Knowledge Graph Visualizer web page.
+
+    Returns:
+        HTML document content string.
+
+    Raises:
+        HTTPException 404 if index.html is missing.
+    """
     if not STATIC_INDEX_FILE.exists():
         raise HTTPException(status_code=404, detail="Visualizer index.html not found")
     return STATIC_INDEX_FILE.read_text(encoding="utf-8")
@@ -118,8 +160,16 @@ def get_graph_visualizer():
 def get_tenant_graph(
     tenant_id: str = FastPath(..., description="Tenant Identifier"),
     data_path: Optional[str] = Query(default=None, description="Local or S3 data path"),
-):
-    """Returns all nodes and edges for tenant graph visualization."""
+) -> Dict[str, Any]:
+    """Returns all nodes and edges for tenant graph visualization.
+
+    Args:
+        tenant_id: Unique tenant identifier string.
+        data_path: Optional custom path to tenant Parquet dataset.
+
+    Returns:
+        Full knowledge graph structure containing 'nodes' and 'edges'.
+    """
     engine = DuckDBQueryEngine(data_base_path=resolve_data_path(tenant_id, data_path))
     return engine.get_full_graph()
 
@@ -127,9 +177,20 @@ def get_tenant_graph(
 @app.post("/api/v1/tenants/{tenant_id}/blast-radius")
 def calculate_blast_radius(
     tenant_id: str = FastPath(..., description="Tenant Identifier"),
-    request: BlastRadiusRequest = None,
-):
-    data_base = resolve_data_path(tenant_id, request.data_path if request else None)
+    request: Optional[BlastRadiusRequest] = None,
+) -> Dict[str, Any]:
+    """Calculates downstream operational blast radius for a target asset node.
+
+    Args:
+        tenant_id: Unique tenant identifier string.
+        request: BlastRadiusRequest containing node_id and optional max_depth/data_path.
+
+    Returns:
+        Impact analysis dictionary including target_node, impacted_nodes, edges, and synthesized prompt.
+    """
+    if not request:
+        raise HTTPException(status_code=400, detail="BlastRadiusRequest body is required")
+    data_base = resolve_data_path(tenant_id, request.data_path)
     engine = DuckDBQueryEngine(data_base_path=data_base)
     result = engine.get_downstream_blast_radius(
         start_node_id=request.node_id,
@@ -157,9 +218,20 @@ def calculate_blast_radius(
 @app.post("/api/v1/tenants/{tenant_id}/root-cause")
 def calculate_root_cause(
     tenant_id: str = FastPath(..., description="Tenant Identifier"),
-    request: RootCauseRequest = None,
-):
-    data_base = resolve_data_path(tenant_id, request.data_path if request else None)
+    request: Optional[RootCauseRequest] = None,
+) -> Dict[str, Any]:
+    """Calculates upstream root cause lineage starting from a target asset node.
+
+    Args:
+        tenant_id: Unique tenant identifier string.
+        request: RootCauseRequest containing node_id and optional max_depth/data_path.
+
+    Returns:
+        Root cause analysis dictionary including target_node, upstream_nodes, edges, and synthesized prompt.
+    """
+    if not request:
+        raise HTTPException(status_code=400, detail="RootCauseRequest body is required")
+    data_base = resolve_data_path(tenant_id, request.data_path)
     engine = DuckDBQueryEngine(data_base_path=data_base)
     result = engine.get_upstream_root_cause(
         start_node_id=request.node_id,
@@ -184,13 +256,23 @@ def calculate_root_cause(
     }
 
 
-
 @app.post("/api/v1/tenants/{tenant_id}/discovery")
 def discover_semantic_assets(
     tenant_id: str = FastPath(..., description="Tenant Identifier"),
-    request: DiscoveryRequest = None,
-):
-    data_base = resolve_data_path(tenant_id, request.data_path if request else None)
+    request: Optional[DiscoveryRequest] = None,
+) -> Dict[str, Any]:
+    """Executes semantic search over lineage assets and synthesizes a discovery prompt.
+
+    Args:
+        tenant_id: Unique tenant identifier string.
+        request: DiscoveryRequest containing natural language query, top_k, and optional data_path.
+
+    Returns:
+        Discovery result dictionary containing query, matched_nodes, and synthesized prompt.
+    """
+    if not request:
+        raise HTTPException(status_code=400, detail="DiscoveryRequest body is required")
+    data_base = resolve_data_path(tenant_id, request.data_path)
     engine = DuckDBQueryEngine(data_base_path=data_base)
     matched_nodes = engine.search_semantic_assets(
         query_text=request.query,
@@ -218,9 +300,19 @@ def call_openai_llm(
     base_url: Optional[str] = None,
     model: Optional[str] = None,
 ) -> Tuple[Optional[str], Optional[str]]:
-    """
-    Calls OpenAI API or any OpenAI-compatible provider (Azure OpenAI, Ollama, vLLM, Groq, OpenRouter).
-    Automatically routes Gemini API keys (AIza..., AQ...) to Google's OpenAI endpoint if no custom base_url is set.
+    """Calls OpenAI API or OpenAI-compatible provider (Azure, Ollama, vLLM, Groq, OpenRouter).
+
+    Automatically routes Gemini API keys (AIza..., AQ...) to Google's OpenAI endpoint
+    if no custom base_url is set.
+
+    Args:
+        prompt: Full prompt string to submit to LLM.
+        api_key: Optional API key override.
+        base_url: Optional API base URL endpoint override.
+        model: Optional LLM model identifier override.
+
+    Returns:
+        Tuple of (generated_response_text, error_message_string).
     """
     key = api_key or os.getenv("OPENAI_API_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     if not key:
@@ -258,8 +350,14 @@ def call_openai_llm(
 
 
 def call_gemini_llm(prompt: str, api_key: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
-    """
-    Calls Google Gemini API (gemini-3.6-flash) using standard HTTP endpoint.
+    """Calls Google Gemini API (gemini-3.6-flash) using standard REST HTTP endpoint.
+
+    Args:
+        prompt: Full prompt string to submit to Gemini.
+        api_key: Optional Gemini/Google API key override.
+
+    Returns:
+        Tuple of (generated_response_text, error_message_string).
     """
     key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or os.getenv("OPENAI_API_KEY")
     if not key:
@@ -289,10 +387,18 @@ def call_llm(
     openai_base_url: Optional[str] = None,
     openai_model: Optional[str] = None,
 ) -> Tuple[Optional[str], Optional[str]]:
-    """
-    Attempts to generate LLM response using configured providers in order:
+    """Attempts to generate LLM response using configured providers in order:
     1. OpenAI / OpenAI-compatible API (including Gemini AIza keys via Google OpenAI endpoint)
     2. Google Gemini Native API
+
+    Args:
+        prompt: Full prompt string for LLM completion.
+        openai_key: Optional OpenAI API key override.
+        openai_base_url: Optional base URL endpoint override.
+        openai_model: Optional model name override.
+
+    Returns:
+        Tuple of (generated_response_text, error_message_string).
     """
     openai_res, openai_err = call_openai_llm(prompt, api_key=openai_key, base_url=openai_base_url, model=openai_model)
     if openai_res:
@@ -305,14 +411,40 @@ def call_llm(
     return None, openai_err or gemini_err
 
 
+def _find_target_node(nodes: List[Dict[str, Any]], msg_lower: str) -> Optional[Dict[str, Any]]:
+    """Helper to locate target graph node referenced in user query string."""
+    for n in nodes:
+        if n.get("name", "").lower() in msg_lower or n.get("id", "").lower() in msg_lower:
+            return n
+    return nodes[0] if nodes else None
+
+
+def _has_api_key_configured(request: ChatRequest) -> bool:
+    """Helper to check whether any LLM API key is present in request or env."""
+    return bool(
+        request.openai_api_key
+        or os.getenv("OPENAI_API_KEY")
+        or os.getenv("GEMINI_API_KEY")
+        or os.getenv("GOOGLE_API_KEY")
+    )
+
+
 @app.post("/api/v1/tenants/{tenant_id}/chat")
 def lineage_ai_chat(
     tenant_id: str = FastPath(..., description="Tenant Identifier"),
-    request: ChatRequest = None,
-):
-    """
-    GraphRAG LLM Lineage Chat endpoint. Integrates DuckDB query engine, PromptSynthesizer,
-    OpenAI, and Gemini LLM to answer interactive queries regarding blast radius and lineage graphs.
+    request: Optional[ChatRequest] = None,
+) -> Dict[str, Any]:
+    """GraphRAG LLM Lineage Chat endpoint.
+
+    Integrates DuckDB query engine, PromptSynthesizer, OpenAI, and Gemini LLM
+    to answer interactive user queries regarding blast radius, root cause, and lineage graphs.
+
+    Args:
+        tenant_id: Unique tenant identifier string.
+        request: ChatRequest payload containing user message and optional provider credentials.
+
+    Returns:
+        Chat response dictionary containing tenant_id, reply string, synthesized_prompt, and node details.
     """
     if not request or not request.message:
         raise HTTPException(status_code=400, detail="Message prompt is required")
@@ -325,14 +457,7 @@ def lineage_ai_chat(
     # 1. Check if query asks about blast radius or downstream impact
     if any(k in msg_lower for k in ["blast", "impact", "affected", "break", "change", "downstream"]):
         full_graph = engine.get_full_graph()
-        target_node = None
-        for n in full_graph.get("nodes", []):
-            if n["name"].lower() in msg_lower or n["id"].lower() in msg_lower:
-                target_node = n
-                break
-        
-        if not target_node and full_graph.get("nodes"):
-            target_node = full_graph["nodes"][0]
+        target_node = _find_target_node(full_graph.get("nodes", []), msg_lower)
 
         if target_node:
             result = engine.get_downstream_blast_radius(start_node_id=target_node["id"], max_depth=5)
@@ -350,7 +475,7 @@ def lineage_ai_chat(
             )
             if llm_reply:
                 reply = llm_reply
-            elif llm_err and (request.openai_api_key or os.getenv("OPENAI_API_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")):
+            elif llm_err and _has_api_key_configured(request):
                 reply = f"⚠️ **LLM Provider Error**:\n\n`{llm_err}`\n\nPlease check your API key and model settings in the ⚙️ settings panel."
             else:
                 impacted_names = [n["name"] for n in result["impacted_nodes"] if n["id"] != target_node["id"]]
@@ -374,14 +499,7 @@ def lineage_ai_chat(
     # 2. Check if query asks about root cause or upstream origin
     if any(k in msg_lower for k in ["root cause", "upstream", "why", "origin", "source", "parent"]):
         full_graph = engine.get_full_graph()
-        target_node = None
-        for n in full_graph.get("nodes", []):
-            if n["name"].lower() in msg_lower or n["id"].lower() in msg_lower:
-                target_node = n
-                break
-        
-        if not target_node and full_graph.get("nodes"):
-            target_node = full_graph["nodes"][0]
+        target_node = _find_target_node(full_graph.get("nodes", []), msg_lower)
 
         if target_node:
             result = engine.get_upstream_root_cause(start_node_id=target_node["id"], max_depth=5)
@@ -399,7 +517,7 @@ def lineage_ai_chat(
             )
             if llm_reply:
                 reply = llm_reply
-            elif llm_err and (request.openai_api_key or os.getenv("OPENAI_API_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")):
+            elif llm_err and _has_api_key_configured(request):
                 reply = f"⚠️ **LLM Provider Error**:\n\n`{llm_err}`\n\nPlease check your API key and model settings in the ⚙️ settings panel."
             else:
                 upstream_names = [n["name"] for n in result["upstream_nodes"] if n["id"] != target_node["id"]]
@@ -421,7 +539,6 @@ def lineage_ai_chat(
             }
 
     # 3. General Semantic Data Discovery / Lineage Asset Search
-
     matched_nodes = engine.search_semantic_assets(query_text=request.message, top_k=5)
     prompt = synthesizer.synthesize_discovery_prompt(query_text=request.message, matched_nodes=matched_nodes)
 
@@ -433,7 +550,7 @@ def lineage_ai_chat(
     )
     if llm_reply:
         reply = llm_reply
-    elif llm_err and (request.openai_api_key or os.getenv("OPENAI_API_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")):
+    elif llm_err and _has_api_key_configured(request):
         reply = f"⚠️ **LLM Provider Error**:\n\n`{llm_err}`\n\nPlease check your API key, base URL, and model settings in the ⚙️ settings panel."
     elif matched_nodes:
         reply = f"LineagIQ Knowledge Graph matched **{len(matched_nodes)}** relevant data assets for **\"{request.message}\"**:\n\n"
@@ -454,4 +571,5 @@ def lineage_ai_chat(
         "synthesized_prompt": prompt,
         "matched_nodes": matched_nodes,
     }
+
 
