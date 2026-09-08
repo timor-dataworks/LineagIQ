@@ -87,6 +87,10 @@
         Load
       </button>
 
+      <button class="btn btn-secondary" onclick="openTimeDiffModal()">
+        ⚡ Time Travel Diff
+      </button>
+
       <button class="btn btn-secondary" onclick="toggleChatDrawer()">
         🤖 AI Assistant
       </button>
@@ -103,6 +107,7 @@
       <span id="timeline-label" style="font-size: 11px; font-weight: 600; color: var(--text-primary);">LIVE (Latest)</span>
       <input type="range" id="timeline-slider" class="timeline-slider" min="0" max="0" value="0" step="1" oninput="onTimelineSliderChange(this.value)">
       <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 10px;" onclick="resetTimelineLive()">Reset Live</button>
+      <button class="btn" style="padding: 2px 8px; font-size: 10px; background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));" onclick="openTimeDiffModal()">⚡ Compare Diff</button>
     </div>
 
     <!-- Right Sidebar Inspector Drawer -->
@@ -228,6 +233,97 @@
       <div class="chat-input-bar">
         <input type="text" id="chat-input" class="chat-input-field" placeholder="Ask AI Assistant..." onkeydown="if(event.key==='Enter') sendChatMessage()">
         <button class="btn" onclick="sendChatMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Time Travel Diff Dashboard Modal -->
+  <div class="modal-overlay" id="time-diff-modal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon">⚡</div>
+          <div>
+            <h3 style="font-size: 15px; font-weight: 700; color: var(--text-primary);">Time Travel &amp; Schema Drift Analysis</h3>
+            <span style="font-size: 11px; color: var(--text-muted);">Compare historical Delta Lake commit versions and compute lineage diffs</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-icon" style="padding: 4px 8px;" onclick="closeTimeDiffModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Diff Select Bar -->
+        <div class="diff-select-bar">
+          <div class="diff-select-group">
+            <span class="diff-select-label">Baseline Timestamp (T1)</span>
+            <select id="diff-t1-select" style="width: 100%;"></select>
+          </div>
+          <div style="font-size: 16px; color: var(--text-muted); padding-top: 14px;">➔</div>
+          <div class="diff-select-group">
+            <span class="diff-select-label">Compare Timestamp (T2)</span>
+            <select id="diff-t2-select" style="width: 100%;"></select>
+          </div>
+          <div class="diff-select-group">
+            <span class="diff-select-label">Scoped Asset ID (Optional)</span>
+            <input type="text" id="diff-node-input" placeholder="e.g. analytics.stg_customers">
+          </div>
+          <div style="padding-top: 14px;">
+            <button class="btn" onclick="executeTimeDiff()">⚡ Run Diff Analysis</button>
+          </div>
+        </div>
+
+        <!-- Metric Summary Cards -->
+        <div class="diff-metrics-grid" id="diff-metrics-grid">
+          <div class="diff-metric-card card-added">
+            <span class="diff-metric-value" id="diff-count-added">0</span>
+            <span class="diff-metric-label">🟢 Added Assets</span>
+          </div>
+          <div class="diff-metric-card card-removed">
+            <span class="diff-metric-value" id="diff-count-removed">0</span>
+            <span class="diff-metric-label">🔴 Removed Assets</span>
+          </div>
+          <div class="diff-metric-card card-modified">
+            <span class="diff-metric-value" id="diff-count-modified">0</span>
+            <span class="diff-metric-label">🟡 Modified Schema</span>
+          </div>
+          <div class="diff-metric-card card-edges">
+            <span class="diff-metric-value" id="diff-count-edges">0</span>
+            <span class="diff-metric-label">⚡ Lineage Edge Shifts</span>
+          </div>
+        </div>
+
+        <!-- Tabbed Breakdown -->
+        <div class="diff-tabs-bar">
+          <button class="diff-tab active" id="tab-btn-added" onclick="switchDiffTab('added')">🟢 Added Assets (<span id="badge-tab-added">0</span>)</button>
+          <button class="diff-tab" id="tab-btn-removed" onclick="switchDiffTab('removed')">🔴 Removed Assets (<span id="badge-tab-removed">0</span>)</button>
+          <button class="diff-tab" id="tab-btn-modified" onclick="switchDiffTab('modified')">🟡 Modified Attributes (<span id="badge-tab-modified">0</span>)</button>
+          <button class="diff-tab" id="tab-btn-edges" onclick="switchDiffTab('edges')">⚡ Edge Changes (<span id="badge-tab-edges">0</span>)</button>
+          <button class="diff-tab" id="tab-btn-prompt" onclick="switchDiffTab('prompt')">🤖 GraphRAG Prompt</button>
+        </div>
+
+        <!-- Detail Lists Container -->
+        <div id="diff-tab-added" class="diff-item-list">
+          <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No assets added between selected timestamps.</div>
+        </div>
+        <div id="diff-tab-removed" class="diff-item-list" style="display: none;">
+          <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No assets removed between selected timestamps.</div>
+        </div>
+        <div id="diff-tab-modified" class="diff-item-list" style="display: none;">
+          <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No schema properties modified.</div>
+        </div>
+        <div id="diff-tab-edges" class="diff-item-list" style="display: none;">
+          <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No lineage edges altered.</div>
+        </div>
+        <div id="diff-tab-prompt" class="diff-item-list" style="display: none;">
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 11px; font-weight: 700; color: var(--accent-cyan);">Synthesized GraphRAG Time Travel Prompt:</span>
+              <button class="btn btn-secondary" style="padding: 3px 10px; font-size: 11px;" onclick="sendDiffToAiAssistant()">🤖 Send to AI Assistant</button>
+            </div>
+            <div class="code-block" id="diff-prompt-content" style="max-height: 180px;">Click "Run Diff Analysis" to generate prompt...</div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -754,6 +850,243 @@
       html = html.replace(/`([^`]+)`/g, "<code style='background: rgba(2, 6, 23, 0.6); color: #38bdf8; padding: 2px 6px; border-radius: 4px;'>$1</code>");
       html = html.replace(/\n/g, "<br>");
       return html;
+    }
+
+    let lastDiffResult = null;
+
+    function openTimeDiffModal() {
+      const modal = document.getElementById('time-diff-modal');
+      modal.style.display = 'flex';
+      populateDiffDropdowns();
+    }
+
+    function closeTimeDiffModal() {
+      document.getElementById('time-diff-modal').style.display = 'none';
+    }
+
+    function populateDiffDropdowns() {
+      const sel1 = document.getElementById('diff-t1-select');
+      const sel2 = document.getElementById('diff-t2-select');
+      sel1.innerHTML = '';
+      sel2.innerHTML = '';
+
+      if (!availableTimestamps || availableTimestamps.length === 0) {
+        sel1.innerHTML = '<option value="">No historical commits available</option>';
+        sel2.innerHTML = '<option value="">No historical commits available</option>';
+        return;
+      }
+
+      availableTimestamps.forEach((item) => {
+        const opt1 = document.createElement('option');
+        opt1.value = item.timestamp;
+        opt1.innerText = `v${item.version} - ${item.timestamp}`;
+        sel1.appendChild(opt1);
+
+        const opt2 = document.createElement('option');
+        opt2.value = item.timestamp;
+        opt2.innerText = `v${item.version} - ${item.timestamp}`;
+        sel2.appendChild(opt2);
+      });
+
+      sel1.selectedIndex = 0;
+      sel2.selectedIndex = availableTimestamps.length - 1;
+
+      if (selectedNodeId && document.getElementById('diff-node-input')) {
+        document.getElementById('diff-node-input').value = selectedNodeId;
+      }
+    }
+
+    async function executeTimeDiff() {
+      const t1 = document.getElementById('diff-t1-select').value;
+      const t2 = document.getElementById('diff-t2-select').value;
+      const nodeId = document.getElementById('diff-node-input').value.trim() || 'enterprise';
+      const tenantId = document.getElementById('tenant-input').value.trim() || 'demo_tenant';
+      const dataPath = document.getElementById('data-path-input').value.trim();
+
+      if (!t1 || !t2) {
+        alert("Please select baseline (T1) and compare (T2) timestamps.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/v1/tenants/${tenantId}/time-travel/diff`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            node_id: nodeId,
+            timestamp_t1: t1,
+            timestamp_t2: t2,
+            data_path: dataPath
+          })
+        });
+
+        if (!response.ok) throw new Error("Time Travel Diff request failed");
+        const data = await response.json();
+        lastDiffResult = data;
+
+        const diff = data.diff || {};
+        const addedNodes = diff.added_nodes || [];
+        const removedNodes = diff.removed_nodes || [];
+        const modifiedNodes = diff.modified_nodes || [];
+        const addedEdges = diff.added_edges || [];
+        const removedEdges = diff.removed_edges || [];
+
+        document.getElementById('diff-count-added').innerText = addedNodes.length;
+        document.getElementById('diff-count-removed').innerText = removedNodes.length;
+        document.getElementById('diff-count-modified').innerText = modifiedNodes.length;
+        document.getElementById('diff-count-edges').innerText = addedEdges.length + removedEdges.length;
+
+        document.getElementById('badge-tab-added').innerText = addedNodes.length;
+        document.getElementById('badge-tab-removed').innerText = removedNodes.length;
+        document.getElementById('badge-tab-modified').innerText = modifiedNodes.length;
+        document.getElementById('badge-tab-edges').innerText = addedEdges.length + removedEdges.length;
+
+        // Render Added
+        const addedContainer = document.getElementById('diff-tab-added');
+        if (addedNodes.length > 0) {
+          addedContainer.innerHTML = addedNodes.map(n => `
+            <div class="diff-item-row">
+              <div>
+                <span class="diff-tag-added">[+] ADDED</span>
+                <strong>${escapeHtml(n.name || n.id)}</strong>
+                <span class="node-badge badge-${n.type || 'Dataset'}" style="margin-left: 8px;">${n.type || 'Dataset'}</span>
+              </div>
+              <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(n.description || n.id)}</span>
+            </div>
+          `).join('');
+        } else {
+          addedContainer.innerHTML = `<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No assets added between selected timestamps.</div>`;
+        }
+
+        // Render Removed
+        const removedContainer = document.getElementById('diff-tab-removed');
+        if (removedNodes.length > 0) {
+          removedContainer.innerHTML = removedNodes.map(n => `
+            <div class="diff-item-row">
+              <div>
+                <span class="diff-tag-removed">[-] REMOVED</span>
+                <strong>${escapeHtml(n.name || n.id)}</strong>
+                <span class="node-badge badge-${n.type || 'Dataset'}" style="margin-left: 8px;">${n.type || 'Dataset'}</span>
+              </div>
+              <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(n.description || n.id)}</span>
+            </div>
+          `).join('');
+        } else {
+          removedContainer.innerHTML = `<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No assets removed between selected timestamps.</div>`;
+        }
+
+        // Render Modified
+        const modifiedContainer = document.getElementById('diff-tab-modified');
+        if (modifiedNodes.length > 0) {
+          modifiedContainer.innerHTML = modifiedNodes.map(m => `
+            <div class="diff-item-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+              <div>
+                <span class="diff-tag-modified">[Δ] MODIFIED</span>
+                <strong>${escapeHtml(m.id)}</strong>
+              </div>
+              <div style="font-size: 11px; color: var(--text-secondary); width: 100%;">
+                <span style="color: var(--accent-rose);">Before:</span> ${escapeHtml(JSON.stringify(m.before))}
+                <br>
+                <span style="color: var(--accent-emerald);">After:</span> ${escapeHtml(JSON.stringify(m.after))}
+              </div>
+            </div>
+          `).join('');
+        } else {
+          modifiedContainer.innerHTML = `<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No schema properties modified.</div>`;
+        }
+
+        // Render Edges
+        const edgesContainer = document.getElementById('diff-tab-edges');
+        const allEdges = [
+          ...addedEdges.map(e => ({ mode: 'added', ...e })),
+          ...removedEdges.map(e => ({ mode: 'removed', ...e }))
+        ];
+        if (allEdges.length > 0) {
+          edgesContainer.innerHTML = allEdges.map(e => `
+            <div class="diff-item-row">
+              <div>
+                <span class="${e.mode === 'added' ? 'diff-tag-added' : 'diff-tag-removed'}">[${e.mode === 'added' ? '+' : '-'}] ${e.mode.toUpperCase()} LINEAGE</span>
+                <code>${escapeHtml(e.source_id)}</code> ➔ <code>${escapeHtml(e.target_id)}</code>
+              </div>
+              <span style="font-size: 11px; color: var(--text-muted);">${e.type || 'Edge'}</span>
+            </div>
+          `).join('');
+        } else {
+          edgesContainer.innerHTML = `<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No lineage edges altered.</div>`;
+        }
+
+        // Synthesized Prompt
+        document.getElementById('diff-prompt-content').innerText = data.synthesized_prompt || 'No prompt generated.';
+
+        applyGraphDiffVisuals(diff);
+
+      } catch (err) {
+        alert(`Error executing time diff: ${err.message}`);
+      }
+    }
+
+    function switchDiffTab(tabName) {
+      const tabs = ['added', 'removed', 'modified', 'edges', 'prompt'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const content = document.getElementById(`diff-tab-${t}`);
+        if (t === tabName) {
+          btn.classList.add('active');
+          content.style.display = 'flex';
+        } else {
+          btn.classList.remove('active');
+          content.style.display = 'none';
+        }
+      });
+    }
+
+    function applyGraphDiffVisuals(diff) {
+      if (!nodesDataSet) return;
+
+      const addedIds = new Set((diff.added_nodes || []).map(n => n.id));
+      const removedIds = new Set((diff.removed_nodes || []).map(n => n.id));
+      const modifiedIds = new Set((diff.modified_nodes || []).map(n => n.id));
+
+      const allNodes = nodesDataSet.get();
+      const updatedNodes = allNodes.map(n => {
+        let color = { background: '#1e293b', border: 'transparent' };
+        let opacity = 0.35;
+        let label = n.label || n.id;
+
+        if (addedIds.has(n.id)) {
+          color = { background: '#059669', border: '#10b981', highlight: { background: '#10b981', border: '#34d399' } };
+          opacity = 1.0;
+          if (!label.startsWith('[+]')) label = `[+] ${label}`;
+        } else if (removedIds.has(n.id)) {
+          color = { background: '#b91c1c', border: '#ef4444', highlight: { background: '#f43f5e', border: '#f87171' } };
+          opacity = 1.0;
+          if (!label.startsWith('[-]')) label = `[-] ${label}`;
+        } else if (modifiedIds.has(n.id)) {
+          color = { background: '#d97706', border: '#f59e0b', highlight: { background: '#fbbf24', border: '#fef08a' } };
+          opacity = 1.0;
+          if (!label.startsWith('[Δ]')) label = `[Δ] ${label}`;
+        }
+
+        return {
+          id: n.id,
+          color: color,
+          opacity: opacity,
+          label: label
+        };
+      });
+
+      nodesDataSet.update(updatedNodes);
+    }
+
+    function sendDiffToAiAssistant() {
+      if (!lastDiffResult || !lastDiffResult.synthesized_prompt) return;
+      closeTimeDiffModal();
+      const drawer = document.getElementById('chat-drawer');
+      drawer.style.display = 'flex';
+
+      const inputEl = document.getElementById('chat-input');
+      inputEl.value = `Analyze historical schema drift and lineage changes:\n\n${lastDiffResult.synthesized_prompt}`;
+      sendChatMessage();
     }
 
     window.addEventListener('DOMContentLoaded', () => {
