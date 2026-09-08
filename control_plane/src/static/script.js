@@ -183,7 +183,29 @@ function renderNetwork(nodesData, edgesData) {
   const isHierarchical = (document.getElementById('layout-mode').value === 'hierarchical');
 
   const formattedNodes = nodesData.map(n => {
+    const isColumn = (n.type === 'Column');
     const color = typeColors[n.type] || { background: '#334155', border: 'transparent' };
+
+    if (isColumn) {
+      return {
+        id: n.id,
+        label: n.name || n.id,
+        shape: 'box',
+        margin: 6,
+        borderWidth: 1,
+        borderWidthSelected: 2,
+        color: {
+          background: '#4c1d95',
+          border: '#7c3aed',
+          highlight: { background: '#6d28d9', border: '#c084fc' },
+          hover: { background: '#5b21b6', border: '#a855f7' }
+        },
+        font: { color: '#f3e8ff', size: 11, face: 'Inter', weight: '500' },
+        shapeProperties: { borderRadius: 4 },
+        rawNode: n
+      };
+    }
+
     const shape = n.type === 'Dataset' ? 'box' : (n.type === 'Pipeline' ? 'ellipse' : 'dot');
     return {
       id: n.id,
@@ -191,29 +213,35 @@ function renderNetwork(nodesData, edgesData) {
       shape: shape,
       size: n.type === 'Dataset' ? 22 : (n.type === 'Pipeline' ? 18 : 12),
       margin: 12,
-      borderWidth: 0,
+      borderWidth: n.type === 'Dataset' ? 1 : 0,
       borderWidthSelected: 2,
       color: {
         background: color.background,
-        border: 'transparent',
-        highlight: { background: color.highlight, border: 'transparent' },
+        border: color.border || 'transparent',
+        highlight: { background: color.highlight, border: '#ffffff' },
         hover: { background: color.highlight, border: 'transparent' }
       },
       font: { color: '#ffffff', size: 13, face: 'Inter', weight: '600' },
+      shapeProperties: { borderRadius: 6 },
       rawNode: n
     };
   });
 
   const formattedEdges = edgesData.map(e => {
+    const isBelongsTo = (e.type === 'BELONGS_TO');
     return {
       from: e.source_id,
       to: e.target_id,
-      label: e.type,
-      arrows: { to: { enabled: true, scaleFactor: 0.8 } },
-      color: { color: 'rgba(255, 255, 255, 0.45)', highlight: '#06b6d4' },
+      label: isBelongsTo ? '' : e.type,
+      arrows: isBelongsTo ? { to: { enabled: false } } : { to: { enabled: true, scaleFactor: 0.8 } },
+      dashes: isBelongsTo ? [3, 4] : false,
+      width: isBelongsTo ? 1 : 2,
+      color: isBelongsTo
+        ? { color: 'rgba(168, 85, 247, 0.4)', highlight: '#c084fc' }
+        : { color: 'rgba(255, 255, 255, 0.45)', highlight: '#06b6d4' },
       font: {
         color: '#ffffff',
-        size: 11,
+        size: 10,
         face: 'Inter',
         align: 'middle',
         strokeWidth: 0,
