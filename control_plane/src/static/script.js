@@ -476,12 +476,14 @@ function renderNetwork(nodesData, edgesData) {
   if (network) network.destroy();
   network = new vis.Network(container, data, options);
 
-  // Trigger automatic viewport fit so all nodes (including columns) are immediately framed and visible
+  // Trigger automatic horizontal alignment and viewport fit
   setTimeout(() => {
+    alignLineageHorizontalHeights();
     if (network) network.fit({ animation: false });
   }, 100);
 
   network.once("stabilizationIterationsDone", function () {
+    alignLineageHorizontalHeights();
     if (network) network.fit({ animation: { duration: 400 } });
   });
 
@@ -499,6 +501,112 @@ function renderNetwork(nodesData, edgesData) {
     resetSidebar();
     resetGraphHighlight();
   });
+}
+
+function alignLineageHorizontalHeights() {
+  if (!network || !nodesDataSet || !edgesDataSet) return;
+
+  const isHierarchical = (document.getElementById('layout-mode').value === 'hierarchical');
+  if (!isHierarchical) return;
+
+  const positions = network.getPositions();
+  const allNodes = nodesDataSet.get();
+  const allEdges = edgesDataSet.get();
+
+  const isBackbone = (n) => {
+    const raw = n.rawNode || n;
+    const type = raw.type || n.type;
+    return (type === 'Dataset' || type === 'Pipeline');
+  };
+
+  const backboneNodes = allNodes.filter(n => isBackbone(n));
+  const backboneIds = new Set(backboneNodes.map(n => n.id));
+
+  // Build directional adjacency for lineage
+  const outAdj = {};
+  const inAdj = {};
+
+  backboneIds.forEach(id => {
+    outAdj[id] = [];
+    inAdj[id] = [];
+  });
+
+  allEdges.forEach(e => {
+    if (e.from !== e.to && backboneIds.has(e.from) && backboneIds.has(e.to)) {
+      outAdj[e.from].push(e.to);
+      inAdj[e.to].push(e.from);
+    }
+  });
+
+  // Root backbone nodes (in-degree 0)
+  const rootIds = backboneNodes.filter(n => inAdj[n.id].length === 0).map(n => n.id);
+
+  const alignedY = {};
+  const visited = new Set();
+  let currentYOffset = 0;
+
+  rootIds.forEach(rootId => {
+    if (visited.has(rootId)) return;
+
+    const initialY = (positions[rootId] && positions[rootId].y !== undefined)
+      ? positions[rootId].y
+      : currentYOffset;
+
+    alignedY[rootId] = initialY;
+    const queue = [rootId];
+    visited.add(rootId);
+
+    while (queue.length > 0) {
+      const curr = queue.shift();
+      const currY = alignedY[curr];
+
+      (outAdj[curr] || []).forEach(childId => {
+        if (!visited.has(childId)) {
+          alignedY[childId] = currY; // Set child Y to EXACT same horizontal height as parent!
+          visited.add(childId);
+          queue.push(childId);
+        }
+      });
+    }
+
+    currentYOffset += 240;
+  });
+
+  // Handle any disconnected backbone nodes
+  backboneNodes.forEach(n => {
+    if (alignedY[n.id] === undefined) {
+      alignedY[n.id] = (positions[n.id] && positions[n.id].y !== undefined) ? positions[n.id].y : 0;
+    }
+  });
+
+  const updates = [];
+  backboneNodes.forEach(n => {
+    if (alignedY[n.id] !== undefined && positions[n.id]) {
+      updates.push({
+        id: n.id,
+        x: positions[n.id].x,
+        y: alignedY[n.id]
+      });
+    }
+  });
+
+  // Align Column Cloud satellites directly below their parent dataset
+  allNodes.forEach(n => {
+    if (n.id.endsWith('__column_cloud')) {
+      const parentId = n.id.replace('__column_cloud', '');
+      if (alignedY[parentId] !== undefined && positions[parentId]) {
+        updates.push({
+          id: n.id,
+          x: positions[parentId].x,
+          y: alignedY[parentId] + 150
+        });
+      }
+    }
+  });
+
+  if (updates.length > 0) {
+    nodesDataSet.update(updates);
+  }
 }
 
 function fitGraphView() {
