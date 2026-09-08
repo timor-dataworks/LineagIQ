@@ -1,7 +1,10 @@
 # Developer & Architectural Specification: Enterprise Semantic Knowledge Graph (LineagIQ)
 
 ## System Overview
-The LineagIQ platform models an enterprise data landscape into a contextual knowledge graph. It decouples the core semantic and graph engine from tenant-specific operational data. The architecture operates through a two-tier model: an ephemeral **Stateless Ingestion Agent** that extracts, embeds, and formats metadata inside the customer environment, and a **Serverless S3 Control Plane** that hosts multi-tenant storage and executes GraphRAG queries, time travel historical analysis, and interactive DAG visualization.
+The LineagIQ platform models an enterprise data landscape into a contextual knowledge graph. It decouples the core semantic and graph engine from tenant-specific operational data through a three-tier modular architecture:
+1. **LineagIQ Core (`core/`)**: Standardized ontology Pydantic models (`Node`, `Edge`, `GraphPayload`), in-process quantized INT8 ONNX vector embedder with singleton caching, Delta Lake PyArrow schemas, table/path constants, and artifact serialization.
+2. **Stateless Ingestion Agent (`collection_agent/`)**: An ephemeral edge metadata collector that extracts (dbt, SQL catalog, query logs, OpenLineage) and syncs metadata directly to tenant S3 prefixes.
+3. **Serverless S3 Control Plane (`control_plane/`)**: A multi-tenant query engine powered by DuckDB and Delta Lake exposing FastAPI endpoints, interactive web visualization with time travel timeline scrubbing, and dynamic LineagIQ AI Assistant (supporting OpenAI, Gemini, and local Ollama).
 
 ---
 
