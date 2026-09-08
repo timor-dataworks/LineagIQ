@@ -52,8 +52,8 @@ The extraction layer uses source-specific plugins targeting operational data ass
 
 ---
 
-## 2.2 Graph Normalization Engine (`transform/`)
-Translates extracted payloads into the normalized LineagIQ Ontology:
+## 2.2 Graph Normalization Engine (`core.graph_builder` & `core.models`)
+Translates extracted payloads into the normalized LineagIQ Ontology provided by the platform `core` package:
 
 * **Node Types**:
   - `Dataset`: Tables, views, and raw file stores.
@@ -71,16 +71,16 @@ Translates extracted payloads into the normalized LineagIQ Ontology:
 
 ---
 
-## 2.3 In-Process Vectorization (`embedder/`)
+## 2.3 In-Process Vectorization (`core.embedder`)
 To eliminate external API costs and keep metadata private:
-- Uses a local quantized embedding model (`bge-small-en-v1.5` in INT8 ONNX format).
+- Uses a local quantized embedding model (`bge-small-en-v1.5` in INT8 ONNX format) provided by `core.LocalEmbedder`.
 - Embedded fields: Dataset descriptions, column names, business terms, and query context strings.
-- Runs entirely in-process using ONNX Runtime with zero external HTTP calls.
+- Runs entirely in-process using ONNX Runtime with zero external HTTP calls, featuring singleton session caching.
 
 ---
 
-## 2.4 Storage & Index Serialization (`storage/`)
-Outputs are written via `ArtifactWriter` in [`writer.py`](file:///Users/timor/projects/dataworks/LineagIQ/collection_agent/src/storage/writer.py) into ephemeral `/tmp` scratch space before sync:
+## 2.4 Storage & Index Serialization (`core.writer`)
+Outputs are written via `ArtifactWriter` in `core.writer` into ephemeral `/tmp` scratch space before sync:
 - **Delta Lake Table Commit Logs**: Nodes, edges, and dense vectors are written to Delta Lake dataset directories (`graph/nodes/`, `graph/edges/`, `vectors/`) using `write_deltalake`. Each execution appends or commits a new version transaction log (`_delta_log/00000000000000000000.json`).
 - **Snappy-Compressed Parquet Files**: Standalone `data.parquet` files are maintained alongside Delta logs for backward compatibility and direct Parquet scans.
 

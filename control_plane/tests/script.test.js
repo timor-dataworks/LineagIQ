@@ -104,3 +104,33 @@ test('computeDeterministicPositions assigns explicit X and Y coordinates in LR m
   assert.equal(nodes[2].x, 720);
   assert.equal(typeof nodes[0].y, 'number');
 });
+
+test('updateChatDrawerPosition dynamically positions drawer to right edge or shifts when sidebar is open', () => {
+  const drawerStyle = { right: '', left: '', display: 'flex' };
+  const sidebarStyle = { display: 'none' };
+  const sidebarEl = { style: sidebarStyle, offsetWidth: 400 };
+  const drawerEl = { style: drawerStyle };
+
+  global.document = {
+    getElementById: (id) => {
+      if (id === 'chat-drawer') return drawerEl;
+      if (id === 'sidebar') return sidebarEl;
+      return null;
+    }
+  };
+
+  // Sidebar is closed -> docks dynamically to right: 16px
+  script.updateChatDrawerPosition();
+  assert.equal(drawerStyle.right, '16px');
+
+  // Sidebar is opened -> shifts dynamically to left of sidebar
+  sidebarStyle.display = 'flex';
+  script.updateChatDrawerPosition();
+  assert.equal(drawerStyle.right, '420px');
+
+  // Sidebar closed again -> smoothly docks back to right: 16px
+  sidebarStyle.display = 'none';
+  script.updateChatDrawerPosition();
+  assert.equal(drawerStyle.right, '16px');
+});
+

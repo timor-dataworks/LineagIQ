@@ -678,6 +678,7 @@ function displayNodeDetails(node) {
   if (!node) return;
   const sidebar = getEl('sidebar');
   if (sidebar) sidebar.style.display = 'flex';
+  updateChatDrawerPosition();
 
   const emptyInspector = getEl('inspector-empty');
   const contentInspector = getEl('inspector-content');
@@ -732,6 +733,7 @@ function highlightConnected(nodeId) {
 function resetSidebar() {
   const sidebar = getEl('sidebar');
   if (sidebar) sidebar.style.display = 'none';
+  updateChatDrawerPosition();
 
   const contentInspector = getEl('inspector-content');
   const emptyInspector = getEl('inspector-empty');
@@ -840,14 +842,88 @@ function resetGraphHighlight() {
   resetSidebar();
 }
 
+let chatDockMode = 'dynamic'; // 'dynamic' | 'right' | 'left'
+
+function updateChatDrawerPosition() {
+  const drawer = getEl('chat-drawer');
+  if (!drawer) return;
+
+  if (chatDockMode === 'right') {
+    drawer.style.right = '16px';
+    drawer.style.left = 'auto';
+    return;
+  }
+  if (chatDockMode === 'left') {
+    drawer.style.left = '16px';
+    drawer.style.right = 'auto';
+    return;
+  }
+
+  // Dynamic mode: adapt dynamically to right side based on sidebar visibility
+  drawer.style.left = 'auto';
+  const sidebar = getEl('sidebar');
+  const isSidebarVisible = sidebar && sidebar.style.display !== 'none' && sidebar.offsetWidth > 0;
+  if (isSidebarVisible) {
+    const sidebarWidth = sidebar.offsetWidth || 400;
+    drawer.style.right = `${sidebarWidth + 20}px`;
+  } else {
+    drawer.style.right = '16px';
+  }
+}
+
+function toggleChatDockMode() {
+  const dockBtn = getEl('dock-btn');
+  if (chatDockMode === 'dynamic') {
+    chatDockMode = 'right';
+    if (dockBtn) dockBtn.title = 'AI Assistant locked to right edge (Click to dock left)';
+    showToast('AI Assistant locked to right edge');
+  } else if (chatDockMode === 'right') {
+    chatDockMode = 'left';
+    if (dockBtn) dockBtn.title = 'AI Assistant docked to left edge (Click for dynamic mode)';
+    showToast('AI Assistant docked to left');
+  } else {
+    chatDockMode = 'dynamic';
+    if (dockBtn) dockBtn.title = 'AI Assistant dynamic positioning (Click to lock right)';
+    showToast('AI Assistant dynamic positioning restored');
+  }
+  updateChatDrawerPosition();
+}
+
 function toggleChatDrawer() {
   const drawer = getEl('chat-drawer');
-  if (drawer) drawer.style.display = (drawer.style.display === 'none' || !drawer.style.display) ? 'flex' : 'none';
+  if (!drawer) return;
+  const willShow = (drawer.style.display === 'none' || !drawer.style.display);
+  drawer.style.display = willShow ? 'flex' : 'none';
+  if (willShow) {
+    updateChatDrawerPosition();
+  }
 }
 
 function toggleChatSettings() {
   const panel = getEl('chat-settings');
   if (panel) panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'flex' : 'none';
+}
+
+function setOllamaConfig() {
+  const urlEl = getEl('cfg-base-url');
+  const modelEl = getEl('cfg-model');
+  const keyEl = getEl('cfg-api-key');
+  if (urlEl) urlEl.value = 'http://localhost:11434/v1';
+  if (modelEl) modelEl.value = 'llama3';
+  if (keyEl) keyEl.value = 'ollama';
+  saveLlmSettings();
+  showToast('Configured for local Ollama (http://localhost:11434/v1, model: llama3)');
+}
+
+function setOpenAiConfig() {
+  const urlEl = getEl('cfg-base-url');
+  const modelEl = getEl('cfg-model');
+  const keyEl = getEl('cfg-api-key');
+  if (urlEl) urlEl.value = '';
+  if (modelEl) modelEl.value = '';
+  if (keyEl) keyEl.value = '';
+  saveLlmSettings();
+  showToast('Reset to default OpenAI / Gemini cloud config');
 }
 
 function saveLlmSettings() {
@@ -1197,6 +1273,7 @@ if (typeof window !== 'undefined') {
     loadLlmSettings();
     loadGraph();
   });
+  window.addEventListener('resize', updateChatDrawerPosition);
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -1214,6 +1291,10 @@ if (typeof module !== 'undefined' && module.exports) {
     saveLlmSettings,
     loadLlmSettings,
     applySuggestedPrompt,
-    computeDeterministicPositions
+    computeDeterministicPositions,
+    updateChatDrawerPosition,
+    toggleChatDockMode,
+    setOllamaConfig,
+    setOpenAiConfig
   };
 }

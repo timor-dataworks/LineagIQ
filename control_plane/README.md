@@ -8,7 +8,8 @@ Key Features:
 * **Semantic Discovery & Vector Search**: Searches dense metadata vector indices (`vectors/`) against historical snapshot versions to locate relevant data assets.
 * **GraphRAG Prompt Synthesizer**: Formats contextual graph traversals, historical diffs, and search results into structured LLM prompts for downstream AI analysis.
 * **Agentic Retriever Tools**: Standalone retriever tools in `control_plane/src/agent_tools.py` for integration into LLM agent workflows (LangChain, AutoGen, LlamaIndex).
-* **Interactive Visualizer with Timeline Scrubbing**: Web UI visualizer (`/visualizer`) featuring an interactive bottom overlay with a timeline slider for scrubbing back through graph commit history.
+* **LineagIQ AI Assistant (Dynamic Docking & Ollama Support)**: Interactive GraphRAG AI assistant drawer dynamically docking to the right edge with automatic sidebar offset adaptation, supporting local models (Ollama on `11434`), OpenAI, and Google Gemini.
+* **Decoupled Core Architecture**: Imports domain models, vector embeddings, and storage schemas directly from `core`, with 0 coupling to `collection_agent`.
 * **FastAPI Web Service**: Exposes REST endpoints for multi-tenant graph visualization, timeline commit logs, blast radius calculation, root cause analysis, schema diffing, semantic discovery, and GraphRAG chat.
 
 ---

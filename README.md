@@ -1,9 +1,10 @@
 # LineagIQ: Enterprise Semantic Knowledge Graph Platform
 
-LineagIQ models an enterprise data landscape into a contextual knowledge graph. It decouples the core semantic and graph engine from tenant-specific operational data using a two-tier architecture:
+LineagIQ models an enterprise data landscape into a contextual knowledge graph. It decouples the core semantic and graph engine from tenant-specific operational data using a three-tier architecture:
 
-1. **Stateless Ingestion Agent (`collection_agent`)**: An ephemeral edge metadata collector that extracts, embeds (via local ONNX INT8), formats (Delta Lake / Parquet), and syncs metadata inside the customer environment.
-2. **Serverless S3 Control Plane (`control_plane`)**: A multi-tenant query engine powered by DuckDB and Delta Lake exposing FastAPI endpoints, interactive web visualization with time travel timeline scrubbing, and Agentic AI tools for GraphRAG prompt synthesis (downstream blast-radius, upstream root cause, historical schema drift diffing, and semantic discovery).
+1. **LineagIQ Core (`core`)**: Centralized ontology domain models (`Node`, `Edge`, `GraphPayload`), local quantized INT8 vector embedder with singleton caching, Delta Lake PyArrow schemas, storage table/path constants, and `ArtifactWriter`.
+2. **Stateless Ingestion Agent (`collection_agent`)**: An ephemeral edge metadata collector that extracts (dbt, SQL catalog, query logs, OpenLineage) and syncs metadata inside the customer environment.
+3. **Serverless S3 Control Plane (`control_plane`)**: A multi-tenant query engine powered by DuckDB and Delta Lake exposing FastAPI endpoints, interactive web visualization with time travel timeline scrubbing, and the dynamic LineagIQ AI Assistant (supporting OpenAI, Gemini, and local Ollama).
 
 ---
 
@@ -98,6 +99,13 @@ completion = client.chat.completions.create(
 
 print(completion.choices[0].message.content)
 ```
+
+### Interactive Web AI Assistant (Dynamic Right Docking & Ollama Support)
+
+The web visualizer UI (`http://localhost:8000/`) includes an interactive **LineagIQ AI Assistant** drawer:
+* **Dynamic Right Docking**: Automatically docks to the right screen edge (`right: 16px`). When a node is selected in the graph, the drawer dynamically shifts left to accommodate the node inspector sidebar without overlapping, and glides back smoothly when the inspector closes.
+* **Local LLM Support (Ollama)**: Seamlessly connect to local Ollama instances (`ollama serve` on `http://localhost:11434/v1`) with zero API key required, as well as cloud providers (OpenAI `gpt-4o`, Google Gemini `gemini-3.6-flash`).
+* **One-Click Diff Analysis**: In the Time Travel Diff View, click **"🤖 Send to AI Assistant"** to automatically pipe schema drift diffs into the assistant for automated impact explanations.
 
 ---
 

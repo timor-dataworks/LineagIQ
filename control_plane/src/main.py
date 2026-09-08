@@ -391,14 +391,22 @@ def call_openai_llm(
         Tuple of (generated_response_text, error_message_string).
     """
     key = api_key or os.getenv("OPENAI_API_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    endpoint = (base_url or os.getenv("OPENAI_BASE_URL") or "").rstrip("/")
+
+    # Allow local Ollama or local LLM servers without requiring API key
     if not key:
-        return None, None
+        if endpoint and any(h in endpoint.lower() for h in ["11434", "localhost", "127.0.0.1", "ollama"]):
+            key = "ollama"
+        else:
+            return None, None
 
-    is_gemini_key = key.startswith("AIza") or key.startswith("AQ") or not key.startswith("sk-")
+    is_gemini_key = (key.startswith("AIza") or key.startswith("AQ") or (not key.startswith("sk-") and key != "ollama")) and not (endpoint and "11434" in endpoint)
     default_base_url = "https://generativelanguage.googleapis.com/v1beta/openai" if is_gemini_key else "https://api.openai.com/v1"
-    default_model = "gemini-3.6-flash" if is_gemini_key else "gpt-4o-mini"
+    default_model = "gemini-3.6-flash" if is_gemini_key else ("llama3" if key == "ollama" else "gpt-4o-mini")
 
-    endpoint = (base_url or os.getenv("OPENAI_BASE_URL") or default_base_url).rstrip("/")
+    if not endpoint:
+        endpoint = default_base_url
+
     url = f"{endpoint}/chat/completions"
     model_name = model or os.getenv("OPENAI_MODEL") or default_model
 

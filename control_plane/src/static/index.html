@@ -185,6 +185,7 @@
           </div>
         </div>
         <div style="display: flex; gap: 6px; align-items: center;">
+          <button class="btn btn-secondary btn-icon" id="dock-btn" style="padding: 4px 8px;" title="Toggle Dynamic Docking to Right" onclick="toggleChatDockMode()">📌</button>
           <button class="btn btn-secondary btn-icon" style="padding: 4px 8px;" title="LLM API Settings" onclick="toggleChatSettings()">⚙️</button>
           <button class="btn btn-secondary btn-icon" style="padding: 4px 8px;" onclick="toggleChatDrawer()">✕</button>
         </div>
@@ -196,10 +197,14 @@
           <span>⚙️ LLM API Provider Config</span>
           <span style="font-size: 10px; font-weight: normal; color: var(--text-muted);">Saved in browser</span>
         </div>
-        <input type="password" id="cfg-api-key" placeholder="API Key (OpenAI key or Gemini AIza... key)" style="width: 100%; font-size: 12px;" onchange="saveLlmSettings()">
+        <input type="password" id="cfg-api-key" placeholder="API Key (Optional for local Ollama)" style="width: 100%; font-size: 12px;" onchange="saveLlmSettings()">
         <div style="display: flex; gap: 8px;">
-          <input type="text" id="cfg-base-url" placeholder="Base URL (Optional)" style="flex: 1; font-size: 12px;" onchange="saveLlmSettings()">
-          <input type="text" id="cfg-model" placeholder="Model (Optional)" style="flex: 1; font-size: 12px;" onchange="saveLlmSettings()">
+          <input type="text" id="cfg-base-url" placeholder="Base URL (e.g. http://localhost:11434/v1)" style="flex: 1; font-size: 12px;" onchange="saveLlmSettings()">
+          <input type="text" id="cfg-model" placeholder="Model (e.g. llama3)" style="flex: 1; font-size: 12px;" onchange="saveLlmSettings()">
+        </div>
+        <div style="display: flex; gap: 6px; margin-top: 2px;">
+          <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 3px 8px; flex: 1; border-color: var(--accent-cyan);" onclick="setOllamaConfig()">🦙 Local Ollama (11434)</button>
+          <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 3px 8px; flex: 1;" onclick="setOpenAiConfig()">⚡ Reset OpenAI / Gemini</button>
         </div>
       </div>
 
