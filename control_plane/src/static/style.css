@@ -614,10 +614,27 @@ select {
   align-items: center;
 }
 
-.chat-input-field {
-  flex: 1;
-  background: rgba(30, 41, 59, 0.6);
+/* Floating Timeline Scrubbing Panel */
+.timeline-panel {
+  position: absolute;
+  top: 16px;
+  left: 24px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border-subtle);
-  color: var(--text-primary);
-  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 15;
+  box-shadow: var(--shadow-lg);
 }
+
+.timeline-slider {
+  width: 180px;
+  accent-color: var(--accent-cyan);
+  cursor: pointer;
+}
+

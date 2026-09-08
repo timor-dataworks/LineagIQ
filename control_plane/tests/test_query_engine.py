@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from collection_agent.src.transform import (
     DatasetNode,
     PipelineNode,
@@ -190,23 +191,26 @@ def test_pluggable_stores_architecture(tmp_path):
     from control_plane.src.query_engine import BaseGraphStore, BaseVectorStore
 
     class CustomMockGraphStore(BaseGraphStore):
-        def get_full_graph(self):
+        def get_full_graph(self, as_of: Optional[str] = None):
             return {"nodes": [{"id": "mock.node", "name": "mock_node", "type": "Dataset"}], "edges": []}
 
-        def get_downstream_blast_radius(self, start_node_id: str, max_depth: int = 5):
+        def get_downstream_blast_radius(self, start_node_id: str, max_depth: int = 5, as_of: Optional[str] = None):
             return {"impacted_nodes": [{"id": start_node_id}], "edges": [], "root_node": {"id": start_node_id}, "depth_reached": 1}
 
-        def get_upstream_root_cause(self, start_node_id: str, max_depth: int = 5):
+        def get_upstream_root_cause(self, start_node_id: str, max_depth: int = 5, as_of: Optional[str] = None):
             return {"upstream_nodes": [{"id": start_node_id}], "edges": [], "target_node": {"id": start_node_id}, "depth_reached": 1}
 
-        def get_nodes_by_ids(self, node_ids):
+        def get_nodes_by_ids(self, node_ids, as_of: Optional[str] = None):
             return [{"id": nid, "name": nid, "type": "Dataset"} for nid in node_ids]
 
-        def search_nodes_by_terms(self, query_text: str, top_k: int = 5):
+        def search_nodes_by_terms(self, query_text: str, top_k: int = 5, as_of: Optional[str] = None):
             return [{"id": "mock.searched_node", "name": query_text, "type": "Dataset"}]
 
+        def get_schema_time_travel_diff(self, start_node_id: str, timestamp_t1: str, timestamp_t2: str):
+            return {"added_nodes": [], "removed_nodes": [], "modified_nodes": [], "added_edges": [], "removed_edges": []}
+
     class CustomMockVectorStore(BaseVectorStore):
-        def search_vectors(self, query_vector, top_k: int = 5):
+        def search_vectors(self, query_vector, top_k: int = 5, max_distance: float = 0.75, as_of: Optional[str] = None):
             return ["mock.vector_node"]
 
     mock_graph = CustomMockGraphStore()

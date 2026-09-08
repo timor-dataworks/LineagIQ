@@ -97,8 +97,17 @@
   <div class="main-container">
     <div id="network-canvas"></div>
 
+    <!-- Floating Timeline Scrubbing Panel Overlay -->
+    <div class="timeline-panel" id="timeline-panel" style="display: none;">
+      <span style="font-size: 11px; font-weight: 700; color: var(--accent-cyan);">⏳ Time Travel:</span>
+      <span id="timeline-label" style="font-size: 11px; font-weight: 600; color: var(--text-primary);">LIVE (Latest)</span>
+      <input type="range" id="timeline-slider" class="timeline-slider" min="0" max="0" value="0" step="1" oninput="onTimelineSliderChange(this.value)">
+      <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 10px;" onclick="resetTimelineLive()">Reset Live</button>
+    </div>
+
     <!-- Right Sidebar Inspector Drawer -->
     <aside class="sidebar" id="sidebar">
+
       <!-- Populated State -->
       <div id="inspector-content" style="display: none; height: 100%; flex-direction: column; gap: 20px;">
         <div class="sidebar-header">
@@ -233,6 +242,8 @@
     let selectedNodeId = null;
     let searchDebounceTimer = null;
     let vectorMatchedIds = null;
+    let availableTimestamps = [];
+    let currentAsOfTimestamp = null;
 
     const typeColors = {
       'Dataset': { background: '#0284c7', border: 'transparent', highlight: '#06b6d4' },
@@ -242,14 +253,66 @@
       'BusinessTerm': { background: '#e11d48', border: 'transparent', highlight: '#f43f5e' }
     };
 
-    async function loadGraph() {
+    async function loadTimeline() {
+      const tenantId = document.getElementById('tenant-input').value.trim() || 'demo_tenant';
+      const dataPath = document.getElementById('data-path-input').value.trim();
+      let url = `/api/v1/tenants/${tenantId}/timeline`;
+      if (dataPath) url += `?data_path=${encodeURIComponent(dataPath)}`;
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) return;
+        const data = await response.json();
+        availableTimestamps = data.timestamps || [];
+
+        const panel = document.getElementById('timeline-panel');
+        const slider = document.getElementById('timeline-slider');
+
+        if (availableTimestamps.length > 1) {
+          panel.style.display = 'flex';
+          slider.max = availableTimestamps.length - 1;
+          if (currentAsOfTimestamp === null) {
+            slider.value = availableTimestamps.length - 1;
+            document.getElementById('timeline-label').innerText = 'LIVE (Latest)';
+          }
+        } else {
+          panel.style.display = 'none';
+        }
+      } catch (err) {
+        console.warn("Timeline fetch error:", err);
+      }
+    }
+
+    function onTimelineSliderChange(val) {
+      const idx = parseInt(val, 10);
+      if (idx === availableTimestamps.length - 1) {
+        currentAsOfTimestamp = null;
+        document.getElementById('timeline-label').innerText = 'LIVE (Latest)';
+      } else if (idx < availableTimestamps.length) {
+        const item = availableTimestamps[idx];
+        currentAsOfTimestamp = item.timestamp;
+        document.getElementById('timeline-label').innerHTML = `v${item.version} <span style="color: var(--accent-cyan);">${item.timestamp}</span>`;
+      }
+      loadGraph(false);
+    }
+
+    function resetTimelineLive() {
+      const slider = document.getElementById('timeline-slider');
+      slider.value = availableTimestamps.length > 0 ? availableTimestamps.length - 1 : 0;
+      currentAsOfTimestamp = null;
+      document.getElementById('timeline-label').innerText = 'LIVE (Latest)';
+      loadGraph(false);
+    }
+
+    async function loadGraph(refreshTimeline = true) {
       const tenantId = document.getElementById('tenant-input').value.trim() || 'demo_tenant';
       const dataPath = document.getElementById('data-path-input').value.trim();
 
       let url = `/api/v1/tenants/${tenantId}/graph`;
-      if (dataPath) {
-        url += `?data_path=${encodeURIComponent(dataPath)}`;
-      }
+      const params = [];
+      if (dataPath) params.push(`data_path=${encodeURIComponent(dataPath)}`);
+      if (currentAsOfTimestamp) params.push(`as_of=${encodeURIComponent(currentAsOfTimestamp)}`);
+      if (params.length > 0) url += `?${params.join('&')}`;
 
       try {
         const response = await fetch(url);
@@ -260,6 +323,7 @@
         rawEdges = data.edges || [];
 
         filterGraph();
+        if (refreshTimeline) loadTimeline();
       } catch (err) {
         alert(`Error loading graph: ${err.message}`);
       }
@@ -287,7 +351,12 @@
         const response = await fetch(`/api/v1/tenants/${tenantId}/discovery`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: queryText, top_k: 10, data_path: dataPath })
+          body: JSON.stringify({
+            query: queryText,
+            top_k: 10,
+            data_path: dataPath,
+            as_of: currentAsOfTimestamp || undefined,
+          })
         });
         if (!response.ok) throw new Error("Vector search HTTP error");
         const data = await response.json();
@@ -298,12 +367,13 @@
           vectorMatchedIds = new Set();
         }
       } catch (err) {
-        console.warn("LanceDB vector search fallback to local filter:", err);
+        console.warn("Vector search fallback to local filter:", err);
         vectorMatchedIds = null;
       }
 
       filterGraph();
     }
+
 
     function filterGraph() {
       const viewMode = document.getElementById('view-mode').value;

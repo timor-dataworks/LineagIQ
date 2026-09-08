@@ -1,9 +1,14 @@
 import os
 import json
 import re
-from typing import Dict, Any, List
+import datetime
+import logging
+from typing import Dict, Any, List, Optional
 import duckdb
+from deltalake import DeltaTable
 from control_plane.src.query_engine.base import BaseGraphStore
+
+logger = logging.getLogger(__name__)
 
 STOP_WORDS = {
     "find", "show", "search", "get", "list", "where", "is", "are", "the",
@@ -40,27 +45,143 @@ def _quote_id(val: str) -> str:
     return "'" + val.replace("'", "''") + "'"
 
 
-class DuckDBGraphStore(BaseGraphStore):
-    """
-    DuckDB & Parquet Implementation of `BaseGraphStore`.
+def parse_iso_to_epoch_ms(iso_str: Optional[str]) -> Optional[int]:
+    """Parses ISO 8601 timestamp string into Epoch milliseconds.
 
-    Executes in-memory SQL queries over Parquet dataset files (`graph/nodes/data.parquet`
-    and `graph/edges/data.parquet`) for recursive graph traversals and metadata queries.
+    Args:
+        iso_str: ISO 8601 string (e.g. '2026-09-08T10:00:00Z' or '2026-09-08T10:00:00.123Z').
+
+    Returns:
+        Epoch milliseconds int or None if invalid/empty.
+    """
+    if not iso_str:
+        return None
+    clean = iso_str.strip().replace("Z", "+00:00")
+    try:
+        dt = datetime.datetime.fromisoformat(clean)
+        epoch_ms = int(dt.timestamp() * 1000)
+        if "." not in iso_str and "T" in iso_str:
+            epoch_ms += 999
+        return epoch_ms
+    except Exception:
+        return None
+
+
+def resolve_delta_or_parquet_table(
+    con: duckdb.DuckDBPyConnection,
+    target_path: str,
+    view_name: str,
+    as_of: Optional[str] = None,
+) -> bool:
+    """Registers Delta Lake or Parquet dataset as a DuckDB SQL view.
+
+    If target_path is a Delta Lake table directory, resolves the target version
+    corresponding to `as_of` timestamp (if provided) and registers PyArrow table.
+    Otherwise, registers standard Parquet file SQL view.
+
+    Args:
+        con: Active DuckDB connection instance.
+        target_path: File or directory path to dataset.
+        view_name: Registered SQL view name in DuckDB connection.
+        as_of: Optional ISO 8601 timestamp string.
+
+    Returns:
+        True if table/file exists and view was registered, False otherwise.
+    """
+    table_dir = target_path
+    if os.path.isfile(target_path) and target_path.endswith(".parquet"):
+        table_dir = os.path.dirname(target_path)
+
+    if os.path.exists(table_dir) and DeltaTable.is_deltatable(table_dir):
+        try:
+            dt = DeltaTable(table_dir)
+            target_ms = parse_iso_to_epoch_ms(as_of)
+            if target_ms is not None:
+                history = dt.history()
+                matching_ver = 0
+                for commit in sorted(history, key=lambda x: x.get("version", 0)):
+                    if commit.get("timestamp", 0) <= target_ms:
+                        matching_ver = commit.get("version", 0)
+                dt.load_as_version(matching_ver)
+
+            pa_table = dt.to_pyarrow_table()
+            con.register(view_name, pa_table)
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to load Delta table at {table_dir}: {e}")
+
+    # Fallback to direct parquet file scan
+    p_file = target_path
+    if os.path.isdir(target_path):
+        data_parquet = os.path.join(target_path, "data.parquet")
+        nodes_parquet = os.path.join(target_path, "nodes.parquet")
+        if os.path.exists(data_parquet):
+            p_file = data_parquet
+        elif os.path.exists(nodes_parquet):
+            p_file = nodes_parquet
+
+    if os.path.exists(p_file) and os.path.isfile(p_file):
+        p_file_escaped = p_file.replace("'", "''")
+        con.execute(f"CREATE VIEW {view_name} AS SELECT * FROM read_parquet('{p_file_escaped}');")
+        return True
+
+    return False
+
+
+def get_available_timestamps(data_base_path: str) -> List[Dict[str, Any]]:
+    """Retrieves commit history timestamps from tenant Delta Lake table logs.
+
+    Args:
+        data_base_path: Base path to tenant data directory.
+
+    Returns:
+        List of dictionaries with 'version', 'timestamp' (ISO 8601), and 'operation'.
+    """
+    nodes_dir = os.path.join(data_base_path, "graph", "nodes")
+    if not os.path.exists(nodes_dir) or not DeltaTable.is_deltatable(nodes_dir):
+        return []
+
+    try:
+        dt = DeltaTable(nodes_dir)
+        history = dt.history()
+        results = []
+        for commit in sorted(history, key=lambda x: x.get("version", 0)):
+            commit_ms = commit.get("timestamp", 0)
+            dt_obj = datetime.datetime.fromtimestamp(commit_ms / 1000, tz=datetime.timezone.utc)
+            iso_str = dt_obj.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+            results.append({
+                "version": commit.get("version", 0),
+                "timestamp": iso_str,
+                "timestamp_ms": commit_ms,
+                "operation": commit.get("operation", "WRITE"),
+            })
+        return results
+    except Exception as e:
+        logger.warning(f"Error fetching available timestamps: {e}")
+        return []
+
+
+class DuckDBGraphStore(BaseGraphStore):
+    """DuckDB & Parquet/Delta Lake Implementation of `BaseGraphStore`.
+
+    Executes in-memory SQL queries over Parquet dataset files or Delta Lake tables
+    (`graph/nodes` and `graph/edges`) for recursive graph traversals, metadata queries,
+    and historical time-travel analysis.
+
+    Args:
+        data_base_path: Root directory path containing graph and vector Parquet/Delta data.
     """
 
     def __init__(self, data_base_path: str):
-        """
-        Initializes DuckDBGraphStore for a given tenant data directory.
-
-        :param data_base_path: Local directory path containing tenant Parquet files.
-        """
         self.base_path = data_base_path
+        self.nodes_dir = os.path.join(data_base_path, "graph", "nodes")
+        self.edges_dir = os.path.join(data_base_path, "graph", "edges")
         self.nodes_file = os.path.join(data_base_path, "graph", "nodes", "data.parquet")
         self.edges_file = os.path.join(data_base_path, "graph", "edges", "data.parquet")
 
     def _synthesize_missing_nodes(self, nodes: List[Dict[str, Any]], target_ids: set) -> List[Dict[str, Any]]:
         """
-        Helper method to synthesize node metadata for any edge endpoint IDs not present in nodes.parquet.
+        Helper method to synthesize node metadata for any edge endpoint IDs not present in nodes table.
 
         :param nodes: List of existing node metadata dictionaries.
         :param target_ids: Set of all node IDs referenced in edges or lineage traversals.
@@ -81,19 +202,23 @@ class DuckDBGraphStore(BaseGraphStore):
                 found_ids.add(nid)
         return nodes
 
-    def get_full_graph(self) -> Dict[str, Any]:
-        """
-        Retrieves all graph nodes and edges from Parquet storage, synthesizing placeholder records
-        for any external edge endpoints.
+    def get_full_graph(self, as_of: Optional[str] = None) -> Dict[str, Any]:
+        """Retrieves all graph nodes and edges as of optional ISO 8601 timestamp.
 
-        :return: Dictionary containing 'nodes' and 'edges' lists.
+        Args:
+            as_of: Optional ISO 8601 timestamp string for historical time travel.
+
+        Returns:
+            Dictionary containing 'nodes' list and 'edges' list.
         """
-        if not os.path.exists(self.nodes_file) or not os.path.exists(self.edges_file):
+        con = duckdb.connect(database=":memory:")
+        if not resolve_delta_or_parquet_table(con, self.nodes_dir, "nodes_view", as_of=as_of):
+            return {"nodes": [], "edges": []}
+        if not resolve_delta_or_parquet_table(con, self.edges_dir, "edges_view", as_of=as_of):
             return {"nodes": [], "edges": []}
 
-        con = duckdb.connect(database=":memory:")
-        nodes_df = con.execute(f"SELECT id, type, name, description, properties FROM read_parquet('{self.nodes_file}')").df()
-        edges_df = con.execute(f"SELECT source_id, target_id, type, properties FROM read_parquet('{self.edges_file}')").df()
+        nodes_df = con.execute("SELECT id, FIRST(type) as type, FIRST(name) as name, FIRST(description) as description, FIRST(properties) as properties FROM nodes_view GROUP BY id").df()
+        edges_df = con.execute("SELECT DISTINCT source_id, target_id, type, properties FROM edges_view").df()
 
         nodes = nodes_df.to_dict(orient="records")
         edges = edges_df.to_dict(orient="records")
@@ -105,30 +230,32 @@ class DuckDBGraphStore(BaseGraphStore):
         return {"nodes": nodes, "edges": edges}
 
     def get_downstream_blast_radius(
-        self, start_node_id: str, max_depth: int = 5
+        self, start_node_id: str, max_depth: int = 5, as_of: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Executes recursive CTE traversal in DuckDB to compute downstream blast radius starting from `start_node_id`.
 
         :param start_node_id: Target node canonical ID.
         :param max_depth: Maximum recursive lineage traversal depth (1 to 10).
+        :param as_of: Optional ISO 8601 timestamp string for historical time travel.
         :return: Traversal payload containing 'root_node', 'impacted_nodes', 'edges', and 'depth_reached'.
         """
-        if not os.path.exists(self.nodes_file) or not os.path.exists(self.edges_file):
-            return {"impacted_nodes": [], "edges": [], "root_node": None, "depth_reached": 0}
-
         con = duckdb.connect(database=":memory:")
+        if not resolve_delta_or_parquet_table(con, self.nodes_dir, "nodes_view", as_of=as_of):
+            return {"impacted_nodes": [], "edges": [], "root_node": None, "depth_reached": 0}
+        if not resolve_delta_or_parquet_table(con, self.edges_dir, "edges_view", as_of=as_of):
+            return {"impacted_nodes": [], "edges": [], "root_node": None, "depth_reached": 0}
 
         query = f"""
         WITH RECURSIVE downstream_traverse(source_id, target_id, type, depth) AS (
             SELECT source_id, target_id, type, 1 AS depth
-            FROM read_parquet('{self.edges_file}')
+            FROM edges_view
             WHERE source_id = {_quote_id(start_node_id)}
             
             UNION ALL
             
             SELECT e.source_id, e.target_id, e.type, d.depth + 1
-            FROM read_parquet('{self.edges_file}') e
+            FROM edges_view e
             JOIN downstream_traverse d ON e.source_id = d.target_id
             WHERE d.depth < {max_depth} AND e.type != 'BELONGS_TO'
         )
@@ -150,7 +277,7 @@ class DuckDBGraphStore(BaseGraphStore):
         node_id_list_str = ", ".join(_quote_id(nid) for nid in impacted_node_ids)
         nodes_query = f"""
         SELECT id, type, name, description, properties
-        FROM read_parquet('{self.nodes_file}')
+        FROM nodes_view
         WHERE id IN ({node_id_list_str});
         """
         nodes_df = con.execute(nodes_query).df()
@@ -167,30 +294,32 @@ class DuckDBGraphStore(BaseGraphStore):
         }
 
     def get_upstream_root_cause(
-        self, start_node_id: str, max_depth: int = 5
+        self, start_node_id: str, max_depth: int = 5, as_of: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Executes recursive CTE traversal in DuckDB to compute upstream root cause dependencies starting from `start_node_id`.
 
         :param start_node_id: Target node canonical ID.
         :param max_depth: Maximum recursive lineage traversal depth (1 to 10).
+        :param as_of: Optional ISO 8601 timestamp string for historical time travel.
         :return: Traversal payload containing 'target_node', 'upstream_nodes', 'edges', and 'depth_reached'.
         """
-        if not os.path.exists(self.nodes_file) or not os.path.exists(self.edges_file):
-            return {"upstream_nodes": [], "edges": [], "target_node": None, "depth_reached": 0}
-
         con = duckdb.connect(database=":memory:")
+        if not resolve_delta_or_parquet_table(con, self.nodes_dir, "nodes_view", as_of=as_of):
+            return {"upstream_nodes": [], "edges": [], "target_node": None, "depth_reached": 0}
+        if not resolve_delta_or_parquet_table(con, self.edges_dir, "edges_view", as_of=as_of):
+            return {"upstream_nodes": [], "edges": [], "target_node": None, "depth_reached": 0}
 
         query = f"""
         WITH RECURSIVE upstream_traverse(source_id, target_id, type, depth) AS (
             SELECT source_id, target_id, type, 1 AS depth
-            FROM read_parquet('{self.edges_file}')
+            FROM edges_view
             WHERE target_id = {_quote_id(start_node_id)} AND type != 'BELONGS_TO'
             
             UNION ALL
             
             SELECT e.source_id, e.target_id, e.type, u.depth + 1
-            FROM read_parquet('{self.edges_file}') e
+            FROM edges_view e
             JOIN upstream_traverse u ON e.target_id = u.source_id
             WHERE u.depth < {max_depth} AND e.type != 'BELONGS_TO'
         )
@@ -212,7 +341,7 @@ class DuckDBGraphStore(BaseGraphStore):
         node_id_list_str = ", ".join(_quote_id(nid) for nid in upstream_node_ids)
         nodes_query = f"""
         SELECT id, type, name, description, properties
-        FROM read_parquet('{self.nodes_file}')
+        FROM nodes_view
         WHERE id IN ({node_id_list_str});
         """
         nodes_df = con.execute(nodes_query).df()
@@ -228,21 +357,27 @@ class DuckDBGraphStore(BaseGraphStore):
             "depth_reached": max(e["depth"] for e in edges) if edges else 0,
         }
 
-    def get_nodes_by_ids(self, node_ids: List[str]) -> List[Dict[str, Any]]:
+    def get_nodes_by_ids(
+        self, node_ids: List[str], as_of: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """
         Retrieves full node metadata records for a given list of node IDs.
 
         :param node_ids: List of canonical node identifiers.
+        :param as_of: Optional ISO 8601 timestamp string for historical time travel.
         :return: List of matching node metadata dictionaries in requested order.
         """
-        if not node_ids or not os.path.exists(self.nodes_file):
+        if not node_ids:
             return []
 
         con = duckdb.connect(database=":memory:")
+        if not resolve_delta_or_parquet_table(con, self.nodes_dir, "nodes_view", as_of=as_of):
+            return []
+
         v_ids_str = ", ".join(_quote_id(vid) for vid in node_ids)
         query = f"""
         SELECT id, type, name, description, properties
-        FROM read_parquet('{self.nodes_file}')
+        FROM nodes_view
         WHERE id IN ({v_ids_str});
         """
         results_df = con.execute(query).df()
@@ -250,15 +385,19 @@ class DuckDBGraphStore(BaseGraphStore):
         record_map = {r["id"]: r for r in records}
         return [record_map[vid] for vid in node_ids if vid in record_map]
 
-    def search_nodes_by_terms(self, query_text: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    def search_nodes_by_terms(
+        self, query_text: str, top_k: int = 5, as_of: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """
         Searches node metadata fields (name, id, description, type, properties) using SQL LIKE clauses.
 
         :param query_text: User search query or keyword phrase.
         :param top_k: Maximum number of candidate node records to return.
+        :param as_of: Optional ISO 8601 timestamp string for historical time travel.
         :return: List of matching node metadata dictionaries.
         """
-        if not os.path.exists(self.nodes_file):
+        con = duckdb.connect(database=":memory:")
+        if not resolve_delta_or_parquet_table(con, self.nodes_dir, "nodes_view", as_of=as_of):
             return []
 
         terms = extract_search_terms(query_text)
@@ -274,13 +413,67 @@ class DuckDBGraphStore(BaseGraphStore):
         if not where_clauses:
             return []
 
-        con = duckdb.connect(database=":memory:")
         where_stmt = " OR ".join(where_clauses)
         query = f"""
         SELECT id, type, name, description, properties
-        FROM read_parquet('{self.nodes_file}')
+        FROM nodes_view
         WHERE {where_stmt}
         LIMIT {top_k * 2};
         """
         results_df = con.execute(query).df()
         return results_df.to_dict(orient="records")
+
+    def get_schema_time_travel_diff(
+        self, start_node_id: str, timestamp_t1: str, timestamp_t2: str
+    ) -> Dict[str, Any]:
+        """Computes schema and lineage graph diff between two historical ISO 8601 timestamps.
+
+        Args:
+            start_node_id: Canonical asset identifier to scope diff assessment.
+            timestamp_t1: Initial ISO 8601 timestamp string.
+            timestamp_t2: Subsequent ISO 8601 timestamp string.
+
+        Returns:
+            Dictionary containing added_nodes, removed_nodes, modified_nodes, and edge_changes.
+        """
+        graph_t1 = self.get_full_graph(as_of=timestamp_t1)
+        graph_t2 = self.get_full_graph(as_of=timestamp_t2)
+
+        nodes_t1 = {n["id"]: n for n in graph_t1.get("nodes", [])}
+        nodes_t2 = {n["id"]: n for n in graph_t2.get("nodes", [])}
+
+        added_nodes = [n for nid, n in nodes_t2.items() if nid not in nodes_t1]
+        removed_nodes = [n for nid, n in nodes_t1.items() if nid not in nodes_t2]
+
+        modified_nodes = []
+        for nid, n2 in nodes_t2.items():
+            if nid in nodes_t1:
+                n1 = nodes_t1[nid]
+                if n1.get("properties") != n2.get("properties") or n1.get("description") != n2.get("description"):
+                    modified_nodes.append({"id": nid, "before": n1, "after": n2})
+
+        edges_t1 = {(e["source_id"], e["target_id"], e["type"]) for e in graph_t1.get("edges", [])}
+        edges_t2 = {(e["source_id"], e["target_id"], e["type"]) for e in graph_t2.get("edges", [])}
+
+        added_edges = [
+            {"source_id": s, "target_id": t, "type": ty}
+            for (s, t, ty) in edges_t2 if (s, t, ty) not in edges_t1
+        ]
+        removed_edges = [
+            {"source_id": s, "target_id": t, "type": ty}
+            for (s, t, ty) in edges_t1 if (s, t, ty) not in edges_t2
+        ]
+
+        return {
+            "start_node_id": start_node_id,
+            "timestamp_t1": timestamp_t1,
+            "timestamp_t2": timestamp_t2,
+            "added_nodes_count": len(added_nodes),
+            "removed_nodes_count": len(removed_nodes),
+            "modified_nodes_count": len(modified_nodes),
+            "added_nodes": added_nodes,
+            "removed_nodes": removed_nodes,
+            "modified_nodes": modified_nodes,
+            "added_edges": added_edges,
+            "removed_edges": removed_edges,
+        }

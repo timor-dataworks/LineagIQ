@@ -94,6 +94,50 @@ class LineagIQGraphRAGClient:
         response.raise_for_status()
         return response.json()["synthesized_prompt"]
 
+    def get_time_travel_diff_prompt(
+        self,
+        tenant_id: str,
+        node_id: str,
+        timestamp_t1: str,
+        timestamp_t2: str,
+        data_path: Optional[str] = None,
+    ) -> str:
+        """Queries historical schema and lineage diff between T1 and T2 and returns GraphRAG prompt.
+
+        Args:
+            tenant_id: Tenant Identifier string.
+            node_id: Target asset identifier.
+            timestamp_t1: Initial ISO 8601 timestamp string.
+            timestamp_t2: Subsequent ISO 8601 timestamp string.
+            data_path: Optional local path to tenant dataset directory.
+
+        Returns:
+            Synthesized GraphRAG prompt string ready for LLM prompt context injection.
+        """
+        if data_path and os.path.exists(data_path):
+            engine = DuckDBQueryEngine(data_base_path=data_path)
+            diff_res = engine.get_schema_time_travel_diff(
+                start_node_id=node_id, timestamp_t1=timestamp_t1, timestamp_t2=timestamp_t2
+            )
+            synthesizer = PromptSynthesizer()
+            return synthesizer.synthesize_time_travel_diff_prompt(
+                node_id=node_id, timestamp_t1=timestamp_t1, timestamp_t2=timestamp_t2, diff_result=diff_res
+            )
+
+        url = f"{self.base_url}/api/v1/tenants/{tenant_id}/time-travel/diff"
+        response = requests.post(
+            url,
+            json={
+                "node_id": node_id,
+                "timestamp_t1": timestamp_t1,
+                "timestamp_t2": timestamp_t2,
+                "data_path": data_path,
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
+        return response.json()["synthesized_prompt"]
+
 
 # Standalone Helper Functions / Agent Tools
 def get_dataset_blast_radius(
@@ -146,4 +190,34 @@ def search_enterprise_data_catalog(
         top_k=top_k,
         data_path=data_path,
     )
+
+
+def get_lineage_time_travel_diff(
+    tenant_id: str,
+    node_id: str,
+    timestamp_t1: str,
+    timestamp_t2: str,
+    data_path: Optional[str] = None,
+) -> str:
+    """Agentic Retriever Tool: Analyzes historical schema drift & lineage diff between T1 and T2.
+
+    Args:
+        tenant_id: Tenant Identifier string.
+        node_id: Target dataset or column node ID under evaluation.
+        timestamp_t1: Initial ISO 8601 timestamp string (e.g. '2026-09-08T00:00:00Z').
+        timestamp_t2: Subsequent ISO 8601 timestamp string (e.g. '2026-09-08T10:00:00Z').
+        data_path: Optional local path to tenant dataset directory.
+
+    Returns:
+        Formatted GraphRAG prompt detailing schema drift, added/deleted columns, and lineage shifts.
+    """
+    client = LineagIQGraphRAGClient()
+    return client.get_time_travel_diff_prompt(
+        tenant_id=tenant_id,
+        node_id=node_id,
+        timestamp_t1=timestamp_t1,
+        timestamp_t2=timestamp_t2,
+        data_path=data_path,
+    )
+
 

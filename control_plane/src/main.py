@@ -105,6 +105,7 @@ class BlastRadiusRequest(BaseModel):
     node_id: str = Field(..., description="Target node ID for blast radius analysis")
     max_depth: int = Field(default=5, ge=1, le=10, description="Max lineage traversal depth")
     data_path: Optional[str] = Field(default=None, description="Local or S3 path to tenant data")
+    as_of: Optional[str] = Field(default=None, description="Optional ISO 8601 timestamp string for historical time travel")
 
 
 class RootCauseRequest(BaseModel):
@@ -112,6 +113,7 @@ class RootCauseRequest(BaseModel):
     node_id: str = Field(..., description="Target node ID for upstream root cause analysis")
     max_depth: int = Field(default=5, ge=1, le=10, description="Max lineage traversal depth")
     data_path: Optional[str] = Field(default=None, description="Local or S3 path to tenant data")
+    as_of: Optional[str] = Field(default=None, description="Optional ISO 8601 timestamp string for historical time travel")
 
 
 class DiscoveryRequest(BaseModel):
@@ -119,15 +121,25 @@ class DiscoveryRequest(BaseModel):
     query: str = Field(..., description="Natural language semantic search query")
     top_k: int = Field(default=5, ge=1, le=50, description="Max matched assets to return")
     data_path: Optional[str] = Field(default=None, description="Local or S3 path to tenant data")
+    as_of: Optional[str] = Field(default=None, description="Optional ISO 8601 timestamp string for historical time travel")
 
 
 class ChatRequest(BaseModel):
     """Payload schema for interactive GraphRAG LLM chat request."""
     message: str = Field(..., description="User query for GraphRAG lineage AI assistant")
     data_path: Optional[str] = Field(default=None, description="Local or S3 path to tenant data")
+    as_of: Optional[str] = Field(default=None, description="Optional ISO 8601 timestamp string for historical time travel")
     openai_api_key: Optional[str] = Field(default=None, description="Optional OpenAI API Key")
     openai_base_url: Optional[str] = Field(default=None, description="Optional OpenAI Base URL endpoint")
     openai_model: Optional[str] = Field(default=None, description="Optional OpenAI Model name")
+
+
+class TimeTravelDiffRequest(BaseModel):
+    """Payload schema for historical schema drift and lineage diff request."""
+    node_id: str = Field(..., description="Target node ID for time travel diff analysis")
+    timestamp_t1: str = Field(..., description="Initial ISO 8601 timestamp string (T1)")
+    timestamp_t2: str = Field(..., description="Subsequent ISO 8601 timestamp string (T2)")
+    data_path: Optional[str] = Field(default=None, description="Local or S3 path to tenant data")
 
 
 @app.get("/healthz")
@@ -160,18 +172,39 @@ def get_graph_visualizer() -> str:
 def get_tenant_graph(
     tenant_id: str = FastPath(..., description="Tenant Identifier"),
     data_path: Optional[str] = Query(default=None, description="Local or S3 data path"),
+    as_of: Optional[str] = Query(default=None, description="Optional ISO 8601 timestamp for historical time travel"),
 ) -> Dict[str, Any]:
     """Returns all nodes and edges for tenant graph visualization.
 
     Args:
         tenant_id: Unique tenant identifier string.
         data_path: Optional custom path to tenant Parquet dataset.
+        as_of: Optional ISO 8601 timestamp string for historical time travel.
 
     Returns:
         Full knowledge graph structure containing 'nodes' and 'edges'.
     """
     engine = DuckDBQueryEngine(data_base_path=resolve_data_path(tenant_id, data_path))
-    return engine.get_full_graph()
+    return engine.get_full_graph(as_of=as_of)
+
+
+@app.get("/api/v1/tenants/{tenant_id}/timeline")
+def get_tenant_timeline(
+    tenant_id: str = FastPath(..., description="Tenant Identifier"),
+    data_path: Optional[str] = Query(default=None, description="Local or S3 data path"),
+) -> Dict[str, Any]:
+    """Returns available commit timestamps from Delta Lake logs for UI timeline scrubbing.
+
+    Args:
+        tenant_id: Unique tenant identifier string.
+        data_path: Optional custom path to tenant data.
+
+    Returns:
+        Dictionary containing list of available commit timestamp objects.
+    """
+    engine = DuckDBQueryEngine(data_base_path=resolve_data_path(tenant_id, data_path))
+    timestamps = engine.get_available_timestamps()
+    return {"tenant_id": tenant_id, "timestamps_count": len(timestamps), "timestamps": timestamps}
 
 
 @app.post("/api/v1/tenants/{tenant_id}/blast-radius")
@@ -183,7 +216,7 @@ def calculate_blast_radius(
 
     Args:
         tenant_id: Unique tenant identifier string.
-        request: BlastRadiusRequest containing node_id and optional max_depth/data_path.
+        request: BlastRadiusRequest containing node_id and optional max_depth/data_path/as_of.
 
     Returns:
         Impact analysis dictionary including target_node, impacted_nodes, edges, and synthesized prompt.
@@ -195,6 +228,7 @@ def calculate_blast_radius(
     result = engine.get_downstream_blast_radius(
         start_node_id=request.node_id,
         max_depth=request.max_depth,
+        as_of=request.as_of,
     )
 
     synthesizer = PromptSynthesizer()
@@ -224,7 +258,7 @@ def calculate_root_cause(
 
     Args:
         tenant_id: Unique tenant identifier string.
-        request: RootCauseRequest containing node_id and optional max_depth/data_path.
+        request: RootCauseRequest containing node_id and optional max_depth/data_path/as_of.
 
     Returns:
         Root cause analysis dictionary including target_node, upstream_nodes, edges, and synthesized prompt.
@@ -236,6 +270,7 @@ def calculate_root_cause(
     result = engine.get_upstream_root_cause(
         start_node_id=request.node_id,
         max_depth=request.max_depth,
+        as_of=request.as_of,
     )
 
     synthesizer = PromptSynthesizer()
@@ -265,7 +300,7 @@ def discover_semantic_assets(
 
     Args:
         tenant_id: Unique tenant identifier string.
-        request: DiscoveryRequest containing natural language query, top_k, and optional data_path.
+        request: DiscoveryRequest containing natural language query, top_k, optional data_path, and as_of.
 
     Returns:
         Discovery result dictionary containing query, matched_nodes, and synthesized prompt.
@@ -277,6 +312,7 @@ def discover_semantic_assets(
     matched_nodes = engine.search_semantic_assets(
         query_text=request.query,
         top_k=request.top_k,
+        as_of=request.as_of,
     )
 
     synthesizer = PromptSynthesizer()
@@ -292,6 +328,46 @@ def discover_semantic_assets(
         "matched_nodes": matched_nodes,
         "synthesized_prompt": prompt,
     }
+
+
+@app.post("/api/v1/tenants/{tenant_id}/time-travel/diff")
+def calculate_time_travel_diff(
+    tenant_id: str = FastPath(..., description="Tenant Identifier"),
+    request: Optional[TimeTravelDiffRequest] = None,
+) -> Dict[str, Any]:
+    """Calculates schema drift and lineage diff between two historical ISO 8601 timestamps.
+
+    Args:
+        tenant_id: Unique tenant identifier string.
+        request: TimeTravelDiffRequest containing node_id, timestamp_t1, timestamp_t2.
+
+    Returns:
+        Diff dictionary containing added/removed nodes/edges and synthesized prompt.
+    """
+    if not request:
+        raise HTTPException(status_code=400, detail="TimeTravelDiffRequest body is required")
+    data_base = resolve_data_path(tenant_id, request.data_path)
+    engine = DuckDBQueryEngine(data_base_path=data_base)
+    diff_result = engine.get_schema_time_travel_diff(
+        start_node_id=request.node_id,
+        timestamp_t1=request.timestamp_t1,
+        timestamp_t2=request.timestamp_t2,
+    )
+
+    synthesizer = PromptSynthesizer()
+    prompt = synthesizer.synthesize_time_travel_diff_prompt(
+        node_id=request.node_id,
+        timestamp_t1=request.timestamp_t1,
+        timestamp_t2=request.timestamp_t2,
+        diff_result=diff_result,
+    )
+
+    return {
+        "tenant_id": tenant_id,
+        "diff": diff_result,
+        "synthesized_prompt": prompt,
+    }
+
 
 
 def call_openai_llm(
@@ -456,11 +532,11 @@ def lineage_ai_chat(
 
     # 1. Check if query asks about blast radius or downstream impact
     if any(k in msg_lower for k in ["blast", "impact", "affected", "break", "change", "downstream"]):
-        full_graph = engine.get_full_graph()
+        full_graph = engine.get_full_graph(as_of=request.as_of)
         target_node = _find_target_node(full_graph.get("nodes", []), msg_lower)
 
         if target_node:
-            result = engine.get_downstream_blast_radius(start_node_id=target_node["id"], max_depth=5)
+            result = engine.get_downstream_blast_radius(start_node_id=target_node["id"], max_depth=5, as_of=request.as_of)
             prompt = synthesizer.synthesize_blast_radius_prompt(
                 start_node=result["root_node"],
                 impacted_nodes=result["impacted_nodes"],
@@ -498,11 +574,11 @@ def lineage_ai_chat(
 
     # 2. Check if query asks about root cause or upstream origin
     if any(k in msg_lower for k in ["root cause", "upstream", "why", "origin", "source", "parent"]):
-        full_graph = engine.get_full_graph()
+        full_graph = engine.get_full_graph(as_of=request.as_of)
         target_node = _find_target_node(full_graph.get("nodes", []), msg_lower)
 
         if target_node:
-            result = engine.get_upstream_root_cause(start_node_id=target_node["id"], max_depth=5)
+            result = engine.get_upstream_root_cause(start_node_id=target_node["id"], max_depth=5, as_of=request.as_of)
             prompt = synthesizer.synthesize_root_cause_prompt(
                 target_node=result["target_node"],
                 upstream_nodes=result["upstream_nodes"],
@@ -539,7 +615,7 @@ def lineage_ai_chat(
             }
 
     # 3. General Semantic Data Discovery / Lineage Asset Search
-    matched_nodes = engine.search_semantic_assets(query_text=request.message, top_k=5)
+    matched_nodes = engine.search_semantic_assets(query_text=request.message, top_k=5, as_of=request.as_of)
     prompt = synthesizer.synthesize_discovery_prompt(query_text=request.message, matched_nodes=matched_nodes)
 
     llm_reply, llm_err = call_llm(
@@ -559,7 +635,7 @@ def lineage_ai_chat(
             reply += f"• **`{n['name']}`** ({n['type']}): {desc}\n"
         reply += "\n*💡 Tip: Set `OPENAI_API_KEY` or `GEMINI_API_KEY` environment variable to enable live LLM responses.*"
     else:
-        full_graph = engine.get_full_graph()
+        full_graph = engine.get_full_graph(as_of=request.as_of)
         nodes_count = len(full_graph.get("nodes", []))
         edges_count = len(full_graph.get("edges", []))
         reply = f"LineagIQ Knowledge Graph active for tenant `{tenant_id}` containing **{nodes_count} nodes** and **{edges_count} edges**.\n\nHow can I help you trace asset dependencies or compute impact blast radius?"
@@ -571,5 +647,6 @@ def lineage_ai_chat(
         "synthesized_prompt": prompt,
         "matched_nodes": matched_nodes,
     }
+
 
 

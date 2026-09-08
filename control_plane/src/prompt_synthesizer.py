@@ -185,4 +185,67 @@ class PromptSynthesizer:
 
         return "\n".join(prompt_lines)
 
+    def synthesize_time_travel_diff_prompt(
+        self,
+        node_id: str,
+        timestamp_t1: str,
+        timestamp_t2: str,
+        diff_result: Dict[str, Any],
+    ) -> str:
+        """Synthesizes a structured GraphRAG Prompt for historical schema drift & lineage diff analysis.
+
+        Args:
+            node_id: Target node ID under historical assessment.
+            timestamp_t1: Baseline ISO 8601 timestamp string.
+            timestamp_t2: Compare ISO 8601 timestamp string.
+            diff_result: Dictionary containing added_nodes, removed_nodes, modified_nodes, edge_changes.
+
+        Returns:
+            Formatted text string prompt for LLM historical analysis.
+        """
+        prompt_lines = [
+            "================================================================================",
+            "LINEAGIQ GRAPHRAG PROMPT: TIME TRAVEL & HISTORICAL SCHEMA DRIFT ANALYSIS",
+            "================================================================================",
+            "",
+            f"### TARGET ASSET: {node_id}",
+            f"### BASELINE TIMESTAMP (T1): {timestamp_t1}",
+            f"### COMPARE TIMESTAMP (T2):  {timestamp_t2}",
+            "",
+            "### HISTORICAL CHANGES SUMMARY:",
+            f"* Added Assets / Columns: {diff_result.get('added_nodes_count', 0)}",
+            f"* Removed Assets / Columns: {diff_result.get('removed_nodes_count', 0)}",
+            f"* Modified Schema Attributes: {diff_result.get('modified_nodes_count', 0)}",
+            f"* Added Lineage Edges: {len(diff_result.get('added_edges', []))}",
+            f"* Removed Lineage Edges: {len(diff_result.get('removed_edges', []))}",
+        ]
+
+        if diff_result.get("added_nodes"):
+            prompt_lines.append("\n#### Added Data Assets & Columns:")
+            for n in diff_result["added_nodes"]:
+                prompt_lines.append(f"  + {n['name']} [{n['type']}] (ID: {n['id']})")
+
+        if diff_result.get("removed_nodes"):
+            prompt_lines.append("\n#### Removed Data Assets & Columns:")
+            for n in diff_result["removed_nodes"]:
+                prompt_lines.append(f"  - {n['name']} [{n['type']}] (ID: {n['id']})")
+
+        if diff_result.get("modified_nodes"):
+            prompt_lines.append("\n#### Modified Data Assets / Schema Attributes:")
+            for m in diff_result["modified_nodes"]:
+                prompt_lines.append(f"  ~ {m['id']}")
+
+        prompt_lines.extend([
+            "",
+            "================================================================================",
+            "AI ASSISTANT TASK INSTRUCTIONS:",
+            "1. Evaluate the impact of schema additions, deletions, and lineage shifts between T1 and T2.",
+            "2. Identify breaking changes or removed dependencies causing downstream consumer failures.",
+            "3. Provide actionable remediation guidance to restore lineage stability.",
+            "================================================================================",
+        ])
+
+        return "\n".join(prompt_lines)
+
+
 
