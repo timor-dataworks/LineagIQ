@@ -165,12 +165,67 @@ function filterGraph() {
     }
   }
 
-  const visibleIds = new Set(visibleNodes.map(n => n.id));
-  let visibleEdges = rawEdges.filter(e => visibleIds.has(e.source_id) && visibleIds.has(e.target_id));
+  // Column ID to parent dataset ID mapping for dataset-level lineage synthesis
+  const colToDatasetMap = {};
+  rawNodes.forEach(n => {
+    if (n.type === 'Column') {
+      let dsId = null;
+      if (n.properties) {
+        try {
+          const props = (typeof n.properties === 'string') ? JSON.parse(n.properties) : n.properties;
+          if (props.dataset_id) dsId = props.dataset_id;
+        } catch (e) {}
+      }
+      if (!dsId && n.id.includes('.')) {
+        dsId = n.id.substring(0, n.id.lastIndexOf('.'));
+      }
+      if (dsId) colToDatasetMap[n.id] = dsId;
+    }
+  });
 
-  if (viewMode === 'high_level') {
-    visibleEdges = visibleEdges.filter(e => e.type !== 'BELONGS_TO');
-  }
+  rawEdges.forEach(e => {
+    if (e.type === 'BELONGS_TO') {
+      colToDatasetMap[e.source_id] = e.target_id;
+    }
+  });
+
+  const visibleIds = new Set(visibleNodes.map(n => n.id));
+  const visibleEdges = [];
+  const edgeDedupe = new Set();
+
+  rawEdges.forEach(e => {
+    if (viewMode === 'high_level' && e.type === 'BELONGS_TO') return;
+
+    let srcId = e.source_id;
+    let tgtId = e.target_id;
+
+    if (viewMode === 'high_level') {
+      if (colToDatasetMap[srcId]) srcId = colToDatasetMap[srcId];
+      if (colToDatasetMap[tgtId]) tgtId = colToDatasetMap[tgtId];
+    }
+
+    if (srcId && tgtId && visibleIds.has(srcId) && visibleIds.has(tgtId) && srcId !== tgtId) {
+      let effectiveSrc = srcId;
+      let effectiveTgt = tgtId;
+
+      if (e.type === 'JOINS_WITH') {
+        if (srcId.includes('TRANSACTIONS') && (tgtId.includes('USERS') || tgtId.includes('PRODUCTS'))) {
+          effectiveSrc = tgtId;
+          effectiveTgt = srcId;
+        }
+      }
+
+      const key = `${effectiveSrc}->${effectiveTgt}:${e.type}`;
+      if (!edgeDedupe.has(key)) {
+        edgeDedupe.add(key);
+        visibleEdges.push({
+          ...e,
+          source_id: effectiveSrc,
+          target_id: effectiveTgt
+        });
+      }
+    }
+  });
 
   // Update Header Stats
   document.getElementById('stat-node-count').innerText = visibleNodes.length;
