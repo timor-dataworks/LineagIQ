@@ -1,14 +1,16 @@
 import os
 from typing import Optional
-from collection_agent.src.transform import (
+from core import (
     DatasetNode,
     PipelineNode,
     ColumnNode,
     Edge,
     EdgeType,
     GraphPayload,
+    ArtifactWriter,
+    LocalEmbedder,
+    GraphBuilder,
 )
-from collection_agent.src.storage.writer import ArtifactWriter
 from control_plane.src.query_engine import DuckDBQueryEngine
 from control_plane.src.prompt_synthesizer import PromptSynthesizer
 
@@ -54,7 +56,6 @@ def test_duckdb_blast_radius_traversal(tmp_path):
 
 
 def test_duckdb_vector_semantic_search(tmp_path):
-    from collection_agent.src.embedder.local_embedder import LocalEmbedder
 
     ds = DatasetNode(id="db.users", name="users", description="User dimension dataset")
     col = ColumnNode(id="db.users.email", name="email", dataset_id="db.users", data_type="VARCHAR")
@@ -75,7 +76,6 @@ def test_duckdb_vector_semantic_search(tmp_path):
 
 
 def test_hybrid_semantic_search_with_parent_resolution(tmp_path):
-    from collection_agent.src.embedder.local_embedder import LocalEmbedder
 
     ds = DatasetNode(id="db.orders", name="orders", description="Fact orders")
     col = ColumnNode(id="db.orders.order_id", name="order_id", dataset_id="db.orders")
@@ -233,7 +233,6 @@ def test_pluggable_stores_architecture(tmp_path):
 
 
 def test_duckdb_vss_vector_store(tmp_path):
-    from collection_agent.src.embedder.local_embedder import LocalEmbedder
     from control_plane.src.query_engine import DuckDBVectorStore
 
     ds = DatasetNode(id="db.customers", name="customers", description="Customer dataset")
@@ -255,8 +254,6 @@ def test_duckdb_vss_vector_store(tmp_path):
 
 
 def test_semantic_search_raw_customers_edge_node_ranking(tmp_path):
-    from collection_agent.src.embedder.local_embedder import LocalEmbedder
-    from collection_agent.src.transform.graph_builder import GraphBuilder
 
     builder = GraphBuilder()
     stg_ds = DatasetNode(id="model.jaffle_shop.stg_customers", name="stg_customers", description="Staged customer records")

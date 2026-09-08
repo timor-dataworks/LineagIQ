@@ -1,3 +1,9 @@
+"""LineagIQ Core Ontology & Domain Models.
+
+Defines standard entity nodes, relationships, and payload containers
+used across ingestion agents, control planes, and GraphRAG pipelines.
+"""
+
 from enum import Enum
 from typing import Dict, Any, List, Optional, Union, Literal
 from pydantic import BaseModel, Field, ConfigDict
@@ -26,9 +32,7 @@ class EdgeType(str, Enum):
 
 
 class Node(BaseModel):
-    """
-    Base Graph Node model representing an entity in the LineagIQ graph.
-    """
+    """Base Graph Node model representing an entity in the LineagIQ graph."""
     model_config = ConfigDict(populate_by_name=True)
 
     id: str = Field(..., description="Unique node canonical identifier")
@@ -78,9 +82,7 @@ class BusinessTermNode(Node):
 
 
 class Edge(BaseModel):
-    """
-    Graph Edge model representing directional relationships between nodes.
-    """
+    """Graph Edge model representing directional relationships between nodes."""
     source_id: str = Field(..., description="Source node ID")
     target_id: str = Field(..., description="Target node ID")
     type: EdgeType = Field(..., description="Edge relationship type classification")
@@ -88,8 +90,6 @@ class Edge(BaseModel):
 
 
 class GraphPayload(BaseModel):
-    """
-    Container payload holding a collection of graph nodes and lineage edges.
-    """
+    """Container payload holding a collection of graph nodes and lineage edges."""
     nodes: List[Union[DatasetNode, ColumnNode, PipelineNode, UserTeamNode, BusinessTermNode, Node]] = Field(default_factory=list)
     edges: List[Edge] = Field(default_factory=list)

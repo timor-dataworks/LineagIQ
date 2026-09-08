@@ -5,6 +5,7 @@ from typing import List, Optional
 import duckdb
 from control_plane.src.query_engine.base import BaseVectorStore
 from control_plane.src.query_engine.duckdb_store import resolve_delta_or_parquet_table
+from core.constants import get_vectors_table_path
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ class DuckDBVectorStore(BaseVectorStore):
 
     def __init__(self, data_base_path: str):
         self.data_base_path = data_base_path
-        self.vectors_dir = os.path.join(data_base_path, "vectors")
+        self.vectors_dir = get_vectors_table_path(data_base_path)
 
     def search_vectors(
         self,

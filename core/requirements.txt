@@ -1,0 +1,5 @@
+# LineagIQ Core Dependencies
+
+pydantic>=2.10.0
+pyarrow>=14.0.0
+deltalake>=0.17.0

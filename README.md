@@ -11,11 +11,21 @@ LineagIQ models an enterprise data landscape into a contextual knowledge graph. 
 
 ```text
 LineagIQ/
+├── core/                       # Shared Domain Models, Vector Embedder, Schemas & Writer
+│   ├── models.py               # Ontology Pydantic Models (Node, Edge, GraphPayload)
+│   ├── embedder.py             # Local In-Memory & Quantized Vector Embedder
+│   ├── constants.py            # Storage table names, paths, and helpers
+│   ├── schemas.py              # Static PyArrow Schemas (NODE_SCHEMA, EDGE_SCHEMA)
+│   ├── writer.py               # Delta Lake & Parquet ArtifactWriter
+│   ├── graph_builder.py        # Graph normalization and DAG alias resolver
+│   ├── utils.py                # ISO 8601 timestamps & search term extractors
+│   └── tests/                  # Core package unit tests
+│
 ├── collection_agent/           # Ephemeral Ingestion Agent
 │   ├── README.md               # Collection Agent documentation
-│   ├── ARCHITECTURE.md          # Architectural specification
+│   ├── ARCHITECTURE.md         # Architectural specification
 │   ├── requirements.txt        # Agent dependencies
-│   ├── src/                    # Extractors, Transform, Embedder, Storage, Sync, CLI
+│   ├── src/                    # Extractors, S3 Sync, CLI
 │   └── tests/                  # Pytest test suite & mock fixtures
 │
 ├── control_plane/              # Serverless Query Plane & GraphRAG API

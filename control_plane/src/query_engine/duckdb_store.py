@@ -7,64 +7,19 @@ from typing import Dict, Any, List, Optional
 import duckdb
 from deltalake import DeltaTable
 from control_plane.src.query_engine.base import BaseGraphStore
+from core.utils import STOP_WORDS, extract_search_terms, parse_iso_to_epoch_ms
+from core.constants import (
+    get_nodes_table_path,
+    get_edges_table_path,
+    FILE_DATA_PARQUET,
+)
 
 logger = logging.getLogger(__name__)
-
-STOP_WORDS = {
-    "find", "show", "search", "get", "list", "where", "is", "are", "the",
-    "a", "an", "for", "with", "in", "me", "dataset", "datasets", "table",
-    "tables", "column", "columns", "all", "what", "which", "who", "how", "tell", "about"
-}
-
-
-def extract_search_terms(query_text: str) -> List[str]:
-    """
-    Extracts and filters normalized search term phrases from a natural language query string.
-
-    :param query_text: Raw user query string.
-    :return: List of clean search term strings (minimum length 2).
-    """
-    raw_clean = query_text.lower().strip()
-    words = [w for w in re.split(r'\s+', raw_clean) if w]
-    filtered_words = [w for w in words if w not in STOP_WORDS]
-
-    terms = []
-    if filtered_words:
-        terms.append(" ".join(filtered_words))
-        for w in filtered_words:
-            if w not in terms:
-                terms.append(w)
-    if raw_clean not in terms:
-        terms.append(raw_clean)
-
-    return [t for t in terms if len(t) >= 2]
 
 
 def _quote_id(val: str) -> str:
     """Escapes single quotes and wraps string in SQL single quotes."""
     return "'" + val.replace("'", "''") + "'"
-
-
-def parse_iso_to_epoch_ms(iso_str: Optional[str]) -> Optional[int]:
-    """Parses ISO 8601 timestamp string into Epoch milliseconds.
-
-    Args:
-        iso_str: ISO 8601 string (e.g. '2026-09-08T10:00:00Z' or '2026-09-08T10:00:00.123Z').
-
-    Returns:
-        Epoch milliseconds int or None if invalid/empty.
-    """
-    if not iso_str:
-        return None
-    clean = iso_str.strip().replace("Z", "+00:00")
-    try:
-        dt = datetime.datetime.fromisoformat(clean)
-        epoch_ms = int(dt.timestamp() * 1000)
-        if "." not in iso_str and "T" in iso_str:
-            epoch_ms += 999
-        return epoch_ms
-    except Exception:
-        return None
 
 
 def resolve_delta_or_parquet_table(
@@ -137,7 +92,7 @@ def get_available_timestamps(data_base_path: str) -> List[Dict[str, Any]]:
     Returns:
         List of dictionaries with 'version', 'timestamp' (ISO 8601), and 'operation'.
     """
-    nodes_dir = os.path.join(data_base_path, "graph", "nodes")
+    nodes_dir = get_nodes_table_path(data_base_path)
     if not os.path.exists(nodes_dir) or not DeltaTable.is_deltatable(nodes_dir):
         return []
 
@@ -174,10 +129,10 @@ class DuckDBGraphStore(BaseGraphStore):
 
     def __init__(self, data_base_path: str):
         self.base_path = data_base_path
-        self.nodes_dir = os.path.join(data_base_path, "graph", "nodes")
-        self.edges_dir = os.path.join(data_base_path, "graph", "edges")
-        self.nodes_file = os.path.join(data_base_path, "graph", "nodes", "data.parquet")
-        self.edges_file = os.path.join(data_base_path, "graph", "edges", "data.parquet")
+        self.nodes_dir = get_nodes_table_path(data_base_path)
+        self.edges_dir = get_edges_table_path(data_base_path)
+        self.nodes_file = os.path.join(self.nodes_dir, FILE_DATA_PARQUET)
+        self.edges_file = os.path.join(self.edges_dir, FILE_DATA_PARQUET)
 
     def _synthesize_missing_nodes(self, nodes: List[Dict[str, Any]], target_ids: set) -> List[Dict[str, Any]]:
         """

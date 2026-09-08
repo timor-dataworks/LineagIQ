@@ -26,22 +26,15 @@ collection_agent/
 ├── src/                      # Source code
 │   ├── cli.py                # Command-line entrypoint & pipeline runner
 │   ├── extractors/           # dbt, SQL INFORMATION_SCHEMA, Query Logs, OpenLineage
-│   ├── transform/            # Pydantic models & GraphBuilder engine
-│   ├── embedder/             # Local ONNX INT8 vector embedding generator
-│   ├── storage/              # Delta Lake table and Parquet file generator (writer.py)
 │   └── sync/                 # Multi-part S3 uploader
 └── tests/                    # Pytest test suite and sample fixtures
     ├── fixtures/             # Mock dbt manifests, SQL schemas, query logs, OpenLineage events
     ├── test_cli.py           # Pipeline runner tests
     ├── test_dbt_extractor.py # dbt extractor tests
-    ├── test_embedder.py      # Local embedder tests
-    ├── test_graph_builder.py # GraphBuilder normalization tests
-    ├── test_models.py        # Pydantic model validation tests
     ├── test_openlineage_extractor.py
     ├── test_query_logs_extractor.py
     ├── test_sql_extractor.py
-    ├── test_sync.py          # S3 sync tests
-    └── test_writer.py        # Delta Lake & Parquet writer tests
+    └── test_sync.py          # S3 sync tests
 ```
 
 ---

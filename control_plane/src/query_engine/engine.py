@@ -1,6 +1,6 @@
 import json
 from typing import Dict, Any, List, Optional
-from collection_agent.src.embedder.local_embedder import LocalEmbedder
+from core.embedder import LocalEmbedder, get_default_embedder
 from control_plane.src.query_engine.base import BaseGraphStore, BaseVectorStore
 from control_plane.src.query_engine.duckdb_store import DuckDBGraphStore, get_available_timestamps
 from control_plane.src.query_engine.duckdb_vector_store import DuckDBVectorStore
@@ -31,7 +31,7 @@ class DuckDBQueryEngine:
         self.base_path = data_base_path
         self.graph_store = graph_store or DuckDBGraphStore(data_base_path)
         self.vector_store = vector_store or DuckDBVectorStore(data_base_path)
-        self.embedder = embedder or LocalEmbedder()
+        self.embedder = embedder or get_default_embedder()
 
     def get_downstream_blast_radius(
         self, start_node_id: str, max_depth: int = 5, as_of: Optional[str] = None

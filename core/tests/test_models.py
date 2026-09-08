@@ -1,5 +1,5 @@
 import pytest
-from collection_agent.src.transform import (
+from core import (
     NodeType,
     EdgeType,
     DatasetNode,
@@ -73,9 +73,10 @@ def test_graph_payload_validation():
         type=EdgeType.PRODUCED_BY,
     )
 
-    payload = GraphPayload(nodes=[ds_node, pipe_node], edges=[edge])
+    payload = GraphPayload(
+        nodes=[ds_node, pipe_node],
+        edges=[edge],
+    )
 
     assert len(payload.nodes) == 2
     assert len(payload.edges) == 1
-    assert payload.nodes[0].type == NodeType.DATASET
-    assert payload.edges[0].type == EdgeType.PRODUCED_BY

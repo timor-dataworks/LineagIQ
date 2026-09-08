@@ -1,8 +1,8 @@
 import os
 import pyarrow.parquet as pq
-from collection_agent.src.embedder.local_embedder import LocalEmbedder
-from collection_agent.src.storage.writer import ArtifactWriter
-from collection_agent.src.transform.models import (
+from core import (
+    LocalEmbedder,
+    ArtifactWriter,
     DatasetNode,
     ColumnNode,
     Edge,
@@ -17,7 +17,7 @@ def test_artifact_writer_parquet_and_vectors(tmp_path):
     edge = Edge(source_id="analytics.users.id", target_id="analytics.users", type=EdgeType.JOINS_WITH)
 
     payload = GraphPayload(nodes=[ds_node, col_node], edges=[edge])
-    
+
     # Embed payload
     embedder = LocalEmbedder()
     payload = embedder.embed_payload(payload)
@@ -46,4 +46,3 @@ def test_artifact_writer_parquet_and_vectors(tmp_path):
     vectors_table = pq.read_table(vectors_file)
     assert vectors_table.num_rows == 2
     assert "vector" in vectors_table.column_names
-

@@ -1,5 +1,11 @@
+"""LineagIQ Core Graph Builder.
+
+Normalizes raw metadata extractor outputs into validated Pydantic `Node` and `Edge` models,
+maintaining deduplicated collections, synthesizing missing endpoint nodes, and resolving entity aliases.
+"""
+
 from typing import Dict, Any, List, Optional
-from collection_agent.src.transform.models import (
+from core.models import (
     Node,
     NodeType,
     EdgeType,
@@ -14,8 +20,7 @@ from collection_agent.src.transform.models import (
 
 
 class GraphBuilder:
-    """
-    Graph Builder normalizes raw metadata extractor outputs into validated Pydantic
+    """Graph Builder normalizes raw metadata extractor outputs into validated Pydantic
     `Node` and `Edge` models, maintaining deduplicated collections and resolving entity aliases.
     """
 
@@ -26,25 +31,27 @@ class GraphBuilder:
         self._alias_map: Dict[str, str] = {}
 
     def register_alias(self, alias: str, canonical_id: str) -> None:
-        """
-        Registers an entity alias mapping (case-insensitive) to a canonical node ID.
+        """Registers an entity alias mapping (case-insensitive) to a canonical node ID.
 
-        :param alias: Table, view, or column alias string (e.g., 'USERS', 'users.id').
-        :param canonical_id: Canonical target node ID (e.g., 'PROD_DB.PUBLIC.USERS.ID').
+        Args:
+            alias: Table, view, or column alias string (e.g., 'USERS', 'users.id').
+            canonical_id: Canonical target node ID (e.g., 'PROD_DB.PUBLIC.USERS.ID').
         """
         if alias and canonical_id:
             self._alias_map[alias.lower()] = canonical_id
 
     def resolve_id(self, raw_id: str) -> str:
-        """
-        Resolves raw dataset or column identifiers to canonical node IDs using registered aliases.
+        """Resolves raw dataset or column identifiers to canonical node IDs using registered aliases.
 
         Handles:
         1. Direct alias lookups (e.g., 'stg_customers' -> 'model.jaffle_shop.stg_customers').
         2. Unqualified column aliases (e.g., 'USERS.ID' -> 'PROD_DB.PUBLIC.USERS.ID').
 
-        :param raw_id: Input identifier string.
-        :return: Canonical target node ID.
+        Args:
+            raw_id: Input identifier string.
+
+        Returns:
+            Canonical target node ID.
         """
         if not raw_id:
             return raw_id
@@ -68,10 +75,10 @@ class GraphBuilder:
         return raw_id
 
     def add_node(self, node: Node) -> None:
-        """
-        Adds or merges a graph node into the registry and updates alias maps.
+        """Adds or merges a graph node into the registry and updates alias maps.
 
-        :param node: Node instance (DatasetNode, ColumnNode, PipelineNode, UserTeamNode, etc.).
+        Args:
+            node: Node instance (DatasetNode, ColumnNode, PipelineNode, UserTeamNode, etc.).
         """
         if node.id in self._nodes:
             existing = self._nodes[node.id]
@@ -106,10 +113,10 @@ class GraphBuilder:
             self.add_node(n)
 
     def _ensure_node_exists(self, node_id: str) -> None:
-        """
-        Synthesizes a Dataset or Pipeline node if an edge endpoint is not already registered.
+        """Synthesizes a Dataset or Pipeline node if an edge endpoint is not already registered.
 
-        :param node_id: Target node ID referenced by an edge.
+        Args:
+            node_id: Target node ID referenced by an edge.
         """
         resolved_id = self.resolve_id(node_id)
         if resolved_id not in self._nodes:
@@ -131,19 +138,19 @@ class GraphBuilder:
             self.add_node(synth_node)
 
     def add_edge(self, edge: Edge) -> None:
-        """
-        Adds a lineage relationship edge, avoiding exact duplicates and resolving endpoint aliases.
+        """Adds a lineage relationship edge, avoiding exact duplicates and resolving endpoint aliases.
 
-        :param edge: Edge instance to add.
+        Args:
+            edge: Edge instance to add.
         """
         resolved_source = self.resolve_id(edge.source_id)
         resolved_target = self.resolve_id(edge.target_id)
-        
+
         self._ensure_node_exists(resolved_source)
         self._ensure_node_exists(resolved_target)
-        
+
         edge_key = f"{resolved_source}->{edge.type.value}->{resolved_target}"
-        
+
         resolved_edge = Edge(
             source_id=resolved_source,
             target_id=resolved_target,
@@ -167,12 +174,12 @@ class GraphBuilder:
         catalog_nodes: Optional[List[Dict[str, Any]]] = None,
         lineage_edges: Optional[List[Dict[str, Any]]] = None,
     ) -> None:
-        """
-        Normalizes and ingests dbt extractor output nodes, catalog metadata, and lineage edges.
+        """Normalizes and ingests dbt extractor output nodes, catalog metadata, and lineage edges.
 
-        :param manifest_nodes: Extracted model and seed nodes from dbt manifest.
-        :param catalog_nodes: Extracted column catalog nodes from dbt catalog.
-        :param lineage_edges: Extracted parent-child lineage dependencies.
+        Args:
+            manifest_nodes: Extracted model and seed nodes from dbt manifest.
+            catalog_nodes: Extracted column catalog nodes from dbt catalog.
+            lineage_edges: Extracted parent-child lineage dependencies.
         """
         catalog_map = {c["id"]: c for c in (catalog_nodes or [])}
 
@@ -237,12 +244,12 @@ class GraphBuilder:
         columns: List[Dict[str, Any]],
         foreign_keys: Optional[List[Dict[str, Any]]] = None,
     ) -> None:
-        """
-        Normalizes and ingests SQL INFORMATION_SCHEMA extractor tables, columns, and foreign keys.
+        """Normalizes and ingests SQL INFORMATION_SCHEMA extractor tables, columns, and foreign keys.
 
-        :param tables: Extracted table rows.
-        :param columns: Extracted column rows.
-        :param foreign_keys: Extracted foreign key constraint rows.
+        Args:
+            tables: Extracted table rows.
+            columns: Extracted column rows.
+            foreign_keys: Extracted foreign key constraint rows.
         """
         for tbl in tables:
             ds_node = DatasetNode(
@@ -293,11 +300,11 @@ class GraphBuilder:
         access_edges: List[Dict[str, Any]],
         join_edges: Optional[List[Dict[str, Any]]] = None,
     ) -> None:
-        """
-        Normalizes and ingests query access logs, creating User nodes and CONSUMED_BY / JOINS_WITH edges.
+        """Normalizes and ingests query access logs, creating User nodes and CONSUMED_BY / JOINS_WITH edges.
 
-        :param access_edges: Extracted user dataset access edges.
-        :param join_edges: Extracted column equality join edges.
+        Args:
+            access_edges: Extracted user dataset access edges.
+            join_edges: Extracted column equality join edges.
         """
         for acc in access_edges:
             user_id = acc["target"]
@@ -329,10 +336,10 @@ class GraphBuilder:
                 self.add_edge(edge)
 
     def ingesting_openlineage(self, event_data: Dict[str, Any]) -> None:
-        """
-        Normalizes and ingests parsed OpenLineage run events.
+        """Normalizes and ingests parsed OpenLineage run events.
 
-        :param event_data: Parsed OpenLineage event dictionary.
+        Args:
+            event_data: Parsed OpenLineage event dictionary.
         """
         pipeline_id = event_data["pipeline_id"]
         pipeline_node = PipelineNode(
@@ -365,10 +372,10 @@ class GraphBuilder:
             self.add_edge(edge)
 
     def to_payload(self) -> GraphPayload:
-        """
-        Assembles all registered nodes and edges into a finalized GraphPayload container.
+        """Assembles all registered nodes and edges into a finalized GraphPayload container.
 
-        :return: GraphPayload object ready for vector embedding and Parquet serialization.
+        Returns:
+            GraphPayload object ready for vector embedding and Parquet serialization.
         """
         return GraphPayload(
             nodes=list(self._nodes.values()),

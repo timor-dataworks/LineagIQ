@@ -1,12 +1,25 @@
+"""LineagIQ Core Artifact Writer.
+
+Serializes normalized GraphPayload models into Delta Lake table datasets
+and Snappy-compressed Parquet columnar files for graph nodes, edges, and dense vector embeddings.
+"""
+
 import os
 import json
 import logging
-from pathlib import Path
 from typing import Dict, Any, List, Optional
 import pyarrow as pa
 import pyarrow.parquet as pq
 from deltalake import write_deltalake
-from collection_agent.src.transform.models import GraphPayload
+
+from core.models import GraphPayload
+from core.schemas import NODE_SCHEMA, EDGE_SCHEMA, get_vector_schema
+from core.constants import (
+    get_nodes_table_path,
+    get_edges_table_path,
+    get_vectors_table_path,
+    FILE_DATA_PARQUET,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -16,22 +29,8 @@ class ArtifactWriter:
     and Snappy-compressed Parquet columnar files for graph nodes, edges, and dense vector embeddings.
     """
 
-    # Static PyArrow schema definition for Graph Nodes Parquet/Delta dataset
-    NODE_SCHEMA = pa.schema([
-        ("id", pa.string()),
-        ("type", pa.string()),
-        ("name", pa.string()),
-        ("description", pa.string()),
-        ("properties", pa.string()),
-    ])
-
-    # Static PyArrow schema definition for Lineage Edges Parquet/Delta dataset
-    EDGE_SCHEMA = pa.schema([
-        ("source_id", pa.string()),
-        ("target_id", pa.string()),
-        ("type", pa.string()),
-        ("properties", pa.string()),
-    ])
+    NODE_SCHEMA = NODE_SCHEMA
+    EDGE_SCHEMA = EDGE_SCHEMA
 
     def _extract_node_properties(self, node: Any) -> str:
         """Helper method to extract extra subclass attributes (e.g., database, schema, data_type)
@@ -136,12 +135,7 @@ class ArtifactWriter:
         ]
 
         dim = len(vector_records[0]["vector"]) if vector_records else 384
-        schema = pa.schema([
-            ("id", pa.string()),
-            ("name", pa.string()),
-            ("type", pa.string()),
-            ("vector", pa.list_(pa.float32(), dim)),
-        ])
+        schema = get_vector_schema(dim)
 
         table = pa.Table.from_pylist(vector_records, schema=schema)
         try:
@@ -161,8 +155,8 @@ class ArtifactWriter:
             Path to the generated nodes Parquet file.
         """
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
-        node_dir = os.path.dirname(output_file)
-        table = self.write_nodes_table(payload, node_dir, mode="overwrite")
+        target_dir = os.path.dirname(output_file)
+        table = self.write_nodes_table(payload, target_dir, mode="overwrite")
         pq.write_table(table, output_file, compression="snappy")
         return output_file
 
@@ -177,13 +171,13 @@ class ArtifactWriter:
             Path to the generated edges Parquet file.
         """
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
-        edge_dir = os.path.dirname(output_file)
-        table = self.write_edges_table(payload, edge_dir, mode="overwrite")
+        target_dir = os.path.dirname(output_file)
+        table = self.write_edges_table(payload, target_dir, mode="overwrite")
         pq.write_table(table, output_file, compression="snappy")
         return output_file
 
     def write_vectors_parquet(self, payload: GraphPayload, output_file: str) -> str:
-        """Serializes Node vector embeddings into a Snappy-compressed Parquet file.
+        """Serializes GraphPayload vectorized nodes into a Snappy-compressed Parquet file.
 
         Args:
             payload: Assembled GraphPayload containing vectorized nodes.
@@ -213,17 +207,17 @@ class ArtifactWriter:
         Returns:
             Dictionary mapping asset names ('nodes', 'edges', 'vectors') to absolute Parquet file paths.
         """
-        nodes_dir = os.path.join(base_dir, "graph", "nodes")
-        edges_dir = os.path.join(base_dir, "graph", "edges")
-        vectors_dir = os.path.join(base_dir, "vectors")
+        nodes_dir = get_nodes_table_path(base_dir)
+        edges_dir = get_edges_table_path(base_dir)
+        vectors_dir = get_vectors_table_path(base_dir)
 
         nodes_table = self.write_nodes_table(payload, nodes_dir, mode=mode)
         edges_table = self.write_edges_table(payload, edges_dir, mode=mode)
         vectors_table = self.write_vectors_table(payload, vectors_dir, mode=mode)
 
-        nodes_parquet = os.path.join(nodes_dir, "data.parquet")
-        edges_parquet = os.path.join(edges_dir, "data.parquet")
-        vectors_parquet = os.path.join(vectors_dir, "data.parquet")
+        nodes_parquet = os.path.join(nodes_dir, FILE_DATA_PARQUET)
+        edges_parquet = os.path.join(edges_dir, FILE_DATA_PARQUET)
+        vectors_parquet = os.path.join(vectors_dir, FILE_DATA_PARQUET)
 
         pq.write_table(nodes_table, nodes_parquet, compression="snappy")
         pq.write_table(edges_table, edges_parquet, compression="snappy")
@@ -234,4 +228,3 @@ class ArtifactWriter:
             "edges": edges_parquet,
             "vectors": vectors_parquet,
         }
-

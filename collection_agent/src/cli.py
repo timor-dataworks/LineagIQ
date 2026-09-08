@@ -9,9 +9,7 @@ from collection_agent.src.extractors.dbt import DbtExtractor
 from collection_agent.src.extractors.sql import SqlCatalogExtractor
 from collection_agent.src.extractors.query_logs import QueryLogExtractor
 from collection_agent.src.extractors.openlineage import OpenLineageExtractor
-from collection_agent.src.transform.graph_builder import GraphBuilder
-from collection_agent.src.embedder.local_embedder import LocalEmbedder
-from collection_agent.src.storage.writer import ArtifactWriter
+from core import GraphBuilder, LocalEmbedder, ArtifactWriter
 from collection_agent.src.sync.s3_sync import S3Uploader
 
 FIXTURES_DIR = Path(__file__).parent.parent / "tests" / "fixtures"

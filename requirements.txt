@@ -1,5 +1,8 @@
 # LineagIQ Root Dependencies
 
+# Core Platform
+-r core/requirements.txt
+
 # Collection Agent
 -r collection_agent/requirements.txt
 

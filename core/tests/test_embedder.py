@@ -1,6 +1,5 @@
 import pytest
-from collection_agent.src.embedder.local_embedder import LocalEmbedder
-from collection_agent.src.transform.models import DatasetNode, ColumnNode, GraphPayload
+from core import LocalEmbedder, DatasetNode, ColumnNode, GraphPayload
 
 
 def test_local_embedder_vector_generation():
@@ -74,7 +73,7 @@ def test_local_embedder_production_onnx_model(tmp_path):
     # Test against production quantized all-MiniLM-L6-v2 ONNX model
     model_url = "https://huggingface.co/Xenova/all-MiniLM-L6-v2/resolve/main/onnx/model_quantized.onnx"
     dest = os.path.join(str(tmp_path), "all-MiniLM-L6-v2-quantized.onnx")
-    
+
     try:
         urllib.request.urlretrieve(model_url, dest)
     except Exception as e:
@@ -88,5 +87,3 @@ def test_local_embedder_production_onnx_model(tmp_path):
     assert len(vec) == 384
     norm = sum(x * x for x in vec) ** 0.5
     assert pytest.approx(norm, abs=1e-3) == 1.0
-
-

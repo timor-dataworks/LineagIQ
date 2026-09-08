@@ -3,15 +3,15 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
-from collection_agent.src.transform.models import (
+from core import (
     GraphPayload,
     DatasetNode,
     ColumnNode,
     Edge,
     EdgeType,
+    ArtifactWriter,
+    LocalEmbedder,
 )
-from collection_agent.src.storage.writer import ArtifactWriter
-from collection_agent.src.embedder.local_embedder import LocalEmbedder
 from control_plane.src.query_engine import DuckDBQueryEngine
 from control_plane.src.main import app, resolve_data_path
 

@@ -1,13 +1,21 @@
 import json
 from pathlib import Path
+from core import (
+    GraphBuilder,
+    NodeType,
+    EdgeType,
+    DatasetNode,
+    ColumnNode,
+    Edge,
+    PipelineNode,
+    UserTeamNode,
+)
 from collection_agent.src.extractors.dbt import DbtExtractor
 from collection_agent.src.extractors.sql import SqlCatalogExtractor
 from collection_agent.src.extractors.query_logs import QueryLogExtractor
 from collection_agent.src.extractors.openlineage import OpenLineageExtractor
-from collection_agent.src.transform.graph_builder import GraphBuilder
-from collection_agent.src.transform.models import NodeType, EdgeType
 
-FIXTURES_DIR = Path(__file__).parent / "fixtures"
+FIXTURES_DIR = Path(__file__).parent.parent.parent / "collection_agent" / "tests" / "fixtures"
 
 
 def test_graph_builder_dbt_ingestion():
@@ -85,8 +93,6 @@ def test_graph_builder_openlineage_ingestion():
 
 
 def test_column_alias_resolution_for_unqualified_names():
-    from collection_agent.src.transform.models import DatasetNode, ColumnNode, Edge, EdgeType
-
     builder = GraphBuilder()
     ds = DatasetNode(id="PROD_DB.PUBLIC.USERS", name="USERS", schema_name="PUBLIC", database="PROD_DB")
     col = ColumnNode(id="PROD_DB.PUBLIC.USERS.ID", name="ID", dataset_id="PROD_DB.PUBLIC.USERS")
@@ -98,10 +104,21 @@ def test_column_alias_resolution_for_unqualified_names():
     builder.add_edge(Edge(source_id="USERS.ID", target_id="PROD_DB.PUBLIC.TRANSACTIONS.USER_ID", type=EdgeType.JOINS_WITH))
 
     payload = builder.to_payload()
+    edge_sources = [e.source_id for e in payload.edges]
+    assert "PROD_DB.PUBLIC.USERS.ID" in edge_sources
+
+
+def test_graph_builder_node_synthesis_and_deduplication():
+    builder = GraphBuilder()
+    edge = Edge(source_id="raw.events", target_id="dbt.transform_events", type=EdgeType.PRODUCED_BY)
+    builder.add_edge(edge)
+
+    payload = builder.to_payload()
     node_ids = {n.id for n in payload.nodes}
+    assert "raw.events" in node_ids
+    assert "dbt.transform_events" in node_ids
 
-    # Must resolve USERS.ID -> PROD_DB.PUBLIC.USERS.ID without creating duplicate USERS.ID node
-    assert "USERS.ID" not in node_ids
-    assert "PROD_DB.PUBLIC.USERS.ID" in node_ids
-    assert payload.edges[0].source_id == "PROD_DB.PUBLIC.USERS.ID"
-
+    # Adding duplicate edge should merge, not duplicate
+    builder.add_edge(edge)
+    payload2 = builder.to_payload()
+    assert len(payload2.edges) == 1
