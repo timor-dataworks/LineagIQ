@@ -182,30 +182,45 @@ function filterGraph() {
 function renderNetwork(nodesData, edgesData) {
   const isHierarchical = (document.getElementById('layout-mode').value === 'hierarchical');
 
-  const formattedNodes = nodesData.map(n => {
-    const isColumn = (n.type === 'Column');
-    const color = typeColors[n.type] || { background: '#334155', border: 'transparent' };
+  // Separate non-column nodes and column nodes
+  const nonColumnNodes = nodesData.filter(n => n.type !== 'Column');
+  const columnNodes = nodesData.filter(n => n.type === 'Column');
 
-    if (isColumn) {
-      return {
-        id: n.id,
-        label: n.name || n.id,
-        shape: 'box',
-        margin: 6,
-        borderWidth: 1,
-        borderWidthSelected: 2,
-        color: {
-          background: '#4c1d95',
-          border: '#7c3aed',
-          highlight: { background: '#6d28d9', border: '#c084fc' },
-          hover: { background: '#5b21b6', border: '#a855f7' }
-        },
-        font: { color: '#f3e8ff', size: 11, face: 'Inter', weight: '500' },
-        shapeProperties: { borderRadius: 4 },
-        rawNode: n
-      };
+  // Map each column to its parent dataset_id
+  const columnToParentMap = {};
+  const columnsByDataset = {};
+
+  // Identify parent dataset from BELONGS_TO edges
+  edgesData.forEach(e => {
+    if (e.type === 'BELONGS_TO') {
+      const srcNode = nodesData.find(n => n.id === e.source_id);
+      const tgtNode = nodesData.find(n => n.id === e.target_id);
+      if (srcNode && srcNode.type === 'Column' && tgtNode && tgtNode.type === 'Dataset') {
+        columnToParentMap[srcNode.id] = tgtNode.id;
+      }
     }
+  });
 
+  columnNodes.forEach(c => {
+    let parentId = columnToParentMap[c.id];
+    if (!parentId && c.properties) {
+      try {
+        const props = (typeof c.properties === 'string') ? JSON.parse(c.properties) : c.properties;
+        if (props.dataset_id) parentId = props.dataset_id;
+      } catch (err) {}
+    }
+    if (!parentId && c.id.includes('.')) {
+      parentId = c.id.substring(0, c.id.lastIndexOf('.'));
+    }
+    if (parentId) {
+      columnToParentMap[c.id] = parentId;
+      if (!columnsByDataset[parentId]) columnsByDataset[parentId] = [];
+      columnsByDataset[parentId].push(c);
+    }
+  });
+
+  const formattedNodes = nonColumnNodes.map(n => {
+    const color = typeColors[n.type] || { background: '#334155', border: 'transparent' };
     const shape = n.type === 'Dataset' ? 'box' : (n.type === 'Pipeline' ? 'ellipse' : 'dot');
     return {
       id: n.id,
@@ -227,28 +242,100 @@ function renderNetwork(nodesData, edgesData) {
     };
   });
 
-  const formattedEdges = edgesData.map(e => {
-    const isBelongsTo = (e.type === 'BELONGS_TO');
-    return {
-      from: e.source_id,
-      to: e.target_id,
-      label: isBelongsTo ? '' : e.type,
-      arrows: isBelongsTo ? { to: { enabled: false } } : { to: { enabled: true, scaleFactor: 0.8 } },
-      dashes: isBelongsTo ? [3, 4] : false,
-      width: isBelongsTo ? 1 : 2,
-      color: isBelongsTo
-        ? { color: 'rgba(168, 85, 247, 0.4)', highlight: '#c084fc' }
-        : { color: 'rgba(255, 255, 255, 0.45)', highlight: '#06b6d4' },
-      font: {
-        color: '#ffffff',
-        size: 10,
-        face: 'Inter',
-        align: 'middle',
-        strokeWidth: 0,
-        background: 'rgba(15, 23, 42, 0.9)'
+  // Aggregate columns into a single Column Cloud node per dataset table
+  const columnCloudNodeMap = {};
+  Object.keys(columnsByDataset).forEach(dsId => {
+    const cols = columnsByDataset[dsId];
+    const cloudId = `${dsId}__column_cloud`;
+    columnCloudNodeMap[dsId] = cloudId;
+
+    const colLines = cols.map(c => {
+      let dataTypeStr = '';
+      if (c.properties) {
+        try {
+          const props = (typeof c.properties === 'string') ? JSON.parse(c.properties) : c.properties;
+          if (props.data_type || props.type) dataTypeStr = ` (${props.data_type || props.type})`;
+        } catch (err) {}
+      }
+      return `• ${c.name || c.id}${dataTypeStr}`;
+    });
+
+    const label = `☁️ Columns (${cols.length})\n─────────────────\n${colLines.join('\n')}`;
+
+    formattedNodes.push({
+      id: cloudId,
+      label: label,
+      shape: 'box',
+      margin: 10,
+      borderWidth: 1,
+      borderWidthSelected: 2,
+      color: {
+        background: '#2e1065',
+        border: '#7c3aed',
+        highlight: { background: '#4c1d95', border: '#c084fc' },
+        hover: { background: '#3b0764', border: '#a855f7' }
       },
-      smooth: isHierarchical ? { type: 'cubicBezier', forceDirection: 'horizontal' } : { type: 'continuous' }
-    };
+      font: { color: '#e9d5ff', size: 11, face: 'Inter', weight: '500', align: 'left' },
+      shapeProperties: { borderRadius: 8 },
+      rawNode: {
+        id: cloudId,
+        name: `Columns (${cols.length})`,
+        type: 'ColumnCloud',
+        description: `Column schema cloud for ${dsId}`,
+        columns: cols,
+        properties: { dataset_id: dsId, total_columns: cols.length }
+      }
+    });
+  });
+
+  // Format edges: deduplicate BELONGS_TO edges to connect Column Cloud node to dataset
+  const formattedEdges = [];
+  const processedCloudEdges = new Set();
+
+  edgesData.forEach(e => {
+    if (e.type === 'BELONGS_TO') {
+      const parentDsId = columnToParentMap[e.source_id] || e.target_id;
+      const cloudId = columnCloudNodeMap[parentDsId];
+      if (cloudId && !processedCloudEdges.has(cloudId)) {
+        processedCloudEdges.add(cloudId);
+        formattedEdges.push({
+          from: cloudId,
+          to: parentDsId,
+          label: '',
+          arrows: { to: { enabled: false } },
+          dashes: [3, 4],
+          width: 1.5,
+          color: { color: 'rgba(168, 85, 247, 0.65)', highlight: '#c084fc' }
+        });
+      }
+    } else {
+      let fromId = e.source_id;
+      let toId = e.target_id;
+
+      if (columnToParentMap[fromId] && columnCloudNodeMap[columnToParentMap[fromId]]) {
+        fromId = columnCloudNodeMap[columnToParentMap[fromId]];
+      }
+      if (columnToParentMap[toId] && columnCloudNodeMap[columnToParentMap[toId]]) {
+        toId = columnCloudNodeMap[columnToParentMap[toId]];
+      }
+
+      formattedEdges.push({
+        from: fromId,
+        to: toId,
+        label: e.type,
+        arrows: { to: { enabled: true, scaleFactor: 0.8 } },
+        color: { color: 'rgba(255, 255, 255, 0.45)', highlight: '#06b6d4' },
+        font: {
+          color: '#ffffff',
+          size: 10,
+          face: 'Inter',
+          align: 'middle',
+          strokeWidth: 0,
+          background: 'rgba(15, 23, 42, 0.9)'
+        },
+        smooth: isHierarchical ? { type: 'cubicBezier', forceDirection: 'horizontal' } : { type: 'continuous' }
+      });
+    }
   });
 
   nodesDataSet = new vis.DataSet(formattedNodes);
