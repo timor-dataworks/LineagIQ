@@ -105,11 +105,19 @@ test('computeDeterministicPositions assigns explicit X and Y coordinates in LR m
   assert.equal(typeof nodes[0].y, 'number');
 });
 
-test('updateChatDrawerPosition dynamically positions drawer to right edge or shifts when sidebar is open', () => {
+test('updateChatDrawerPosition moves drawer to left when node properties open, and back to right when closed', () => {
+  const drawerClasses = new Set();
   const drawerStyle = { right: '', left: '', display: 'flex' };
   const sidebarStyle = { display: 'none' };
   const sidebarEl = { style: sidebarStyle, offsetWidth: 400 };
-  const drawerEl = { style: drawerStyle };
+  const drawerEl = {
+    style: drawerStyle,
+    classList: {
+      add: (cls) => drawerClasses.add(cls),
+      remove: (cls) => drawerClasses.delete(cls),
+      contains: (cls) => drawerClasses.has(cls)
+    }
+  };
 
   global.document = {
     getElementById: (id) => {
@@ -119,18 +127,27 @@ test('updateChatDrawerPosition dynamically positions drawer to right edge or shi
     }
   };
 
-  // Sidebar is closed -> docks dynamically to right: 16px
+  // 1. Sidebar is closed -> positioned on right edge (right: 16px, left: auto)
   script.updateChatDrawerPosition();
   assert.equal(drawerStyle.right, '16px');
+  assert.equal(drawerStyle.left, 'auto');
+  assert.equal(drawerClasses.has('dock-right'), true);
+  assert.equal(drawerClasses.has('dock-left'), false);
 
-  // Sidebar is opened -> shifts dynamically to left of sidebar
+  // 2. Node properties sidebar is opened -> moves to left edge (left: 16px, right: auto)
   sidebarStyle.display = 'flex';
   script.updateChatDrawerPosition();
-  assert.equal(drawerStyle.right, '420px');
+  assert.equal(drawerStyle.left, '16px');
+  assert.equal(drawerStyle.right, 'auto');
+  assert.equal(drawerClasses.has('dock-left'), true);
+  assert.equal(drawerClasses.has('dock-right'), false);
 
-  // Sidebar closed again -> smoothly docks back to right: 16px
+  // 3. Node properties sidebar is closed -> moves back to right edge (right: 16px, left: auto)
   sidebarStyle.display = 'none';
   script.updateChatDrawerPosition();
   assert.equal(drawerStyle.right, '16px');
+  assert.equal(drawerStyle.left, 'auto');
+  assert.equal(drawerClasses.has('dock-right'), true);
+  assert.equal(drawerClasses.has('dock-left'), false);
 });
 

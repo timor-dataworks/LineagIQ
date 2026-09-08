@@ -849,24 +849,40 @@ function updateChatDrawerPosition() {
   if (!drawer) return;
 
   if (chatDockMode === 'right') {
+    if (drawer.classList) {
+      drawer.classList.remove('dock-left');
+      drawer.classList.add('dock-right');
+    }
     drawer.style.right = '16px';
     drawer.style.left = 'auto';
     return;
   }
   if (chatDockMode === 'left') {
+    if (drawer.classList) {
+      drawer.classList.remove('dock-right');
+      drawer.classList.add('dock-left');
+    }
     drawer.style.left = '16px';
     drawer.style.right = 'auto';
     return;
   }
 
-  // Dynamic mode: adapt dynamically to right side based on sidebar visibility
-  drawer.style.left = 'auto';
+  // Dynamic mode: move to left if node properties (sidebar) are opened, and back to right when closed
   const sidebar = getEl('sidebar');
-  const isSidebarVisible = sidebar && sidebar.style.display !== 'none' && sidebar.offsetWidth > 0;
+  const isSidebarVisible = sidebar && sidebar.style.display !== 'none' && (sidebar.offsetWidth > 0 || sidebar.offsetWidth === undefined);
   if (isSidebarVisible) {
-    const sidebarWidth = sidebar.offsetWidth || 400;
-    drawer.style.right = `${sidebarWidth + 20}px`;
+    if (drawer.classList) {
+      drawer.classList.remove('dock-right');
+      drawer.classList.add('dock-left');
+    }
+    drawer.style.left = '16px';
+    drawer.style.right = 'auto';
   } else {
+    if (drawer.classList) {
+      drawer.classList.remove('dock-left');
+      drawer.classList.add('dock-right');
+    }
+    drawer.style.left = 'auto';
     drawer.style.right = '16px';
   }
 }
@@ -883,8 +899,8 @@ function toggleChatDockMode() {
     showToast('AI Assistant docked to left');
   } else {
     chatDockMode = 'dynamic';
-    if (dockBtn) dockBtn.title = 'AI Assistant dynamic positioning (Click to lock right)';
-    showToast('AI Assistant dynamic positioning restored');
+    if (dockBtn) dockBtn.title = 'AI Assistant dynamic positioning (Left when node properties open, Right when closed)';
+    showToast('AI Assistant dynamic positioning active (Left on inspect, Right on close)');
   }
   updateChatDrawerPosition();
 }
