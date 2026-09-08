@@ -918,7 +918,7 @@
     async function executeTimeDiff() {
       const t1 = document.getElementById('diff-t1-select').value;
       const t2 = document.getElementById('diff-t2-select').value;
-      const nodeId = document.getElementById('diff-node-input').value.trim() || 'enterprise';
+      const nodeId = document.getElementById('diff-node-input').value.trim();
       const tenantId = document.getElementById('tenant-input').value.trim() || 'demo_tenant';
       const dataPath = document.getElementById('data-path-input').value.trim();
 

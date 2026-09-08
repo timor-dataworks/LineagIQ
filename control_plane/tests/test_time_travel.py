@@ -49,8 +49,9 @@ def test_delta_table_commits_and_time_travel_query(tmp_path):
     ds2 = DatasetNode(id="model.jaffle_shop.orders", name="orders", description="Orders table v2")
     col2 = ColumnNode(id="model.jaffle_shop.orders.id", name="id", dataset_id="model.jaffle_shop.orders")
     edge2 = Edge(source_id="model.jaffle_shop.orders.id", target_id="model.jaffle_shop.orders", type=EdgeType.BELONGS_TO)
+    edge3 = Edge(source_id="model.jaffle_shop.customers", target_id="model.jaffle_shop.orders", type=EdgeType.DERIVED_FROM)
 
-    payload2 = GraphPayload(nodes=[ds1, col1, ds2, col2], edges=[edge1, edge2])
+    payload2 = GraphPayload(nodes=[ds1, col1, ds2, col2], edges=[edge1, edge2, edge3])
     payload2 = embedder.embed_payload(payload2)
 
     # Commit snapshot T2 to Delta Lake (append log)

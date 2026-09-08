@@ -100,7 +100,7 @@ def resolve_delta_or_parquet_table(
                 history = dt.history()
                 matching_ver = 0
                 for commit in sorted(history, key=lambda x: x.get("version", 0)):
-                    if commit.get("timestamp", 0) <= target_ms:
+                    if commit.get("timestamp", 0) <= target_ms + 100:
                         matching_ver = commit.get("version", 0)
                 dt.load_as_version(matching_ver)
 
@@ -423,10 +423,48 @@ class DuckDBGraphStore(BaseGraphStore):
         results_df = con.execute(query).df()
         return results_df.to_dict(orient="records")
 
+    def _get_scoped_node_ids(self, graph: Dict[str, Any], start_node_id: Optional[str], as_of: Optional[str] = None) -> set:
+        """Helper to compute set of node IDs connected to start_node_id (upstream + downstream)."""
+        nodes = graph.get("nodes", [])
+        if not nodes or not start_node_id:
+            return {n["id"] for n in nodes}
+
+        clean_start = start_node_id.strip().lower()
+        if not clean_start or clean_start in ["all", "enterprise", "global", "none"]:
+            return {n["id"] for n in nodes}
+
+        matched_target_ids = set()
+        for n in nodes:
+            nid = n.get("id", "").lower()
+            name = n.get("name", "").lower()
+            if clean_start == nid or clean_start == name or clean_start in nid or clean_start in name:
+                matched_target_ids.add(n["id"])
+
+        if not matched_target_ids:
+            return set()
+
+        scoped_ids = set(matched_target_ids)
+        for target_id in matched_target_ids:
+            blast = self.get_downstream_blast_radius(start_node_id=target_id, max_depth=5, as_of=as_of)
+            root_cause = self.get_upstream_root_cause(start_node_id=target_id, max_depth=5, as_of=as_of)
+
+            for n in blast.get("impacted_nodes", []):
+                scoped_ids.add(n["id"])
+            for n in root_cause.get("upstream_nodes", []):
+                scoped_ids.add(n["id"])
+
+        # Include all column nodes belonging to any scoped dataset node
+        for e in graph.get("edges", []):
+            if e.get("type") == "BELONGS_TO" and e.get("target_id") in scoped_ids:
+                scoped_ids.add(e["source_id"])
+
+        return scoped_ids
+
     def get_schema_time_travel_diff(
-        self, start_node_id: str, timestamp_t1: str, timestamp_t2: str
+        self, start_node_id: Optional[str], timestamp_t1: str, timestamp_t2: str
     ) -> Dict[str, Any]:
-        """Computes schema and lineage graph diff between two historical ISO 8601 timestamps.
+        """Computes schema and lineage graph diff between two historical ISO 8601 timestamps,
+        optionally scoped to target start_node_id and its connected lineage sub-graph.
 
         Args:
             start_node_id: Canonical asset identifier to scope diff assessment.
@@ -439,8 +477,18 @@ class DuckDBGraphStore(BaseGraphStore):
         graph_t1 = self.get_full_graph(as_of=timestamp_t1)
         graph_t2 = self.get_full_graph(as_of=timestamp_t2)
 
-        nodes_t1 = {n["id"]: n for n in graph_t1.get("nodes", [])}
-        nodes_t2 = {n["id"]: n for n in graph_t2.get("nodes", [])}
+        target_clean = (start_node_id or "").strip()
+        is_global = not target_clean or target_clean.lower() in ["all", "enterprise", "global", "none"]
+
+        if is_global:
+            scoped_ids_t1 = {n["id"] for n in graph_t1.get("nodes", [])}
+            scoped_ids_t2 = {n["id"] for n in graph_t2.get("nodes", [])}
+        else:
+            scoped_ids_t1 = self._get_scoped_node_ids(graph_t1, target_clean, as_of=timestamp_t1)
+            scoped_ids_t2 = self._get_scoped_node_ids(graph_t2, target_clean, as_of=timestamp_t2)
+
+        nodes_t1 = {n["id"]: n for n in graph_t1.get("nodes", []) if n["id"] in scoped_ids_t1}
+        nodes_t2 = {n["id"]: n for n in graph_t2.get("nodes", []) if n["id"] in scoped_ids_t2}
 
         added_nodes = [n for nid, n in nodes_t2.items() if nid not in nodes_t1]
         removed_nodes = [n for nid, n in nodes_t1.items() if nid not in nodes_t2]
@@ -452,8 +500,16 @@ class DuckDBGraphStore(BaseGraphStore):
                 if n1.get("properties") != n2.get("properties") or n1.get("description") != n2.get("description"):
                     modified_nodes.append({"id": nid, "before": n1, "after": n2})
 
-        edges_t1 = {(e["source_id"], e["target_id"], e["type"]) for e in graph_t1.get("edges", [])}
-        edges_t2 = {(e["source_id"], e["target_id"], e["type"]) for e in graph_t2.get("edges", [])}
+        edges_t1 = {
+            (e["source_id"], e["target_id"], e["type"])
+            for e in graph_t1.get("edges", [])
+            if e["source_id"] in scoped_ids_t1 or e["target_id"] in scoped_ids_t1
+        }
+        edges_t2 = {
+            (e["source_id"], e["target_id"], e["type"])
+            for e in graph_t2.get("edges", [])
+            if e["source_id"] in scoped_ids_t2 or e["target_id"] in scoped_ids_t2
+        }
 
         added_edges = [
             {"source_id": s, "target_id": t, "type": ty}
