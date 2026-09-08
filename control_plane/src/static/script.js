@@ -179,6 +179,91 @@ function filterGraph() {
   renderNetwork(visibleNodes, visibleEdges);
 }
 
+function computeDagNodeLevels(nodes, edgesData) {
+  const levels = {};
+  const inDegree = {};
+  const adj = {};
+
+  const isBackbone = (n) => {
+    const raw = n.rawNode || n;
+    const type = raw.type || n.type;
+    return (type === 'Dataset' || type === 'Pipeline');
+  };
+
+  const backboneNodes = nodes.filter(n => isBackbone(n));
+  const backboneIds = new Set(backboneNodes.map(n => n.id));
+
+  backboneIds.forEach(id => {
+    inDegree[id] = 0;
+    adj[id] = [];
+  });
+
+  edgesData.forEach(e => {
+    if (e.type !== 'BELONGS_TO' && backboneIds.has(e.source_id) && backboneIds.has(e.target_id)) {
+      if (e.source_id !== e.target_id) {
+        adj[e.source_id].push(e.target_id);
+        inDegree[e.target_id] = (inDegree[e.target_id] || 0) + 1;
+      }
+    }
+  });
+
+  const queue = [];
+  backboneIds.forEach(id => {
+    if (inDegree[id] === 0) {
+      queue.push(id);
+      levels[id] = 0;
+    }
+  });
+
+  while (queue.length > 0) {
+    const curr = queue.shift();
+    const currLevel = levels[curr] || 0;
+
+    (adj[curr] || []).forEach(neighbor => {
+      levels[neighbor] = Math.max(levels[neighbor] || 0, currLevel + 1);
+      inDegree[neighbor]--;
+      if (inDegree[neighbor] === 0) {
+        queue.push(neighbor);
+      }
+    });
+  }
+
+  backboneIds.forEach(id => {
+    if (levels[id] === undefined) levels[id] = 0;
+  });
+
+  // Assign satellite levels
+  nodes.forEach(n => {
+    const raw = n.rawNode || n;
+    const type = raw.type || n.type;
+    if (!isBackbone(n)) {
+      if (type === 'ColumnCloud' || type === 'Column') {
+        let datasetId = (raw.properties) ? raw.properties.dataset_id : null;
+        if (!datasetId && n.id.includes('__column_cloud')) {
+          datasetId = n.id.replace('__column_cloud', '');
+        }
+        if (datasetId && levels[datasetId] !== undefined) {
+          levels[n.id] = levels[datasetId]; // Placed on same level column as parent dataset
+        } else {
+          levels[n.id] = 0;
+        }
+      } else if (type === 'User') {
+        let maxParentLevel = 0;
+        edgesData.forEach(e => {
+          if (e.target_id === n.id && levels[e.source_id] !== undefined) {
+            maxParentLevel = Math.max(maxParentLevel, levels[e.source_id]);
+          }
+        });
+        levels[n.id] = maxParentLevel + 1;
+      } else {
+        levels[n.id] = 0;
+      }
+    }
+  });
+
+  return levels;
+}
+
 function renderNetwork(nodesData, edgesData) {
   const isHierarchical = (document.getElementById('layout-mode').value === 'hierarchical');
 
@@ -286,6 +371,14 @@ function renderNetwork(nodesData, edgesData) {
         properties: { dataset_id: dsId, total_columns: cols.length }
       }
     });
+  });
+
+  // Calculate topological levels so Datasets and Pipelines form the core LR flow, with satellites on same/adjacent ranks
+  const nodeLevels = computeDagNodeLevels(formattedNodes, edgesData);
+  formattedNodes.forEach(n => {
+    if (nodeLevels[n.id] !== undefined) {
+      n.level = nodeLevels[n.id];
+    }
   });
 
   // Format edges: deduplicate BELONGS_TO edges to connect Column Cloud node to dataset
