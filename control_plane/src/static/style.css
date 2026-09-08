@@ -498,7 +498,17 @@ select {
   flex-direction: column;
   z-index: 25;
   overflow: hidden;
-  transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s ease, opacity 0.2s ease;
+  transition: left 0.35s cubic-bezier(0.16, 1, 0.3, 1), right 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s ease, opacity 0.2s ease;
+}
+
+.chat-drawer.dock-left {
+  left: 16px !important;
+  right: auto !important;
+}
+
+.chat-drawer.dock-right {
+  right: 16px !important;
+  left: auto !important;
 }
 
 .chat-header {
