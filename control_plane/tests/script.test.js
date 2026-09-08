@@ -64,3 +64,43 @@ test('switchDiffTab toggles active tab classes and display styles', () => {
   assert.ok(elements['tab-btn-prompt'].classList.contains('active'));
   assert.equal(elements['diff-tab-prompt'].style.display, 'flex');
 });
+
+test('parseNodeProperties safely parses stringified JSON or returns property object', () => {
+  assert.deepEqual(script.parseNodeProperties(null), {});
+  assert.deepEqual(script.parseNodeProperties({ properties: { a: 1 } }), { a: 1 });
+  assert.deepEqual(script.parseNodeProperties({ properties: '{"b": 2}' }), { b: 2 });
+  assert.deepEqual(script.parseNodeProperties({ properties: 'invalid json' }), { raw: 'invalid json' });
+});
+
+test('buildColumnToDatasetMap maps column IDs to dataset IDs accurately', () => {
+  const nodes = [
+    { id: 'db.schema.tbl.col1', type: 'Column', properties: { dataset_id: 'db.schema.tbl' } },
+    { id: 'db.schema.tbl.col2', type: 'Column' }
+  ];
+  const edges = [
+    { source_id: 'db.schema.tbl.col2', target_id: 'db.schema.tbl', type: 'BELONGS_TO' }
+  ];
+
+  const map = script.buildColumnToDatasetMap(nodes, edges);
+  assert.equal(map['db.schema.tbl.col1'], 'db.schema.tbl');
+  assert.equal(map['db.schema.tbl.col2'], 'db.schema.tbl');
+});
+
+test('computeDeterministicPositions assigns explicit X and Y coordinates in LR mode', () => {
+  const nodes = [
+    { id: 'raw_table', type: 'Dataset' },
+    { id: 'stg_pipe', type: 'Pipeline' },
+    { id: 'marts_table', type: 'Dataset' }
+  ];
+  const edges = [
+    { from: 'raw_table', to: 'stg_pipe' },
+    { from: 'stg_pipe', to: 'marts_table' }
+  ];
+
+  script.computeDeterministicPositions(nodes, edges, true);
+
+  assert.equal(nodes[0].x, 0);
+  assert.equal(nodes[1].x, 360);
+  assert.equal(nodes[2].x, 720);
+  assert.equal(typeof nodes[0].y, 'number');
+});

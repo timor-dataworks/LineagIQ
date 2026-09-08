@@ -13,14 +13,54 @@ let lastDiffResult = null;
 const typeColors = {
   'Dataset': { background: '#0284c7', border: 'transparent', highlight: '#06b6d4' },
   'Column': { background: '#7c3aed', border: 'transparent', highlight: '#a855f7' },
+  'ColumnCloud': { background: '#2e1065', border: '#7c3aed', highlight: '#c084fc' },
   'Pipeline': { background: '#d97706', border: 'transparent', highlight: '#f59e0b' },
   'User': { background: '#059669', border: 'transparent', highlight: '#10b981' },
   'BusinessTerm': { background: '#e11d48', border: 'transparent', highlight: '#f43f5e' }
 };
 
+const getEl = (id) => (typeof document !== 'undefined' ? document.getElementById(id) : null);
+const getVal = (id, fallback = '') => {
+  const el = getEl(id);
+  return el ? el.value.trim() || fallback : fallback;
+};
+
+function parseNodeProperties(node) {
+  if (!node || !node.properties) return {};
+  if (typeof node.properties === 'object') return node.properties;
+  if (typeof node.properties === 'string') {
+    try {
+      return JSON.parse(node.properties);
+    } catch (e) {
+      return { raw: node.properties };
+    }
+  }
+  return {};
+}
+
+function buildColumnToDatasetMap(nodes, edges) {
+  const map = {};
+  (nodes || []).forEach(n => {
+    if (n.type === 'Column') {
+      const props = parseNodeProperties(n);
+      let dsId = props.dataset_id;
+      if (!dsId && n.id && n.id.includes('.')) {
+        dsId = n.id.substring(0, n.id.lastIndexOf('.'));
+      }
+      if (dsId) map[n.id] = dsId;
+    }
+  });
+  (edges || []).forEach(e => {
+    if (e.type === 'BELONGS_TO' && e.source_id && e.target_id) {
+      map[e.source_id] = e.target_id;
+    }
+  });
+  return map;
+}
+
 async function loadTimeline() {
-  const tenantId = document.getElementById('tenant-input').value.trim() || 'demo_tenant';
-  const dataPath = document.getElementById('data-path-input').value.trim();
+  const tenantId = getVal('tenant-input', 'demo_tenant');
+  const dataPath = getVal('data-path-input');
   let url = `/api/v1/tenants/${tenantId}/timeline`;
   if (dataPath) url += `?data_path=${encodeURIComponent(dataPath)}`;
 
@@ -30,17 +70,33 @@ async function loadTimeline() {
     const data = await response.json();
     availableTimestamps = data.timestamps || [];
 
-    const panel = document.getElementById('timeline-panel');
-    const slider = document.getElementById('timeline-slider');
+    const panel = getEl('timeline-panel');
+    const slider = getEl('timeline-slider');
+    const label = getEl('timeline-label');
 
-    if (availableTimestamps.length > 1) {
+    if (panel && slider && availableTimestamps.length > 1) {
       panel.style.display = 'flex';
+      slider.min = 0;
       slider.max = availableTimestamps.length - 1;
+      slider.step = 1;
+
       if (currentAsOfTimestamp === null) {
         slider.value = availableTimestamps.length - 1;
-        document.getElementById('timeline-label').innerText = 'LIVE (Latest)';
+        const lastItem = availableTimestamps[availableTimestamps.length - 1];
+        if (label) label.innerText = `LIVE (v${lastItem ? lastItem.version : 'Latest'})`;
+      } else {
+        const matchingIdx = availableTimestamps.findIndex(t => t.timestamp === currentAsOfTimestamp);
+        if (matchingIdx !== -1) {
+          slider.value = matchingIdx;
+          const currentItem = availableTimestamps[matchingIdx];
+          if (label) label.innerHTML = `v${currentItem.version} <span style="color: var(--accent-cyan);">${currentItem.timestamp}</span>`;
+        } else {
+          slider.value = availableTimestamps.length - 1;
+          currentAsOfTimestamp = null;
+          if (label) label.innerText = 'LIVE (Latest)';
+        }
       }
-    } else {
+    } else if (panel) {
       panel.style.display = 'none';
     }
   } catch (err) {
@@ -48,30 +104,49 @@ async function loadTimeline() {
   }
 }
 
+let timelineDebounceTimer = null;
+
 function onTimelineSliderChange(val) {
   const idx = parseInt(val, 10);
-  if (idx === availableTimestamps.length - 1) {
+  const label = getEl('timeline-label');
+  const maxIdx = availableTimestamps.length - 1;
+
+  if (isNaN(idx) || maxIdx < 0) return;
+
+  const clampedIdx = Math.max(0, Math.min(idx, maxIdx));
+
+  if (clampedIdx === maxIdx) {
     currentAsOfTimestamp = null;
-    document.getElementById('timeline-label').innerText = 'LIVE (Latest)';
-  } else if (idx < availableTimestamps.length) {
-    const item = availableTimestamps[idx];
-    currentAsOfTimestamp = item.timestamp;
-    document.getElementById('timeline-label').innerHTML = `v${item.version} <span style="color: var(--accent-cyan);">${item.timestamp}</span>`;
+    const lastItem = availableTimestamps[maxIdx];
+    if (label) label.innerText = `LIVE (v${lastItem ? lastItem.version : 'Latest'})`;
+  } else {
+    const item = availableTimestamps[clampedIdx];
+    if (item) {
+      currentAsOfTimestamp = item.timestamp;
+      if (label) label.innerHTML = `v${item.version} <span style="color: var(--accent-cyan);">${item.timestamp}</span>`;
+    }
   }
-  loadGraph(false);
+
+  if (timelineDebounceTimer) clearTimeout(timelineDebounceTimer);
+  timelineDebounceTimer = setTimeout(() => {
+    loadGraph(false);
+  }, 200);
 }
 
 function resetTimelineLive() {
-  const slider = document.getElementById('timeline-slider');
-  slider.value = availableTimestamps.length > 0 ? availableTimestamps.length - 1 : 0;
+  const slider = getEl('timeline-slider');
+  const label = getEl('timeline-label');
+  const maxIdx = availableTimestamps.length > 0 ? availableTimestamps.length - 1 : 0;
+  if (slider) slider.value = maxIdx;
   currentAsOfTimestamp = null;
-  document.getElementById('timeline-label').innerText = 'LIVE (Latest)';
+  const lastItem = availableTimestamps[maxIdx];
+  if (label) label.innerText = `LIVE (v${lastItem ? lastItem.version : 'Latest'})`;
   loadGraph(false);
 }
 
 async function loadGraph(refreshTimeline = true) {
-  const tenantId = document.getElementById('tenant-input').value.trim() || 'demo_tenant';
-  const dataPath = document.getElementById('data-path-input').value.trim();
+  const tenantId = getVal('tenant-input', 'demo_tenant');
+  const dataPath = getVal('data-path-input');
 
   let url = `/api/v1/tenants/${tenantId}/graph`;
   const params = [];
@@ -90,12 +165,12 @@ async function loadGraph(refreshTimeline = true) {
     filterGraph();
     if (refreshTimeline) loadTimeline();
   } catch (err) {
-    alert(`Error loading graph: ${err.message}`);
+    console.error("Error loading graph:", err);
   }
 }
 
 function handleSearchInput() {
-  const searchTerm = document.getElementById('search-input').value.trim();
+  const searchTerm = getVal('search-input');
   if (!searchTerm) {
     vectorMatchedIds = null;
     filterGraph();
@@ -109,8 +184,8 @@ function handleSearchInput() {
 }
 
 async function performVectorSearch(queryText) {
-  const tenantId = document.getElementById('tenant-input').value.trim() || 'demo_tenant';
-  const dataPath = document.getElementById('data-path-input').value.trim();
+  const tenantId = getVal('tenant-input', 'demo_tenant');
+  const dataPath = getVal('data-path-input');
 
   try {
     const response = await fetch(`/api/v1/tenants/${tenantId}/discovery`, {
@@ -125,12 +200,7 @@ async function performVectorSearch(queryText) {
     });
     if (!response.ok) throw new Error("Vector search HTTP error");
     const data = await response.json();
-    
-    if (data.matched_nodes && data.matched_nodes.length > 0) {
-      vectorMatchedIds = new Set(data.matched_nodes.map(n => n.id));
-    } else {
-      vectorMatchedIds = new Set();
-    }
+    vectorMatchedIds = new Set((data.matched_nodes || []).map(n => n.id));
   } catch (err) {
     console.warn("Vector search fallback to local filter:", err);
     vectorMatchedIds = null;
@@ -140,13 +210,13 @@ async function performVectorSearch(queryText) {
 }
 
 function filterGraph() {
-  const viewMode = document.getElementById('view-mode').value;
-  const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+  const viewMode = getVal('view-mode', 'high_level');
+  const searchTerm = getVal('search-input').toLowerCase();
 
-  document.getElementById('legend-column').style.display = (viewMode === 'all') ? 'flex' : 'none';
+  const legendCol = getEl('legend-column');
+  if (legendCol) legendCol.style.display = (viewMode === 'all') ? 'flex' : 'none';
 
   let visibleNodes = [...rawNodes];
-
   if (viewMode === 'high_level') {
     visibleNodes = visibleNodes.filter(n => n.type !== 'Column');
   }
@@ -165,33 +235,11 @@ function filterGraph() {
     }
   }
 
-  // Column ID to parent dataset ID mapping for dataset-level lineage synthesis
-  const colToDatasetMap = {};
-  rawNodes.forEach(n => {
-    if (n.type === 'Column') {
-      let dsId = null;
-      if (n.properties) {
-        try {
-          const props = (typeof n.properties === 'string') ? JSON.parse(n.properties) : n.properties;
-          if (props.dataset_id) dsId = props.dataset_id;
-        } catch (e) {}
-      }
-      if (!dsId && n.id.includes('.')) {
-        dsId = n.id.substring(0, n.id.lastIndexOf('.'));
-      }
-      if (dsId) colToDatasetMap[n.id] = dsId;
-    }
-  });
-
-  rawEdges.forEach(e => {
-    if (e.type === 'BELONGS_TO') {
-      colToDatasetMap[e.source_id] = e.target_id;
-    }
-  });
-
+  const colToDatasetMap = buildColumnToDatasetMap(rawNodes, rawEdges);
   const visibleIds = new Set(visibleNodes.map(n => n.id));
-  const visibleEdges = [];
   const edgeDedupe = new Set();
+  const joinEdgesByPair = {};
+  const nonJoinEdges = [];
 
   rawEdges.forEach(e => {
     if (viewMode === 'high_level' && e.type === 'BELONGS_TO') return;
@@ -205,31 +253,49 @@ function filterGraph() {
     }
 
     if (srcId && tgtId && visibleIds.has(srcId) && visibleIds.has(tgtId) && srcId !== tgtId) {
-      let effectiveSrc = srcId;
-      let effectiveTgt = tgtId;
-
       if (e.type === 'JOINS_WITH') {
-        if (srcId.includes('TRANSACTIONS') && (tgtId.includes('USERS') || tgtId.includes('PRODUCTS'))) {
-          effectiveSrc = tgtId;
-          effectiveTgt = srcId;
-        }
-      }
+        const pairKey = [srcId, tgtId].sort().join('--');
+        const rawSrc = (e.source_id || '').toLowerCase();
+        const rawTgt = (e.target_id || '').toLowerCase();
 
-      const key = `${effectiveSrc}->${effectiveTgt}:${e.type}`;
-      if (!edgeDedupe.has(key)) {
-        edgeDedupe.add(key);
-        visibleEdges.push({
-          ...e,
-          source_id: effectiveSrc,
-          target_id: effectiveTgt
-        });
+        // In dimensional data modeling, primary key dimension tables (.id) are upstream
+        // of referencing foreign key fact tables (_id). Orient joins Left-to-Right (PK -> FK).
+        let score = 0;
+        if (rawSrc.endsWith('.id') && rawTgt.includes('_id')) {
+          score = 2;
+        } else if (rawSrc.includes('_id') && rawTgt.endsWith('.id')) {
+          score = 1;
+        }
+
+        if (!joinEdgesByPair[pairKey] || score > joinEdgesByPair[pairKey].score) {
+          joinEdgesByPair[pairKey] = {
+            edge: { ...e, source_id: srcId, target_id: tgtId },
+            score: score
+          };
+        }
+      } else {
+        const key = `${srcId}->${tgtId}:${e.type}`;
+        if (!edgeDedupe.has(key)) {
+          edgeDedupe.add(key);
+          nonJoinEdges.push({
+            ...e,
+            source_id: srcId,
+            target_id: tgtId
+          });
+        }
       }
     }
   });
 
-  // Update Header Stats
-  document.getElementById('stat-node-count').innerText = visibleNodes.length;
-  document.getElementById('stat-edge-count').innerText = visibleEdges.length;
+  const visibleEdges = [...nonJoinEdges];
+  Object.values(joinEdgesByPair).forEach(item => {
+    visibleEdges.push(item.edge);
+  });
+
+  const nodeCountEl = getEl('stat-node-count');
+  const edgeCountEl = getEl('stat-edge-count');
+  if (nodeCountEl) nodeCountEl.innerText = visibleNodes.length;
+  if (edgeCountEl) edgeCountEl.innerText = visibleEdges.length;
 
   renderNetwork(visibleNodes, visibleEdges);
 }
@@ -254,10 +320,12 @@ function computeDagNodeLevels(nodes, edgesData) {
   });
 
   edgesData.forEach(e => {
-    if (e.type !== 'BELONGS_TO' && backboneIds.has(e.source_id) && backboneIds.has(e.target_id)) {
-      if (e.source_id !== e.target_id) {
-        adj[e.source_id].push(e.target_id);
-        inDegree[e.target_id] = (inDegree[e.target_id] || 0) + 1;
+    const src = e.source_id || e.from;
+    const tgt = e.target_id || e.to;
+    if (e.type !== 'BELONGS_TO' && backboneIds.has(src) && backboneIds.has(tgt)) {
+      if (src !== tgt) {
+        adj[src].push(tgt);
+        inDegree[tgt] = (inDegree[tgt] || 0) + 1;
       }
     }
   });
@@ -287,26 +355,24 @@ function computeDagNodeLevels(nodes, edgesData) {
     if (levels[id] === undefined) levels[id] = 0;
   });
 
-  // Assign satellite levels
   nodes.forEach(n => {
     const raw = n.rawNode || n;
     const type = raw.type || n.type;
     if (!isBackbone(n)) {
       if (type === 'ColumnCloud' || type === 'Column') {
-        let datasetId = (raw.properties) ? raw.properties.dataset_id : null;
+        const props = parseNodeProperties(raw);
+        let datasetId = props.dataset_id;
         if (!datasetId && n.id.includes('__column_cloud')) {
           datasetId = n.id.replace('__column_cloud', '');
         }
-        if (datasetId && levels[datasetId] !== undefined) {
-          levels[n.id] = levels[datasetId]; // Placed on same level column as parent dataset
-        } else {
-          levels[n.id] = 0;
-        }
+        levels[n.id] = (datasetId && levels[datasetId] !== undefined) ? levels[datasetId] : 0;
       } else if (type === 'User') {
         let maxParentLevel = 0;
         edgesData.forEach(e => {
-          if (e.target_id === n.id && levels[e.source_id] !== undefined) {
-            maxParentLevel = Math.max(maxParentLevel, levels[e.source_id]);
+          const src = e.source_id || e.from;
+          const tgt = e.target_id || e.to;
+          if (tgt === n.id && levels[src] !== undefined) {
+            maxParentLevel = Math.max(maxParentLevel, levels[src]);
           }
         });
         levels[n.id] = maxParentLevel + 1;
@@ -319,41 +385,16 @@ function computeDagNodeLevels(nodes, edgesData) {
   return levels;
 }
 
-function renderNetwork(nodesData, edgesData) {
-  const isHierarchical = (document.getElementById('layout-mode').value === 'hierarchical');
-
-  // Separate non-column nodes and column nodes
+function formatGraphNodes(nodesData, edgesData) {
   const nonColumnNodes = nodesData.filter(n => n.type !== 'Column');
   const columnNodes = nodesData.filter(n => n.type === 'Column');
 
-  // Map each column to its parent dataset_id
-  const columnToParentMap = {};
+  const columnToParentMap = buildColumnToDatasetMap(nodesData, edgesData);
   const columnsByDataset = {};
 
-  // Identify parent dataset from BELONGS_TO edges
-  edgesData.forEach(e => {
-    if (e.type === 'BELONGS_TO') {
-      const srcNode = nodesData.find(n => n.id === e.source_id);
-      const tgtNode = nodesData.find(n => n.id === e.target_id);
-      if (srcNode && srcNode.type === 'Column' && tgtNode && tgtNode.type === 'Dataset') {
-        columnToParentMap[srcNode.id] = tgtNode.id;
-      }
-    }
-  });
-
   columnNodes.forEach(c => {
-    let parentId = columnToParentMap[c.id];
-    if (!parentId && c.properties) {
-      try {
-        const props = (typeof c.properties === 'string') ? JSON.parse(c.properties) : c.properties;
-        if (props.dataset_id) parentId = props.dataset_id;
-      } catch (err) {}
-    }
-    if (!parentId && c.id.includes('.')) {
-      parentId = c.id.substring(0, c.id.lastIndexOf('.'));
-    }
+    const parentId = columnToParentMap[c.id];
     if (parentId) {
-      columnToParentMap[c.id] = parentId;
       if (!columnsByDataset[parentId]) columnsByDataset[parentId] = [];
       columnsByDataset[parentId].push(c);
     }
@@ -382,7 +423,6 @@ function renderNetwork(nodesData, edgesData) {
     };
   });
 
-  // Aggregate columns into a single Column Cloud node per dataset table
   const columnCloudNodeMap = {};
   Object.keys(columnsByDataset).forEach(dsId => {
     const cols = columnsByDataset[dsId];
@@ -390,13 +430,8 @@ function renderNetwork(nodesData, edgesData) {
     columnCloudNodeMap[dsId] = cloudId;
 
     const colLines = cols.map(c => {
-      let dataTypeStr = '';
-      if (c.properties) {
-        try {
-          const props = (typeof c.properties === 'string') ? JSON.parse(c.properties) : c.properties;
-          if (props.data_type || props.type) dataTypeStr = ` (${props.data_type || props.type})`;
-        } catch (err) {}
-      }
+      const props = parseNodeProperties(c);
+      const dataTypeStr = (props.data_type || props.type) ? ` (${props.data_type || props.type})` : '';
       return `• ${c.name || c.id}${dataTypeStr}`;
     });
 
@@ -428,15 +463,10 @@ function renderNetwork(nodesData, edgesData) {
     });
   });
 
-  // Calculate topological levels so Datasets and Pipelines form the core LR flow, with satellites on same/adjacent ranks
-  const nodeLevels = computeDagNodeLevels(formattedNodes, edgesData);
-  formattedNodes.forEach(n => {
-    if (nodeLevels[n.id] !== undefined) {
-      n.level = nodeLevels[n.id];
-    }
-  });
+  return { formattedNodes, columnToParentMap, columnCloudNodeMap };
+}
 
-  // Format edges: deduplicate BELONGS_TO edges to connect Column Cloud node to dataset
+function formatGraphEdges(edgesData, columnToParentMap, columnCloudNodeMap, isHierarchical) {
   const formattedEdges = [];
   const processedCloudEdges = new Set();
 
@@ -474,56 +504,139 @@ function renderNetwork(nodesData, edgesData) {
         arrows: { to: { enabled: true, scaleFactor: 0.8 } },
         color: { color: 'rgba(255, 255, 255, 0.45)', highlight: '#06b6d4' },
         font: {
-          color: '#ffffff',
+          color: '#e2e8f0',
           size: 10,
           face: 'Inter',
-          align: 'middle',
-          strokeWidth: 0,
-          background: 'rgba(15, 23, 42, 0.9)'
+          align: 'horizontal',
+          strokeWidth: 2,
+          strokeColor: '#0f172a',
+          background: 'rgba(15, 23, 42, 0.8)'
         },
         smooth: isHierarchical ? { type: 'cubicBezier', forceDirection: 'horizontal' } : { type: 'continuous' }
       });
     }
   });
 
+  return formattedEdges;
+}
+
+function computeDeterministicPositions(formattedNodes, formattedEdges, isHierarchical) {
+  const levels = computeDagNodeLevels(formattedNodes, formattedEdges);
+
+  const nodesByLevel = {};
+  formattedNodes.forEach(n => {
+    const lvl = levels[n.id] !== undefined ? levels[n.id] : 0;
+    n.level = lvl;
+    if (!nodesByLevel[lvl]) nodesByLevel[lvl] = [];
+    nodesByLevel[lvl].push(n);
+  });
+
+  if (!isHierarchical) return;
+
+  const levelsSorted = Object.keys(nodesByLevel).map(Number).sort((a, b) => a - b);
+
+  levelsSorted.forEach(lvl => {
+    const allAtLvl = nodesByLevel[lvl];
+    const backboneAtLvl = allAtLvl.filter(n => !n.id.endsWith('__column_cloud') && n.type !== 'ColumnCloud');
+    const cloudAtLvl = allAtLvl.filter(n => n.id.endsWith('__column_cloud') || n.type === 'ColumnCloud');
+
+    const count = backboneAtLvl.length;
+    const baseSpacing = 280;
+    const startY = -((count - 1) / 2) * baseSpacing;
+
+    backboneAtLvl.forEach((n, idx) => {
+      n.x = lvl * 360;
+      n.y = startY + (idx * baseSpacing);
+
+      const cloudNode = cloudAtLvl.find(c => c.id === `${n.id}__column_cloud`);
+      if (cloudNode) {
+        cloudNode.x = n.x;
+        cloudNode.y = n.y + 130;
+      }
+    });
+
+    const remainingSatellites = allAtLvl.filter(n => n.x === undefined);
+    remainingSatellites.forEach((n, idx) => {
+      n.x = lvl * 360;
+      n.y = startY + ((count + idx) * baseSpacing);
+    });
+  });
+}
+
+function renderNetwork(nodesData, edgesData) {
+  const isHierarchical = (getVal('layout-mode') === 'hierarchical');
+
+  const { formattedNodes, columnToParentMap, columnCloudNodeMap } = formatGraphNodes(nodesData, edgesData);
+  const formattedEdges = formatGraphEdges(edgesData, columnToParentMap, columnCloudNodeMap, isHierarchical);
+
+  computeDeterministicPositions(formattedNodes, formattedEdges, isHierarchical);
+
+  if (isHierarchical) {
+    // Pure Vis.js native hierarchical LR layout:
+    // Remove manual coordinate overrides so Vis.js DAG engine manages ranks and spacing natively
+    formattedNodes.forEach(n => {
+      delete n.x;
+      delete n.y;
+      delete n.level;
+    });
+  }
+
+  if (network && nodesDataSet && edgesDataSet) {
+    const prevPosition = network.getViewPosition();
+    const prevScale = network.getScale();
+
+    nodesDataSet.clear();
+    nodesDataSet.add(formattedNodes);
+    edgesDataSet.clear();
+    edgesDataSet.add(formattedEdges);
+
+    network.moveTo({ position: prevPosition, scale: prevScale, animation: false });
+    return;
+  }
+
   nodesDataSet = new vis.DataSet(formattedNodes);
   edgesDataSet = new vis.DataSet(formattedEdges);
 
-  const container = document.getElementById('network-canvas');
+  const container = getEl('network-canvas');
   const data = { nodes: nodesDataSet, edges: edgesDataSet };
 
   const options = {
-    nodes: {
-      borderWidth: 0,
-      shadow: false
-    },
+    nodes: { borderWidth: 0, shadow: false },
     edges: {
       width: 2,
-      shadow: false
+      shadow: false,
+      smooth: isHierarchical ? { type: 'cubicBezier', forceDirection: 'horizontal' } : { type: 'continuous' }
     },
     layout: {
       hierarchical: {
         enabled: isHierarchical,
         direction: 'LR',
         sortMethod: 'directed',
-        nodeSpacing: 180,
         levelSeparation: 240,
-        treeSpacing: 200,
+        nodeSpacing: 100,
+        treeSpacing: 45,
         blockShifting: true,
         edgeMinimization: true,
         parentCentralization: true
       }
     },
     physics: {
-      enabled: !isHierarchical,
-      solver: 'forceAtlas2Based',
+      enabled: true,
+      solver: isHierarchical ? 'hierarchicalRepulsion' : 'forceAtlas2Based',
+      hierarchicalRepulsion: {
+        centralGravity: 0.0,
+        springLength: 100,
+        springConstant: 0.01,
+        nodeDistance: 90,
+        damping: 0.09
+      },
       forceAtlas2Based: {
         gravitationalConstant: -40,
         centralGravity: 0.01,
         springLength: 100,
         springConstant: 0.08
       },
-      stabilization: { iterations: 100 }
+      stabilization: { iterations: 120 }
     },
     interaction: { hover: true, tooltipDelay: 200 }
   };
@@ -531,15 +644,8 @@ function renderNetwork(nodesData, edgesData) {
   if (network) network.destroy();
   network = new vis.Network(container, data, options);
 
-  // Trigger automatic horizontal alignment and viewport fit
-  setTimeout(() => {
-    alignLineageHorizontalHeights();
-    if (network) network.fit({ animation: false });
-  }, 100);
-
   network.once("stabilizationIterationsDone", function () {
-    alignLineageHorizontalHeights();
-    if (network) network.fit({ animation: { duration: 400 } });
+    if (network) network.fit({ animation: false });
   });
 
   network.on("selectNode", function (params) {
@@ -558,112 +664,6 @@ function renderNetwork(nodesData, edgesData) {
   });
 }
 
-function alignLineageHorizontalHeights() {
-  if (!network || !nodesDataSet || !edgesDataSet) return;
-
-  const isHierarchical = (document.getElementById('layout-mode').value === 'hierarchical');
-  if (!isHierarchical) return;
-
-  const positions = network.getPositions();
-  const allNodes = nodesDataSet.get();
-  const allEdges = edgesDataSet.get();
-
-  const isBackbone = (n) => {
-    const raw = n.rawNode || n;
-    const type = raw.type || n.type;
-    return (type === 'Dataset' || type === 'Pipeline');
-  };
-
-  const backboneNodes = allNodes.filter(n => isBackbone(n));
-  const backboneIds = new Set(backboneNodes.map(n => n.id));
-
-  // Build directional adjacency for lineage
-  const outAdj = {};
-  const inAdj = {};
-
-  backboneIds.forEach(id => {
-    outAdj[id] = [];
-    inAdj[id] = [];
-  });
-
-  allEdges.forEach(e => {
-    if (e.from !== e.to && backboneIds.has(e.from) && backboneIds.has(e.to)) {
-      outAdj[e.from].push(e.to);
-      inAdj[e.to].push(e.from);
-    }
-  });
-
-  // Root backbone nodes (in-degree 0)
-  const rootIds = backboneNodes.filter(n => inAdj[n.id].length === 0).map(n => n.id);
-
-  const alignedY = {};
-  const visited = new Set();
-  let currentYOffset = 0;
-
-  rootIds.forEach(rootId => {
-    if (visited.has(rootId)) return;
-
-    const initialY = (positions[rootId] && positions[rootId].y !== undefined)
-      ? positions[rootId].y
-      : currentYOffset;
-
-    alignedY[rootId] = initialY;
-    const queue = [rootId];
-    visited.add(rootId);
-
-    while (queue.length > 0) {
-      const curr = queue.shift();
-      const currY = alignedY[curr];
-
-      (outAdj[curr] || []).forEach(childId => {
-        if (!visited.has(childId)) {
-          alignedY[childId] = currY; // Set child Y to EXACT same horizontal height as parent!
-          visited.add(childId);
-          queue.push(childId);
-        }
-      });
-    }
-
-    currentYOffset += 240;
-  });
-
-  // Handle any disconnected backbone nodes
-  backboneNodes.forEach(n => {
-    if (alignedY[n.id] === undefined) {
-      alignedY[n.id] = (positions[n.id] && positions[n.id].y !== undefined) ? positions[n.id].y : 0;
-    }
-  });
-
-  const updates = [];
-  backboneNodes.forEach(n => {
-    if (alignedY[n.id] !== undefined && positions[n.id]) {
-      updates.push({
-        id: n.id,
-        x: positions[n.id].x,
-        y: alignedY[n.id]
-      });
-    }
-  });
-
-  // Align Column Cloud satellites directly below their parent dataset
-  allNodes.forEach(n => {
-    if (n.id.endsWith('__column_cloud')) {
-      const parentId = n.id.replace('__column_cloud', '');
-      if (alignedY[parentId] !== undefined && positions[parentId]) {
-        updates.push({
-          id: n.id,
-          x: positions[parentId].x,
-          y: alignedY[parentId] + 150
-        });
-      }
-    }
-  });
-
-  if (updates.length > 0) {
-    nodesDataSet.update(updates);
-  }
-}
-
 function fitGraphView() {
   if (network) {
     network.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
@@ -676,61 +676,86 @@ function toggleLayout() {
 
 function displayNodeDetails(node) {
   if (!node) return;
-  document.getElementById('inspector-empty').style.display = 'none';
-  const content = document.getElementById('inspector-content');
-  content.style.display = 'flex';
+  const sidebar = getEl('sidebar');
+  if (sidebar) sidebar.style.display = 'flex';
 
-  document.getElementById('panel-node-name').innerText = node.name || node.id;
-  document.getElementById('panel-node-id').innerText = node.id;
-  document.getElementById('panel-node-desc').innerText = node.description || 'No detailed description specified.';
-  let propsObj = {};
-  if (typeof node.properties === 'string') {
-    try {
-      propsObj = JSON.parse(node.properties);
-    } catch (e) {
-      propsObj = { raw: node.properties };
-    }
-  } else if (typeof node.properties === 'object' && node.properties !== null) {
-    propsObj = node.properties;
+  const emptyInspector = getEl('inspector-empty');
+  const contentInspector = getEl('inspector-content');
+  if (emptyInspector) emptyInspector.style.display = 'none';
+  if (contentInspector) contentInspector.style.display = 'flex';
+
+  const nameEl = getEl('panel-node-name');
+  const idEl = getEl('panel-node-id');
+  const descEl = getEl('panel-node-desc');
+  const propsEl = getEl('panel-node-props');
+  const badgeEl = getEl('panel-node-type');
+  const blastBtn = getEl('blast-btn');
+  const rootBtn = getEl('root-cause-btn');
+
+  if (nameEl) nameEl.innerText = node.name || node.id;
+  if (idEl) idEl.innerText = node.id;
+  if (descEl) descEl.innerText = node.description || 'No detailed description specified.';
+
+  const propsObj = parseNodeProperties(node);
+  if (propsEl) propsEl.innerText = JSON.stringify(propsObj, null, 2);
+
+  if (badgeEl) {
+    badgeEl.innerText = node.type || 'Node';
+    badgeEl.className = `node-badge badge-${node.type || 'Dataset'}`;
   }
-  document.getElementById('panel-node-props').innerText = JSON.stringify(propsObj, null, 2);
 
-  const badge = document.getElementById('panel-node-type');
-  badge.innerText = node.type || 'Node';
-  badge.className = `node-badge badge-${node.type || 'Dataset'}`;
-
-  document.getElementById('blast-btn').style.display = 'block';
-  document.getElementById('root-cause-btn').style.display = 'block';
+  if (blastBtn) {
+    blastBtn.style.display = 'block';
+    blastBtn.innerText = '⚡ Compute Downstream Blast Radius';
+    blastBtn.disabled = false;
+  }
+  if (rootBtn) {
+    rootBtn.style.display = 'block';
+    rootBtn.innerText = '🔍 Compute Upstream Root Cause';
+    rootBtn.disabled = false;
+  }
 }
 
 function highlightConnected(nodeId) {
+  if (!network || !nodesDataSet) return;
   const connectedNodes = new Set(network.getConnectedNodes(nodeId));
   connectedNodes.add(nodeId);
 
   const allNodes = nodesDataSet.get();
-  const updatedNodes = allNodes.map(n => {
-    const isConnected = connectedNodes.has(n.id);
-    return {
-      id: n.id,
-      opacity: isConnected ? 1.0 : 0.15
-    };
-  });
+  const updatedNodes = allNodes.map(n => ({
+    id: n.id,
+    opacity: connectedNodes.has(n.id) ? 1.0 : 0.15
+  }));
   nodesDataSet.update(updatedNodes);
 }
 
 function resetSidebar() {
-  document.getElementById('inspector-content').style.display = 'none';
-  document.getElementById('inspector-empty').style.display = 'flex';
-  document.getElementById('blast-btn').style.display = 'none';
-  document.getElementById('root-cause-btn').style.display = 'none';
+  const sidebar = getEl('sidebar');
+  if (sidebar) sidebar.style.display = 'none';
+
+  const contentInspector = getEl('inspector-content');
+  const emptyInspector = getEl('inspector-empty');
+  const blastBtn = getEl('blast-btn');
+  const rootBtn = getEl('root-cause-btn');
+
+  if (contentInspector) contentInspector.style.display = 'none';
+  if (emptyInspector) emptyInspector.style.display = 'none';
+  if (blastBtn) blastBtn.style.display = 'none';
+  if (rootBtn) rootBtn.style.display = 'none';
+  selectedNodeId = null;
 }
 
 async function triggerBlastRadius() {
   if (!selectedNodeId) return;
-  const tenantId = document.getElementById('tenant-input').value.trim() || 'demo_tenant';
-  const dataPath = document.getElementById('data-path-input').value.trim();
+  const tenantId = getVal('tenant-input', 'demo_tenant');
+  const dataPath = getVal('data-path-input');
+  const blastBtn = getEl('blast-btn');
 
   try {
+    if (blastBtn) {
+      blastBtn.innerText = '⏳ Calculating Blast Radius...';
+      blastBtn.disabled = true;
+    }
     const response = await fetch(`/api/v1/tenants/${tenantId}/blast-radius`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -739,33 +764,43 @@ async function triggerBlastRadius() {
     const result = await response.json();
 
     const impactedIds = new Set((result.impacted_nodes || []).map(n => n.id));
-
     const currentNodes = nodesDataSet.get();
     const updatedNodes = currentNodes.map(n => {
       const isImpacted = impactedIds.has(n.id);
-      const color = isImpacted
-        ? { background: '#b91c1c', border: '#ef4444', highlight: { background: '#dc2626', border: '#ef4444' }, hover: { background: '#dc2626', border: '#ef4444' } }
-        : { background: '#1e293b', border: 'transparent' };
       return {
         id: n.id,
-        color: color,
+        color: isImpacted
+          ? { background: '#b91c1c', border: '#ef4444', highlight: { background: '#dc2626', border: '#ef4444' }, hover: { background: '#dc2626', border: '#ef4444' } }
+          : { background: '#1e293b', border: 'transparent' },
         opacity: isImpacted ? 1.0 : 0.25
       };
     });
 
     nodesDataSet.update(updatedNodes);
-    alert(`Blast Radius Calculation Complete!\n${result.impacted_nodes_count} downstream assets impacted.`);
+    if (blastBtn) {
+      blastBtn.innerText = `⚡ Downstream: ${result.impacted_nodes_count} assets impacted`;
+      blastBtn.disabled = false;
+    }
   } catch (err) {
-    alert(`Error calculating blast radius: ${err.message}`);
+    console.error("Error calculating blast radius:", err);
+    if (blastBtn) {
+      blastBtn.innerText = '⚠️ Calculation Failed';
+      blastBtn.disabled = false;
+    }
   }
 }
 
 async function triggerRootCause() {
   if (!selectedNodeId) return;
-  const tenantId = document.getElementById('tenant-input').value.trim() || 'demo_tenant';
-  const dataPath = document.getElementById('data-path-input').value.trim();
+  const tenantId = getVal('tenant-input', 'demo_tenant');
+  const dataPath = getVal('data-path-input');
+  const rootBtn = getEl('root-cause-btn');
 
   try {
+    if (rootBtn) {
+      rootBtn.innerText = '⏳ Calculating Root Cause...';
+      rootBtn.disabled = true;
+    }
     const response = await fetch(`/api/v1/tenants/${tenantId}/root-cause`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -774,24 +809,29 @@ async function triggerRootCause() {
     const result = await response.json();
 
     const upstreamIds = new Set((result.upstream_nodes || []).map(n => n.id));
-
     const currentNodes = nodesDataSet.get();
     const updatedNodes = currentNodes.map(n => {
       const isUpstream = upstreamIds.has(n.id);
-      const color = isUpstream
-        ? { background: '#d97706', border: '#f59e0b', highlight: { background: '#b45309', border: '#f59e0b' }, hover: { background: '#b45309', border: '#f59e0b' } }
-        : { background: '#1e293b', border: 'transparent' };
       return {
         id: n.id,
-        color: color,
+        color: isUpstream
+          ? { background: '#d97706', border: '#f59e0b', highlight: { background: '#b45309', border: '#f59e0b' }, hover: { background: '#b45309', border: '#f59e0b' } }
+          : { background: '#1e293b', border: 'transparent' },
         opacity: isUpstream ? 1.0 : 0.25
       };
     });
 
     nodesDataSet.update(updatedNodes);
-    alert(`Upstream Root Cause Calculation Complete!\n${result.upstream_nodes_count} upstream assets & dependencies identified.`);
+    if (rootBtn) {
+      rootBtn.innerText = `🔍 Upstream: ${result.upstream_nodes_count} dependencies found`;
+      rootBtn.disabled = false;
+    }
   } catch (err) {
-    alert(`Error calculating upstream root cause: ${err.message}`);
+    console.error("Error calculating upstream root cause:", err);
+    if (rootBtn) {
+      rootBtn.innerText = '⚠️ Calculation Failed';
+      rootBtn.disabled = false;
+    }
   }
 }
 
@@ -801,53 +841,63 @@ function resetGraphHighlight() {
 }
 
 function toggleChatDrawer() {
-  const drawer = document.getElementById('chat-drawer');
-  drawer.style.display = (drawer.style.display === 'none' || !drawer.style.display) ? 'flex' : 'none';
+  const drawer = getEl('chat-drawer');
+  if (drawer) drawer.style.display = (drawer.style.display === 'none' || !drawer.style.display) ? 'flex' : 'none';
 }
 
 function toggleChatSettings() {
-  const panel = document.getElementById('chat-settings');
-  panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'flex' : 'none';
+  const panel = getEl('chat-settings');
+  if (panel) panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'flex' : 'none';
 }
 
 function saveLlmSettings() {
-  const apiKey = document.getElementById('cfg-api-key').value;
-  const baseUrl = document.getElementById('cfg-base-url').value;
-  const model = document.getElementById('cfg-model').value;
-  localStorage.setItem('lineagiq_api_key', apiKey);
-  localStorage.setItem('lineagiq_base_url', baseUrl);
-  localStorage.setItem('lineagiq_model', model);
+  const apiKey = getVal('cfg-api-key');
+  const baseUrl = getVal('cfg-base-url');
+  const model = getVal('cfg-model');
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('lineagiq_api_key', apiKey);
+    localStorage.setItem('lineagiq_base_url', baseUrl);
+    localStorage.setItem('lineagiq_model', model);
+  }
 }
 
 function loadLlmSettings() {
+  if (typeof localStorage === 'undefined') return;
   const apiKey = localStorage.getItem('lineagiq_api_key') || '';
   const baseUrl = localStorage.getItem('lineagiq_base_url') || '';
   const model = localStorage.getItem('lineagiq_model') || '';
-  if (document.getElementById('cfg-api-key')) document.getElementById('cfg-api-key').value = apiKey;
-  if (document.getElementById('cfg-base-url')) document.getElementById('cfg-base-url').value = baseUrl;
-  if (document.getElementById('cfg-model')) document.getElementById('cfg-model').value = model;
+
+  const keyEl = getEl('cfg-api-key');
+  const urlEl = getEl('cfg-base-url');
+  const modelEl = getEl('cfg-model');
+
+  if (keyEl) keyEl.value = apiKey;
+  if (urlEl) urlEl.value = baseUrl;
+  if (modelEl) modelEl.value = model;
 }
 
 function applySuggestedPrompt(promptText) {
-  document.getElementById('chat-input').value = promptText;
+  const inputEl = getEl('chat-input');
+  if (inputEl) inputEl.value = promptText;
   sendChatMessage();
 }
 
 async function sendChatMessage() {
-  const inputEl = document.getElementById('chat-input');
+  const inputEl = getEl('chat-input');
+  if (!inputEl) return;
   const message = inputEl.value.trim();
   if (!message) return;
 
-  const tenantId = document.getElementById('tenant-input').value.trim() || 'demo_tenant';
-  const dataPath = document.getElementById('data-path-input').value.trim();
+  const tenantId = getVal('tenant-input', 'demo_tenant');
+  const dataPath = getVal('data-path-input');
 
-  const apiKey = document.getElementById('cfg-api-key').value.trim() || undefined;
-  const baseUrl = document.getElementById('cfg-base-url').value.trim() || undefined;
-  const model = document.getElementById('cfg-model').value.trim() || undefined;
+  const apiKey = getVal('cfg-api-key') || undefined;
+  const baseUrl = getVal('cfg-base-url') || undefined;
+  const model = getVal('cfg-model') || undefined;
 
-  const messagesContainer = document.getElementById('chat-messages');
+  const messagesContainer = getEl('chat-messages');
+  if (!messagesContainer) return;
 
-  // Append user bubble
   const userMsgDiv = document.createElement('div');
   userMsgDiv.className = 'chat-msg chat-msg-user';
   userMsgDiv.innerHTML = `<div class="msg-bubble">${escapeHtml(message)}</div>`;
@@ -856,7 +906,6 @@ async function sendChatMessage() {
   inputEl.value = '';
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-  // Append loading AI bubble
   const aiLoadingDiv = document.createElement('div');
   aiLoadingDiv.className = 'chat-msg chat-msg-ai';
   aiLoadingDiv.innerHTML = `<div class="msg-bubble"><em>Analyzing Knowledge Graph...</em></div>`;
@@ -875,19 +924,20 @@ async function sendChatMessage() {
         openai_model: model
       })
     });
-    
+
     if (!response.ok) throw new Error("API request failed");
     const data = await response.json();
 
-    // Update AI response
-    aiLoadingDiv.querySelector('.msg-bubble').innerHTML = formatMarkdown(data.reply);
+    const bubble = aiLoadingDiv.querySelector('.msg-bubble');
+    if (bubble) bubble.innerHTML = formatMarkdown(data.reply);
 
     if (data.target_node_id && typeof highlightConnected === 'function') {
       selectedNodeId = data.target_node_id;
       highlightConnected(data.target_node_id);
     }
   } catch (err) {
-    aiLoadingDiv.querySelector('.msg-bubble').innerHTML = `<span style="color: var(--accent-rose);">Error: ${escapeHtml(err.message)}</span>`;
+    const bubble = aiLoadingDiv.querySelector('.msg-bubble');
+    if (bubble) bubble.innerHTML = `<span style="color: var(--accent-rose);">Error: ${escapeHtml(err.message)}</span>`;
   }
 
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -908,18 +958,20 @@ function formatMarkdown(text) {
 }
 
 function openTimeDiffModal() {
-  const modal = document.getElementById('time-diff-modal');
-  modal.style.display = 'flex';
+  const modal = getEl('time-diff-modal');
+  if (modal) modal.style.display = 'flex';
   populateDiffDropdowns();
 }
 
 function closeTimeDiffModal() {
-  document.getElementById('time-diff-modal').style.display = 'none';
+  const modal = getEl('time-diff-modal');
+  if (modal) modal.style.display = 'none';
 }
 
 function populateDiffDropdowns() {
-  const sel1 = document.getElementById('diff-t1-select');
-  const sel2 = document.getElementById('diff-t2-select');
+  const sel1 = getEl('diff-t1-select');
+  const sel2 = getEl('diff-t2-select');
+  if (!sel1 || !sel2) return;
   sel1.innerHTML = '';
   sel2.innerHTML = '';
 
@@ -944,17 +996,18 @@ function populateDiffDropdowns() {
   sel1.selectedIndex = 0;
   sel2.selectedIndex = availableTimestamps.length - 1;
 
-  if (selectedNodeId && document.getElementById('diff-node-input')) {
-    document.getElementById('diff-node-input').value = selectedNodeId;
+  const nodeInput = getEl('diff-node-input');
+  if (selectedNodeId && nodeInput) {
+    nodeInput.value = selectedNodeId;
   }
 }
 
 async function executeTimeDiff() {
-  const t1 = document.getElementById('diff-t1-select').value;
-  const t2 = document.getElementById('diff-t2-select').value;
-  const nodeId = document.getElementById('diff-node-input').value.trim();
-  const tenantId = document.getElementById('tenant-input').value.trim() || 'demo_tenant';
-  const dataPath = document.getElementById('data-path-input').value.trim();
+  const t1 = getVal('diff-t1-select');
+  const t2 = getVal('diff-t2-select');
+  const nodeId = getVal('diff-node-input');
+  const tenantId = getVal('tenant-input', 'demo_tenant');
+  const dataPath = getVal('data-path-input');
 
   if (!t1 || !t2) {
     alert("Please select baseline (T1) and compare (T2) timestamps.");
@@ -984,20 +1037,29 @@ async function executeTimeDiff() {
     const addedEdges = diff.added_edges || [];
     const removedEdges = diff.removed_edges || [];
 
-    document.getElementById('diff-count-added').innerText = addedNodes.length;
-    document.getElementById('diff-count-removed').innerText = removedNodes.length;
-    document.getElementById('diff-count-modified').innerText = modifiedNodes.length;
-    document.getElementById('diff-count-edges').innerText = addedEdges.length + removedEdges.length;
+    const cntAdded = getEl('diff-count-added');
+    const cntRemoved = getEl('diff-count-removed');
+    const cntModified = getEl('diff-count-modified');
+    const cntEdges = getEl('diff-count-edges');
 
-    document.getElementById('badge-tab-added').innerText = addedNodes.length;
-    document.getElementById('badge-tab-removed').innerText = removedNodes.length;
-    document.getElementById('badge-tab-modified').innerText = modifiedNodes.length;
-    document.getElementById('badge-tab-edges').innerText = addedEdges.length + removedEdges.length;
+    if (cntAdded) cntAdded.innerText = addedNodes.length;
+    if (cntRemoved) cntRemoved.innerText = removedNodes.length;
+    if (cntModified) cntModified.innerText = modifiedNodes.length;
+    if (cntEdges) cntEdges.innerText = addedEdges.length + removedEdges.length;
 
-    // Render Added
-    const addedContainer = document.getElementById('diff-tab-added');
-    if (addedNodes.length > 0) {
-      addedContainer.innerHTML = addedNodes.map(n => `
+    const bdgAdded = getEl('badge-tab-added');
+    const bdgRemoved = getEl('badge-tab-removed');
+    const bdgModified = getEl('badge-tab-modified');
+    const bdgEdges = getEl('badge-tab-edges');
+
+    if (bdgAdded) bdgAdded.innerText = addedNodes.length;
+    if (bdgRemoved) bdgRemoved.innerText = removedNodes.length;
+    if (bdgModified) bdgModified.innerText = modifiedNodes.length;
+    if (bdgEdges) bdgEdges.innerText = addedEdges.length + removedEdges.length;
+
+    const addedContainer = getEl('diff-tab-added');
+    if (addedContainer) {
+      addedContainer.innerHTML = addedNodes.length > 0 ? addedNodes.map(n => `
         <div class="diff-item-row">
           <div>
             <span class="diff-tag-added">[+] ADDED</span>
@@ -1006,15 +1068,12 @@ async function executeTimeDiff() {
           </div>
           <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(n.description || n.id)}</span>
         </div>
-      `).join('');
-    } else {
-      addedContainer.innerHTML = `<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No assets added between selected timestamps.</div>`;
+      `).join('') : `<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No assets added between selected timestamps.</div>`;
     }
 
-    // Render Removed
-    const removedContainer = document.getElementById('diff-tab-removed');
-    if (removedNodes.length > 0) {
-      removedContainer.innerHTML = removedNodes.map(n => `
+    const removedContainer = getEl('diff-tab-removed');
+    if (removedContainer) {
+      removedContainer.innerHTML = removedNodes.length > 0 ? removedNodes.map(n => `
         <div class="diff-item-row">
           <div>
             <span class="diff-tag-removed">[-] REMOVED</span>
@@ -1023,15 +1082,12 @@ async function executeTimeDiff() {
           </div>
           <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(n.description || n.id)}</span>
         </div>
-      `).join('');
-    } else {
-      removedContainer.innerHTML = `<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No assets removed between selected timestamps.</div>`;
+      `).join('') : `<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No assets removed between selected timestamps.</div>`;
     }
 
-    // Render Modified
-    const modifiedContainer = document.getElementById('diff-tab-modified');
-    if (modifiedNodes.length > 0) {
-      modifiedContainer.innerHTML = modifiedNodes.map(m => `
+    const modifiedContainer = getEl('diff-tab-modified');
+    if (modifiedContainer) {
+      modifiedContainer.innerHTML = modifiedNodes.length > 0 ? modifiedNodes.map(m => `
         <div class="diff-item-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
           <div>
             <span class="diff-tag-modified">[Δ] MODIFIED</span>
@@ -1043,19 +1099,16 @@ async function executeTimeDiff() {
             <span style="color: var(--accent-emerald);">After:</span> ${escapeHtml(JSON.stringify(m.after))}
           </div>
         </div>
-      `).join('');
-    } else {
-      modifiedContainer.innerHTML = `<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No schema properties modified.</div>`;
+      `).join('') : `<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No schema properties modified.</div>`;
     }
 
-    // Render Edges
-    const edgesContainer = document.getElementById('diff-tab-edges');
-    const allEdges = [
-      ...addedEdges.map(e => ({ mode: 'added', ...e })),
-      ...removedEdges.map(e => ({ mode: 'removed', ...e }))
-    ];
-    if (allEdges.length > 0) {
-      edgesContainer.innerHTML = allEdges.map(e => `
+    const edgesContainer = getEl('diff-tab-edges');
+    if (edgesContainer) {
+      const allEdges = [
+        ...addedEdges.map(e => ({ mode: 'added', ...e })),
+        ...removedEdges.map(e => ({ mode: 'removed', ...e }))
+      ];
+      edgesContainer.innerHTML = allEdges.length > 0 ? allEdges.map(e => `
         <div class="diff-item-row">
           <div>
             <span class="${e.mode === 'added' ? 'diff-tag-added' : 'diff-tag-removed'}">[${e.mode === 'added' ? '+' : '-'}] ${e.mode.toUpperCase()} LINEAGE</span>
@@ -1063,16 +1116,13 @@ async function executeTimeDiff() {
           </div>
           <span style="font-size: 11px; color: var(--text-muted);">${e.type || 'Edge'}</span>
         </div>
-      `).join('');
-    } else {
-      edgesContainer.innerHTML = `<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No lineage edges altered.</div>`;
+      `).join('') : `<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No lineage edges altered.</div>`;
     }
 
-    // Synthesized Prompt
-    document.getElementById('diff-prompt-content').innerText = data.synthesized_prompt || 'No prompt generated.';
+    const promptEl = getEl('diff-prompt-content');
+    if (promptEl) promptEl.innerText = data.synthesized_prompt || 'No prompt generated.';
 
     applyGraphDiffVisuals(diff);
-
   } catch (err) {
     alert(`Error executing time diff: ${err.message}`);
   }
@@ -1081,8 +1131,8 @@ async function executeTimeDiff() {
 function switchDiffTab(tabName) {
   const tabs = ['added', 'removed', 'modified', 'edges', 'prompt'];
   tabs.forEach(t => {
-    const btn = document.getElementById(`tab-btn-${t}`);
-    const content = document.getElementById(`diff-tab-${t}`);
+    const btn = getEl(`tab-btn-${t}`);
+    const content = getEl(`diff-tab-${t}`);
     if (t === tabName) {
       if (btn) btn.classList.add('active');
       if (content) content.style.display = 'flex';
@@ -1134,11 +1184,11 @@ function applyGraphDiffVisuals(diff) {
 function sendDiffToAiAssistant() {
   if (!lastDiffResult || !lastDiffResult.synthesized_prompt) return;
   closeTimeDiffModal();
-  const drawer = document.getElementById('chat-drawer');
-  drawer.style.display = 'flex';
+  const drawer = getEl('chat-drawer');
+  if (drawer) drawer.style.display = 'flex';
 
-  const inputEl = document.getElementById('chat-input');
-  inputEl.value = `Analyze historical schema drift and lineage changes:\n\n${lastDiffResult.synthesized_prompt}`;
+  const inputEl = getEl('chat-input');
+  if (inputEl) inputEl.value = `Analyze historical schema drift and lineage changes:\n\n${lastDiffResult.synthesized_prompt}`;
   sendChatMessage();
 }
 
@@ -1155,12 +1205,15 @@ if (typeof module !== 'undefined' && module.exports) {
     formatMarkdown,
     switchDiffTab,
     typeColors,
+    parseNodeProperties,
+    buildColumnToDatasetMap,
     onTimelineSliderChange,
     resetTimelineLive,
     displayNodeDetails,
     resetSidebar,
     saveLlmSettings,
     loadLlmSettings,
-    applySuggestedPrompt
+    applySuggestedPrompt,
+    computeDeterministicPositions
   };
 }

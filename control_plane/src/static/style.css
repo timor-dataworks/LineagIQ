@@ -636,6 +636,17 @@ select {
   width: 180px;
   accent-color: var(--accent-cyan);
   cursor: pointer;
+  flex-shrink: 0;
+}
+
+.timeline-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 220px;
+  white-space: nowrap;
+  display: inline-block;
+  font-family: 'Fira Code', monospace;
 }
 
 /* Modal Backdrop & Time Travel Diff Dashboard */

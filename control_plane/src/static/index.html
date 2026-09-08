@@ -13,8 +13,8 @@
     href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap"
     rel="stylesheet">
 
-  <!-- Vis.js Network Engine -->
-  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <!-- Vis.js Network Engine (Locally bundled) -->
+  <script type="text/javascript" src="/static/vis-network.min.js"></script>
 
   <!-- Extracted Stylesheet -->
   <link rel="stylesheet" href="/static/style.css">
@@ -28,9 +28,9 @@
       <div class="brand-logo">
         <svg viewBox="0 0 24 24">
           <circle cx="6" cy="6" r="3"></circle>
-          <circle cx="18" cy="18" r="3"></circle>
           <circle cx="18" cy="6" r="3"></circle>
-          <path d="M8.5 7.5L15.5 16.5M8.5 6H15.5"></path>
+          <circle cx="12" cy="18" r="3"></circle>
+          <path d="M6 9v3a3 3 0 0 0 3 3h3m6-6v3a3 3 0 0 1-3 3h-3"></path>
         </svg>
       </div>
       <span class="brand-title">LineagIQ</span>
@@ -48,54 +48,34 @@
         <span>Edges:</span>
         <span class="stat-value" id="stat-edge-count">0</span>
       </div>
-      <div class="stat-divider"></div>
-      <div class="stat-item">
-        <span>Engine:</span>
-        <span class="stat-value" style="color: var(--accent-cyan);">DuckDB</span>
-      </div>
     </div>
 
     <!-- Header Controls & Filters -->
     <div class="controls-group">
+      <!-- Background parameters for backend compatibility -->
+      <input type="hidden" id="layout-mode" value="hierarchical">
+      <input type="hidden" id="tenant-input" value="demo_tenant">
+      <input type="hidden" id="data-path-input" value="/tmp/tenants/demo_tenant">
+
       <div class="search-box">
-        <svg class="search-icon" viewBox="0 0 24 24">
+        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="11" cy="11" r="8" stroke-width="2"></circle>
           <path d="M21 21l-4.35-4.35" stroke-width="2" stroke-linecap="round"></path>
         </svg>
-        <input type="text" id="search-input" class="search-input" placeholder="⚡ Vector Search lineage..."
-          oninput="handleSearchInput()">
+        <input type="text" id="search-input" class="search-input" placeholder="⚡ Search lineage..."
+          aria-label="Search Lineage" oninput="handleSearchInput()">
       </div>
 
-      <select id="view-mode" onchange="filterGraph()" title="Lineage View Mode">
-        <option value="all">Full Detail (All Nodes)</option>
+      <select id="view-mode" onchange="filterGraph()" title="Lineage View Mode" aria-label="Lineage View Mode">
         <option value="high_level" selected>High-Level Lineage</option>
+        <option value="all">Full Detail (All Nodes)</option>
       </select>
 
-      <select id="layout-mode" onchange="toggleLayout()" title="Graph Layout Engine">
-        <option value="hierarchical">DAG Layout (LR)</option>
-        <option value="physics">Force Layout</option>
-      </select>
-
-      <input type="text" id="tenant-input" value="demo_tenant" style="width: 100px;" placeholder="Tenant ID">
-      <input type="text" id="data-path-input" value="/tmp/tenants/demo_tenant" style="width: 150px;"
-        placeholder="Data Path">
-
-      <button class="btn" onclick="loadGraph()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-        </svg>
-        Load
-      </button>
-
-      <button class="btn btn-secondary" onclick="fitGraphView()" title="Fit all nodes in viewport">
+      <button class="btn btn-secondary" onclick="fitGraphView()" title="Fit all nodes in viewport" aria-label="Fit View">
         🎯 Fit View
       </button>
 
-      <button class="btn btn-secondary" onclick="openTimeDiffModal()">
-        ⚡ Time Travel Diff
-      </button>
-
-      <button class="btn btn-secondary" onclick="toggleChatDrawer()">
+      <button class="btn btn-secondary" onclick="toggleChatDrawer()" aria-label="AI Assistant">
         🤖 AI Assistant
       </button>
     </div>
@@ -107,15 +87,15 @@
 
     <!-- Floating Timeline Scrubbing Panel Overlay -->
     <div class="timeline-panel" id="timeline-panel" style="display: none;">
-      <span style="font-size: 11px; font-weight: 700; color: var(--accent-cyan);">⏳ Time Travel:</span>
-      <span id="timeline-label" style="font-size: 11px; font-weight: 600; color: var(--text-primary);">LIVE (Latest)</span>
+      <span style="font-size: 11px; font-weight: 700; color: var(--accent-cyan); white-space: nowrap;">⏳ Time Travel:</span>
       <input type="range" id="timeline-slider" class="timeline-slider" min="0" max="0" value="0" step="1" oninput="onTimelineSliderChange(this.value)">
+      <span id="timeline-label" class="timeline-label">LIVE (Latest)</span>
       <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 10px;" onclick="resetTimelineLive()">Reset Live</button>
       <button class="btn" style="padding: 2px 8px; font-size: 10px; background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));" onclick="openTimeDiffModal()">⚡ Compare Diff</button>
     </div>
 
-    <!-- Right Sidebar Inspector Drawer -->
-    <aside class="sidebar" id="sidebar">
+    <!-- Right Sidebar Inspector Drawer (Hidden when not in use) -->
+    <aside class="sidebar" id="sidebar" style="display: none;">
 
       <!-- Populated State -->
       <div id="inspector-content" style="display: none; height: 100%; flex-direction: column; gap: 20px;">
@@ -124,7 +104,10 @@
             <span class="sidebar-title" id="panel-node-name">Select a Node</span>
             <span class="sidebar-subtitle" id="panel-node-subtitle">Asset Lineage Details</span>
           </div>
-          <span class="node-badge badge-Dataset" id="panel-node-type">Dataset</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="node-badge badge-Dataset" id="panel-node-type">Dataset</span>
+            <button class="icon-btn" onclick="resetSidebar(); resetGraphHighlight();" title="Close Panel" aria-label="Close Panel" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; line-height: 1; padding: 4px;">✕</button>
+          </div>
         </div>
 
         <div class="detail-group">
@@ -332,7 +315,7 @@
     </div>
   </div>
 
-  <script src="/static/script.js"></script>
+  <script src="/static/script.js?v=no_popups_v2"></script>
 </body>
 
 </html>
