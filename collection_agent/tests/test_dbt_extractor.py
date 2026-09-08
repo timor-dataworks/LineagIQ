@@ -12,13 +12,16 @@ def test_dbt_parse_manifest():
     extractor = DbtExtractor()
     nodes = extractor.parse_manifest(manifest_data)
 
-    assert len(nodes) == 2
+    assert len(nodes) == 3
     stg_cust = next(n for n in nodes if n["name"] == "stg_customers")
     assert stg_cust["type"] == "Dataset"
     assert stg_cust["database"] == "raw_db"
     assert stg_cust["schema"] == "analytics"
     assert "customer_id" in stg_cust["columns"]
     assert "source.jaffle_shop.raw_customers" in stg_cust["depends_on"]
+
+    prod_node = next(n for n in nodes if n["name"] == "dim_products")
+    assert len(prod_node["columns"]) == 6
 
 
 def test_dbt_parse_catalog():
@@ -28,13 +31,16 @@ def test_dbt_parse_catalog():
     extractor = DbtExtractor()
     catalog_nodes = extractor.parse_catalog(catalog_data)
 
-    assert len(catalog_nodes) == 1
+    assert len(catalog_nodes) == 2
     node = catalog_nodes[0]
     assert node["name"] == "stg_customers"
     assert node["owner"] == "analytics_admin"
     assert len(node["columns"]) == 2
     assert node["columns"][0]["name"] == "customer_id"
     assert node["columns"][0]["type"] == "NUMBER"
+
+    prod_catalog = next(n for n in catalog_nodes if n["name"] == "dim_products")
+    assert len(prod_catalog["columns"]) == 6
 
 
 def test_dbt_extract_lineage():
@@ -44,7 +50,7 @@ def test_dbt_extract_lineage():
     extractor = DbtExtractor()
     edges = extractor.extract_lineage(manifest_data)
 
-    assert len(edges) == 2
+    assert len(edges) == 3
     derived_edge = next(e for e in edges if e["target"] == "model.jaffle_shop.orders")
     assert derived_edge["source"] == "model.jaffle_shop.stg_customers"
     assert derived_edge["type"] == "DERIVED_FROM"

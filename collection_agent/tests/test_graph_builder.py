@@ -26,7 +26,7 @@ def test_graph_builder_dbt_ingestion():
     payload = builder.to_payload()
 
     assert len(payload.nodes) > 0
-    assert len(payload.edges) == 6
+    assert len(payload.edges) == 13
 
     node_types = {n.type for n in payload.nodes}
     assert NodeType.DATASET in node_types
@@ -46,8 +46,8 @@ def test_graph_builder_sql_ingestion():
     builder.ingesting_sql_catalog(tables, columns, fks)
     payload = builder.to_payload()
 
-    assert len(payload.nodes) == 5  # 2 tables + 3 columns
-    assert len(payload.edges) == 4
+    assert len(payload.nodes) == 12  # 3 tables + 9 columns
+    assert len(payload.edges) == 10  # 9 BELONGS_TO + 1 JOINS_WITH
     assert EdgeType.JOINS_WITH in {e.type for e in payload.edges}
 
 

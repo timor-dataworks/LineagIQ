@@ -12,10 +12,12 @@ def test_sql_parse_tables():
     extractor = SqlCatalogExtractor()
     tables = extractor.parse_tables(schema_data["tables"])
 
-    assert len(tables) == 2
+    assert len(tables) == 3
     users_tbl = next(t for t in tables if t["table_name"] == "USERS")
     assert users_tbl["id"] == "PROD_DB.PUBLIC.USERS"
     assert users_tbl["type"] == "Dataset"
+    prod_tbl = next(t for t in tables if t["table_name"] == "PRODUCTS")
+    assert prod_tbl["id"] == "PROD_DB.PUBLIC.PRODUCTS"
 
 
 def test_sql_parse_columns():
@@ -25,11 +27,14 @@ def test_sql_parse_columns():
     extractor = SqlCatalogExtractor()
     columns = extractor.parse_columns(schema_data["columns"])
 
-    assert len(columns) == 3
+    assert len(columns) == 9
     email_col = next(c for c in columns if c["column_name"] == "EMAIL")
     assert email_col["id"] == "PROD_DB.PUBLIC.USERS.EMAIL"
     assert email_col["data_type"] == "VARCHAR"
     assert email_col["is_nullable"] is True
+
+    prod_cols = [c for c in columns if c["dataset_id"] == "PROD_DB.PUBLIC.PRODUCTS"]
+    assert len(prod_cols) == 6
 
 
 def test_sql_parse_foreign_keys():

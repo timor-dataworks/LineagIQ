@@ -47,6 +47,45 @@
       "depends_on": {
         "nodes": ["model.jaffle_shop.stg_customers"]
       }
+    },
+    "model.jaffle_shop.dim_products": {
+      "resource_type": "model",
+      "name": "dim_products",
+      "schema": "analytics",
+      "database": "raw_db",
+      "description": "Product dimension table with pricing and cost info",
+      "meta": {
+        "owner": "product-team"
+      },
+      "columns": {
+        "product_id": {
+          "name": "product_id",
+          "description": "Primary key for products"
+        },
+        "product_name": {
+          "name": "product_name",
+          "description": "Commercial name of the product"
+        },
+        "category": {
+          "name": "category",
+          "description": "Product category classification"
+        },
+        "price": {
+          "name": "price",
+          "description": "Retail price in USD"
+        },
+        "cost": {
+          "name": "cost",
+          "description": "Manufacturing unit cost in USD"
+        },
+        "created_at": {
+          "name": "created_at",
+          "description": "Record creation timestamp"
+        }
+      },
+      "depends_on": {
+        "nodes": ["model.jaffle_shop.orders"]
+      }
     }
   }
 }

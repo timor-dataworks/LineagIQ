@@ -20,6 +20,47 @@
           "index": 2
         }
       }
+    },
+    "model.jaffle_shop.dim_products": {
+      "metadata": {
+        "type": "BASE TABLE",
+        "database": "raw_db",
+        "schema": "analytics",
+        "name": "dim_products",
+        "owner": "product_admin"
+      },
+      "columns": {
+        "product_id": {
+          "type": "NUMBER",
+          "comment": "Primary key",
+          "index": 1
+        },
+        "product_name": {
+          "type": "VARCHAR",
+          "comment": "Product name",
+          "index": 2
+        },
+        "category": {
+          "type": "VARCHAR",
+          "comment": "Product category",
+          "index": 3
+        },
+        "price": {
+          "type": "NUMBER",
+          "comment": "Retail price",
+          "index": 4
+        },
+        "cost": {
+          "type": "NUMBER",
+          "comment": "Manufacturing cost",
+          "index": 5
+        },
+        "created_at": {
+          "type": "TIMESTAMP",
+          "comment": "Creation timestamp",
+          "index": 6
+        }
+      }
     }
   }
 }
