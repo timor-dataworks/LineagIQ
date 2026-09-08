@@ -867,22 +867,20 @@ function updateChatDrawerPosition() {
     return;
   }
 
-  // Dynamic mode: move to left if node properties (sidebar) are opened, and back to right when closed
+  // Dynamic mode: when Node Properties is opened, move slightly to left so it docks to Node Properties right side;
+  // when closed, return smoothly to right edge (16px).
+  if (drawer.classList) {
+    drawer.classList.remove('dock-left');
+    drawer.classList.remove('dock-right');
+  }
+  drawer.style.left = 'auto';
+
   const sidebar = getEl('sidebar');
   const isSidebarVisible = sidebar && sidebar.style.display !== 'none' && (sidebar.offsetWidth > 0 || sidebar.offsetWidth === undefined);
   if (isSidebarVisible) {
-    if (drawer.classList) {
-      drawer.classList.remove('dock-right');
-      drawer.classList.add('dock-left');
-    }
-    drawer.style.left = '16px';
-    drawer.style.right = 'auto';
+    const sidebarWidth = (sidebar.offsetWidth && sidebar.offsetWidth > 0) ? sidebar.offsetWidth : 400;
+    drawer.style.right = `${sidebarWidth + 16}px`;
   } else {
-    if (drawer.classList) {
-      drawer.classList.remove('dock-left');
-      drawer.classList.add('dock-right');
-    }
-    drawer.style.left = 'auto';
     drawer.style.right = '16px';
   }
 }
@@ -899,8 +897,8 @@ function toggleChatDockMode() {
     showToast('AI Assistant docked to left');
   } else {
     chatDockMode = 'dynamic';
-    if (dockBtn) dockBtn.title = 'AI Assistant dynamic positioning (Left when node properties open, Right when closed)';
-    showToast('AI Assistant dynamic positioning active (Left on inspect, Right on close)');
+    if (dockBtn) dockBtn.title = 'AI Assistant dynamic positioning (Docks next to Node Properties when open, right edge when closed)';
+    showToast('AI Assistant dynamic positioning active (Docks next to Node Properties)');
   }
   updateChatDrawerPosition();
 }

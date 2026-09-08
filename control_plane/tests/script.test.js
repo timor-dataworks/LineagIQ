@@ -105,7 +105,7 @@ test('computeDeterministicPositions assigns explicit X and Y coordinates in LR m
   assert.equal(typeof nodes[0].y, 'number');
 });
 
-test('updateChatDrawerPosition moves drawer to left when node properties open, and back to right when closed', () => {
+test('updateChatDrawerPosition moves drawer slightly left when node properties open, docking next to sidebar, and back to right when closed', () => {
   const drawerClasses = new Set();
   const drawerStyle = { right: '', left: '', display: 'flex' };
   const sidebarStyle = { display: 'none' };
@@ -131,23 +131,19 @@ test('updateChatDrawerPosition moves drawer to left when node properties open, a
   script.updateChatDrawerPosition();
   assert.equal(drawerStyle.right, '16px');
   assert.equal(drawerStyle.left, 'auto');
-  assert.equal(drawerClasses.has('dock-right'), true);
-  assert.equal(drawerClasses.has('dock-left'), false);
 
-  // 2. Node properties sidebar is opened -> moves to left edge (left: 16px, right: auto)
+  // 2. Node properties sidebar is opened -> moves slightly to left to dock adjacent to sidebar (right: 416px, left: auto)
   sidebarStyle.display = 'flex';
   script.updateChatDrawerPosition();
-  assert.equal(drawerStyle.left, '16px');
-  assert.equal(drawerStyle.right, 'auto');
-  assert.equal(drawerClasses.has('dock-left'), true);
+  assert.equal(drawerStyle.right, '416px');
+  assert.equal(drawerStyle.left, 'auto');
+  assert.equal(drawerClasses.has('dock-left'), false);
   assert.equal(drawerClasses.has('dock-right'), false);
 
-  // 3. Node properties sidebar is closed -> moves back to right edge (right: 16px, left: auto)
+  // 3. Node properties sidebar is closed -> moves smoothly back to right edge (right: 16px, left: auto)
   sidebarStyle.display = 'none';
   script.updateChatDrawerPosition();
   assert.equal(drawerStyle.right, '16px');
   assert.equal(drawerStyle.left, 'auto');
-  assert.equal(drawerClasses.has('dock-right'), true);
-  assert.equal(drawerClasses.has('dock-left'), false);
 });
 
