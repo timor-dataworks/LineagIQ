@@ -87,6 +87,10 @@
         Load
       </button>
 
+      <button class="btn btn-secondary" onclick="fitGraphView()" title="Fit all nodes in viewport">
+        🎯 Fit View
+      </button>
+
       <button class="btn btn-secondary" onclick="openTimeDiffModal()">
         ⚡ Time Travel Diff
       </button>
@@ -575,8 +579,12 @@
             enabled: isHierarchical,
             direction: 'LR',
             sortMethod: 'directed',
-            nodeSpacing: 160,
-            levelSeparation: 220
+            nodeSpacing: 180,
+            levelSeparation: 240,
+            treeSpacing: 200,
+            blockShifting: true,
+            edgeMinimization: true,
+            parentCentralization: true
           }
         },
         physics: {
@@ -596,8 +604,13 @@
       if (network) network.destroy();
       network = new vis.Network(container, data, options);
 
+      // Trigger automatic viewport fit so all nodes (including columns) are immediately framed and visible
+      setTimeout(() => {
+        if (network) network.fit({ animation: false });
+      }, 100);
+
       network.once("stabilizationIterationsDone", function () {
-        network.fit();
+        if (network) network.fit({ animation: { duration: 400 } });
       });
 
       network.on("selectNode", function (params) {
@@ -614,6 +627,12 @@
         resetSidebar();
         resetGraphHighlight();
       });
+    }
+
+    function fitGraphView() {
+      if (network) {
+        network.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
+      }
     }
 
     function toggleLayout() {
