@@ -50,6 +50,15 @@
     {
       "table_catalog": "PROD_DB",
       "table_schema": "PUBLIC",
+      "table_name": "TRANSACTIONS",
+      "column_name": "PRODUCT_ID",
+      "data_type": "INTEGER",
+      "is_nullable": "NO",
+      "ordinal_position": 2
+    },
+    {
+      "table_catalog": "PROD_DB",
+      "table_schema": "PUBLIC",
       "table_name": "PRODUCTS",
       "column_name": "ID",
       "data_type": "INTEGER",
@@ -113,6 +122,17 @@
       "pk_table": "USERS",
       "pk_column": "ID",
       "constraint_name": "FK_TXN_USERS"
+    },
+    {
+      "fk_catalog": "PROD_DB",
+      "fk_schema": "PUBLIC",
+      "fk_table": "TRANSACTIONS",
+      "fk_column": "PRODUCT_ID",
+      "pk_catalog": "PROD_DB",
+      "pk_schema": "PUBLIC",
+      "pk_table": "PRODUCTS",
+      "pk_column": "ID",
+      "constraint_name": "FK_TXN_PRODUCTS"
     }
   ]
 }

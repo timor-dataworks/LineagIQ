@@ -10,5 +10,11 @@
     "user_name": "bob_engineer",
     "query_text": "SELECT * FROM analytics.stg_customers",
     "start_time": "2026-09-07T10:05:00Z"
+  },
+  {
+    "query_id": "q-1003",
+    "user_name": "alice_analyst",
+    "query_text": "SELECT p.NAME, t.PRODUCT_ID FROM PROD_DB.PUBLIC.PRODUCTS JOIN PROD_DB.PUBLIC.TRANSACTIONS ON PRODUCTS.ID = TRANSACTIONS.PRODUCT_ID",
+    "start_time": "2026-09-07T10:10:00Z"
   }
 ]

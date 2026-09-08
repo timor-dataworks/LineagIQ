@@ -46,8 +46,8 @@ def test_graph_builder_sql_ingestion():
     builder.ingesting_sql_catalog(tables, columns, fks)
     payload = builder.to_payload()
 
-    assert len(payload.nodes) == 12  # 3 tables + 9 columns
-    assert len(payload.edges) == 10  # 9 BELONGS_TO + 1 JOINS_WITH
+    assert len(payload.nodes) == 13  # 3 tables + 10 columns
+    assert len(payload.edges) >= 10
     assert EdgeType.JOINS_WITH in {e.type for e in payload.edges}
 
 

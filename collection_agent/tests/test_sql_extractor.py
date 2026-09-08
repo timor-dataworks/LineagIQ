@@ -27,7 +27,7 @@ def test_sql_parse_columns():
     extractor = SqlCatalogExtractor()
     columns = extractor.parse_columns(schema_data["columns"])
 
-    assert len(columns) == 9
+    assert len(columns) == 10
     email_col = next(c for c in columns if c["column_name"] == "EMAIL")
     assert email_col["id"] == "PROD_DB.PUBLIC.USERS.EMAIL"
     assert email_col["data_type"] == "VARCHAR"
@@ -44,8 +44,8 @@ def test_sql_parse_foreign_keys():
     extractor = SqlCatalogExtractor()
     fk_edges = extractor.parse_foreign_keys(schema_data["foreign_keys"])
 
-    assert len(fk_edges) == 1
-    fk = fk_edges[0]
+    assert len(fk_edges) == 2
+    fk = next(e for e in fk_edges if e["constraint_name"] == "FK_TXN_USERS")
     assert fk["source"] == "PROD_DB.PUBLIC.TRANSACTIONS.USER_ID"
     assert fk["target"] == "PROD_DB.PUBLIC.USERS.ID"
     assert fk["type"] == "JOINS_WITH"
