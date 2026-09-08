@@ -40,6 +40,10 @@ def test_artifact_writer_parquet_and_vectors(tmp_path):
     assert edges_table.num_rows == 1
     assert "source_id" in edges_table.column_names
 
-    # Verify Vectors Dir
-    vectors_dir = output_paths["vectors"]
-    assert os.path.exists(vectors_dir)
+    # Verify Vectors Parquet
+    vectors_file = output_paths["vectors"]
+    assert os.path.exists(vectors_file)
+    vectors_table = pq.read_table(vectors_file)
+    assert vectors_table.num_rows == 2
+    assert "vector" in vectors_table.column_names
+

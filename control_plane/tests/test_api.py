@@ -90,3 +90,68 @@ def test_discovery_api(tmp_path):
     assert data["tenant_id"] == "tenant123"
     assert data["matched_nodes_count"] == 1
     assert "LINEAGIQ GRAPHRAG PROMPT: SEMANTIC DATA DISCOVERY" in data["synthesized_prompt"]
+
+
+def test_lineage_ai_chat_api(tmp_path):
+    ds_node = DatasetNode(id="analytics.orders", name="orders", description="Cleaned orders")
+    payload = GraphPayload(nodes=[ds_node], edges=[])
+    writer = ArtifactWriter()
+    writer.write_all(payload, str(tmp_path))
+
+    response = client.post(
+        "/api/v1/tenants/tenant123/chat",
+        json={
+            "message": "What is the blast radius of orders?",
+            "data_path": str(tmp_path),
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["tenant_id"] == "tenant123"
+    assert "Blast Radius Analysis" in data["reply"]
+    assert "synthesized_prompt" in data
+
+
+def test_root_cause_api(tmp_path):
+    ds_node = DatasetNode(id="analytics.orders", name="orders", description="Cleaned orders")
+    payload = GraphPayload(nodes=[ds_node], edges=[])
+    writer = ArtifactWriter()
+    writer.write_all(payload, str(tmp_path))
+
+    response = client.post(
+        "/api/v1/tenants/tenant123/root-cause",
+        json={
+            "node_id": "analytics.orders",
+            "max_depth": 3,
+            "data_path": str(tmp_path),
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["tenant_id"] == "tenant123"
+    assert data["target_node"]["id"] == "analytics.orders"
+    assert "UPSTREAM ROOT CAUSE" in data["synthesized_prompt"]
+
+
+def test_lineage_ai_chat_root_cause_intent(tmp_path):
+    ds_node = DatasetNode(id="analytics.orders", name="orders", description="Cleaned orders")
+    payload = GraphPayload(nodes=[ds_node], edges=[])
+    writer = ArtifactWriter()
+    writer.write_all(payload, str(tmp_path))
+
+    response = client.post(
+        "/api/v1/tenants/tenant123/chat",
+        json={
+            "message": "What is the upstream root cause of orders?",
+            "data_path": str(tmp_path),
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["tenant_id"] == "tenant123"
+    assert "Upstream Root Cause Analysis" in data["reply"]
+    assert "synthesized_prompt" in data
+
