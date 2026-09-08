@@ -30,6 +30,7 @@ control_plane/
 │   ├── agent_tools.py          # Agentic Retriever Tools & LineagIQGraphRAGClient
 │   └── main.py                 # FastAPI application endpoints
 └── tests/
+    ├── script.test.js          # Node.js unit tests for extracted client script.js
     ├── test_agent_tools.py     # Unit tests for Agentic Retriever Tools
     ├── test_api.py             # Integration tests for FastAPI endpoints
     ├── test_query_engine.py    # Unit tests for query engine & prompt synthesis

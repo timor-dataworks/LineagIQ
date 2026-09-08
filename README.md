@@ -197,8 +197,12 @@ Open your web browser to test interactive endpoints:
 ---
 
 ### 6. Run Full Test Suite
-Run all 48 unit and integration tests across `collection_agent` and `control_plane`:
+Run all Python unit/integration tests and JavaScript client unit tests:
 
 ```bash
+# Run Python backend test suite (48 tests)
 python3 -m pytest collection_agent/tests/ control_plane/tests/
+
+# Run JavaScript visualizer client test suite (4 tests)
+node --test control_plane/tests/script.test.js
 ```
