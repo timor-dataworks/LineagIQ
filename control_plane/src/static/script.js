@@ -1041,8 +1041,36 @@ function escapeHtml(str) {
 function formatMarkdown(text) {
   if (!text) return "";
   let html = escapeHtml(text);
-  html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+  // Multiline code blocks ```...```
+  html = html.replace(/```(?:[a-zA-Z0-9_-]+)?\n?([\s\S]*?)```/g, (match, code) => {
+    return `<pre style="background: rgba(2, 6, 23, 0.7); padding: 8px 12px; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border-subtle); margin: 6px 0; font-family: 'Fira Code', monospace; font-size: 12px; color: #38bdf8;"><code>${code.trim()}</code></pre>`;
+  });
+
+  // Inline code `...`
   html = html.replace(/`([^`]+)`/g, "<code style='background: rgba(2, 6, 23, 0.6); color: #38bdf8; padding: 2px 6px; border-radius: 4px;'>$1</code>");
+
+  // Bold **...**
+  html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+  // LaTeX & Math arrows and symbols (e.g. $\rightarrow$, \rightarrow, $\to$, $\leftarrow$)
+  html = html.replace(/\$\s*\\+(?:rightarrow|to)\s*\$/g, "→");
+  html = html.replace(/\\+(?:rightarrow|to)\b/g, "→");
+  html = html.replace(/\$\s*\\+leftarrow\s*\$/g, "←");
+  html = html.replace(/\\+leftarrow\b/g, "←");
+  html = html.replace(/\$\s*\\+Rightarrow\s*\$/g, "⇒");
+  html = html.replace(/\\+Rightarrow\b/g, "⇒");
+  html = html.replace(/\$\s*\\+Leftarrow\s*\$/g, "⇐");
+  html = html.replace(/\\+Leftarrow\b/g, "⇐");
+  html = html.replace(/\$\s*\\+leftrightarrow\s*\$/g, "↔");
+  html = html.replace(/\\+leftrightarrow\b/g, "↔");
+  html = html.replace(/\$\s*\\+Leftrightarrow\s*\$/g, "⇔");
+  html = html.replace(/\\+Leftrightarrow\b/g, "⇔");
+  html = html.replace(/\$\s*\\+(?:longrightarrow|mapsto|implies)\s*\$/g, "⟶");
+  html = html.replace(/\\+(?:longrightarrow|mapsto|implies)\b/g, "⟶");
+  html = html.replace(/\$([^$\n]*?[→←⇒⇐↔⇔⟶⟵⟹↦][^$\n]*?)\$/g, "$1");
+  html = html.replace(/\{([→←⇒⇐↔⇔⟶⟵⟹↦])\}/g, "$1");
+
   html = html.replace(/\n/g, "<br>");
   return html;
 }

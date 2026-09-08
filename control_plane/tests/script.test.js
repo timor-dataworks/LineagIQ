@@ -20,6 +20,15 @@ test('formatMarkdown renders bold, code, and line breaks properly', () => {
   assert.equal(script.formatMarkdown(null), '');
 });
 
+test('formatMarkdown renders LaTeX arrows including $\\rightarrow$, $\\to$, and multiline code', () => {
+  assert.equal(script.formatMarkdown('raw_customers $\\rightarrow$ stg_customers'), 'raw_customers → stg_customers');
+  assert.equal(script.formatMarkdown('source $\\to$ target'), 'source → target');
+  assert.equal(script.formatMarkdown('A \\rightarrow B'), 'A → B');
+  assert.equal(script.formatMarkdown('$node_1 \\rightarrow node_2$'), 'node_1 → node_2');
+  assert.equal(script.formatMarkdown('stg $\\leftarrow$ fct'), 'stg ← fct');
+  assert.equal(script.formatMarkdown('up $\\Rightarrow$ down'), 'up ⇒ down');
+});
+
 test('typeColors contains accurate color configuration for knowledge graph node types', () => {
   assert.ok(script.typeColors.Dataset);
   assert.equal(script.typeColors.Dataset.background, '#0284c7');
