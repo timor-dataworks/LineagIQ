@@ -2,7 +2,7 @@
 
 The **Collection Agent** is an ephemeral, privacy-first metadata collection service designed to execute directly within customer environments (VPCs, Kubernetes clusters, CI/CD runners, or AWS Batch).
 
-It extracts structural metadata, query logs, and static pipeline manifests, embeds semantic descriptions using a local ONNX model, formats graph nodes and lineage edges into Parquet/LanceDB artifacts, and streams the processed outputs directly to the multi-tenant LineagIQ Control Plane S3 bucket.
+It extracts structural metadata, query logs, and static pipeline manifests, embeds semantic descriptions using a local ONNX model, formats graph nodes, lineage edges, and vector indices into **Delta Lake** dataset tables and Snappy-compressed Parquet artifacts, and streams the processed outputs directly to the multi-tenant LineagIQ Control Plane S3 bucket.
 
 ---
 
@@ -11,8 +11,8 @@ It extracts structural metadata, query logs, and static pipeline manifests, embe
 * **Ephemeral Execution**: Runs as a stateless container or cron job with zero persistent database lock requirements or persistent volume storage.
 * **Privacy-First & Secure**: Only extracts structural schema metadata, query logs, and pipeline definitions. Raw enterprise table cell data never leaves the customer environment.
 * **In-Process Embeddings**: Uses quantized local embedding models (`bge-small-en-v1.5` INT8 via ONNX runtime) to generate vector embeddings in memory without third-party API dependencies.
-* **Columnar & Vector Artifact Output**: Produces standardized `.parquet` files for graph nodes/edges and `.lance` indices for similarity search.
-* **Direct Lake Sync**: Directly uploads prepared Parquet and LanceDB indices to tenant prefixes in S3 via presigned URLs or IAM roles.
+* **Delta Lake & Columnar Output**: Produces standardized Delta Lake datasets (`write_deltalake`) with `_delta_log/` transaction histories alongside `.parquet` files for graph nodes, edges, and dense vector embeddings.
+* **Direct Lake Sync**: Directly uploads prepared Delta Lake and Parquet datasets to tenant prefixes in S3 via presigned URLs or IAM roles.
 
 ---
 
@@ -28,7 +28,7 @@ collection_agent/
 │   ├── extractors/           # dbt, SQL INFORMATION_SCHEMA, Query Logs, OpenLineage
 │   ├── transform/            # Pydantic models & GraphBuilder engine
 │   ├── embedder/             # Local ONNX INT8 vector embedding generator
-│   ├── storage/              # Parquet and LanceDB local file generator
+│   ├── storage/              # Delta Lake table and Parquet file generator (writer.py)
 │   └── sync/                 # Multi-part S3 uploader
 └── tests/                    # Pytest test suite and sample fixtures
     ├── fixtures/             # Mock dbt manifests, SQL schemas, query logs, OpenLineage events
@@ -41,7 +41,7 @@ collection_agent/
     ├── test_query_logs_extractor.py
     ├── test_sql_extractor.py
     ├── test_sync.py          # S3 sync tests
-    └── test_writer.py        # Parquet and LanceDB writer tests
+    └── test_writer.py        # Delta Lake & Parquet writer tests
 ```
 
 ---
@@ -54,7 +54,7 @@ pip install -r collection_agent/requirements.txt
 ```
 
 ### 2. Run the Ingestion Pipeline
-To run the agent and generate tenant graph artifacts (`nodes/data.parquet`, `edges/data.parquet`, `vectors/metadata.lance`) for a demo tenant:
+To run the agent and generate tenant graph artifacts (`graph/nodes/`, `graph/edges/`, `vectors/`) for a demo tenant:
 
 ```bash
 python3 -m collection_agent.src.cli --output-dir /tmp/tenants/demo_tenant

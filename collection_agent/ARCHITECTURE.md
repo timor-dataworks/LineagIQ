@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary
 
-The **Collection Agent** is the edge metadata collection engine for LineagIQ. Designed to operate strictly within the customer's security boundary (VPC, local runner, or private subnet), the agent extracts metadata, converts it into canonical ontology structures, generates quantized vector embeddings locally, packages data into Parquet and LanceDB indices, and syncs the resulting artifacts to the LineagIQ Control Plane.
+The **Collection Agent** is the edge metadata collection engine for LineagIQ. Designed to operate strictly within the customer's security boundary (VPC, local runner, or private subnet), the agent extracts metadata, converts it into canonical ontology structures, generates quantized vector embeddings locally, packages data into **Delta Lake** dataset tables and Parquet indices, and syncs the resulting artifacts to the LineagIQ Control Plane.
 
 ```text
  Customer VPC Boundary
@@ -12,8 +12,8 @@ The **Collection Agent** is the edge metadata collection engine for LineagIQ. De
  │ ┌───────────────────┐    ┌───────────────────┐    ┌──────────────────────────────────┐ │
  │ │  1. Extractors    │───>│  2. Graph Builder │───>│ 3. In-Memory Embedder & Writer   │ │
  │ │  • dbt Artifacts  │    │  • Node Schema    │    │  • bge-small INT8 ONNX            │ │
- │ │  • SQL Catalogs   │    │  • Lineage Edges  │    │  • Parquet (Nodes/Edges)          │ │
- │ │  • Query Logs     │    │  • Business Terms │    │  • LanceDB Index                 │ │
+ │ │  • SQL Catalogs   │    │  • Lineage Edges  │    │  • Delta Lake (Nodes & Edges)     │ │
+ │ │  • Query Logs     │    │  • Business Terms │    │  • Vectors Delta Table            │ │
  │ └───────────────────┘    └───────────────────┘    └──────────────────────────────────┘ │
  └───────────────────────────────────────────┬────────────────────────────────────────────┘
                                              │ Multipart Presigned S3 Sync
@@ -21,9 +21,9 @@ The **Collection Agent** is the edge metadata collection engine for LineagIQ. De
  Multi-Tenant S3 Storage Plane
  ┌────────────────────────────────────────────────────────────────────────────────────────┐
  │ s3://control-plane-lake/tenants/{tenant_id}/                                           │
- │    ├── graph/nodes/data.parquet                                                        │
- │    ├── graph/edges/data.parquet                                                        │
- │    └── vectors/metadata.lance/                                                         │
+ │    ├── graph/nodes/ (_delta_log/, part-*.parquet, data.parquet)                       │
+ │    ├── graph/edges/ (_delta_log/, part-*.parquet, data.parquet)                       │
+ │    └── vectors/     (_delta_log/, part-*.parquet, data.parquet)                       │
  └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -52,7 +52,7 @@ The extraction layer uses source-specific plugins targeting operational data ass
 
 ---
 
-### 2.2 Graph Normalization Engine (`transform/`)
+## 2.2 Graph Normalization Engine (`transform/`)
 Translates extracted payloads into the normalized LineagIQ Ontology:
 
 * **Node Types**:
@@ -71,7 +71,7 @@ Translates extracted payloads into the normalized LineagIQ Ontology:
 
 ---
 
-### 2.3 In-Process Vectorization (`embedder/`)
+## 2.3 In-Process Vectorization (`embedder/`)
 To eliminate external API costs and keep metadata private:
 - Uses a local quantized embedding model (`bge-small-en-v1.5` in INT8 ONNX format).
 - Embedded fields: Dataset descriptions, column names, business terms, and query context strings.
@@ -79,16 +79,16 @@ To eliminate external API costs and keep metadata private:
 
 ---
 
-### 2.4 Storage & Index Serialization (`storage/`)
-Outputs are stored in ephemeral `/tmp` scratch space before sync:
-- **Graph Nodes & Edges**: Written to optimized, compressed Apache Parquet files (`data.parquet`).
-- **Vector Indexing**: Written directly to LanceDB table formats (`metadata.lance/`).
+## 2.4 Storage & Index Serialization (`storage/`)
+Outputs are written via `ArtifactWriter` in [`writer.py`](file:///Users/timor/projects/dataworks/LineagIQ/collection_agent/src/storage/writer.py) into ephemeral `/tmp` scratch space before sync:
+- **Delta Lake Table Commit Logs**: Nodes, edges, and dense vectors are written to Delta Lake dataset directories (`graph/nodes/`, `graph/edges/`, `vectors/`) using `write_deltalake`. Each execution appends or commits a new version transaction log (`_delta_log/00000000000000000000.json`).
+- **Snappy-Compressed Parquet Files**: Standalone `data.parquet` files are maintained alongside Delta logs for backward compatibility and direct Parquet scans.
 
 ---
 
-### 2.5 Multi-Part Direct Sync (`sync/`)
+## 2.5 Multi-Part Direct Sync (`sync/`)
 - Obtains presigned S3 upload URLs from the LineagIQ Control Plane API using tenant authentication tokens.
-- Streams Parquet and LanceDB chunks directly to `s3://control-plane-lake/tenants/{tenant_id}/`.
+- Streams Delta Lake table directories and Parquet files directly to `s3://control-plane-lake/tenants/{tenant_id}/`.
 - Cleanly purges all temporary files from local storage upon completion.
 
 ---
@@ -113,7 +113,7 @@ Outputs are stored in ephemeral `/tmp` scratch space before sync:
  └───────┬───────┘
          ▼
  ┌───────────────┐
- │ 5. Package    │ Write node & edge Parquet tables + LanceDB vector tables.
+ │ 5. Package    │ Write node & edge Delta Lake tables + vector table datasets.
  └───────┬───────┘
          ▼
  ┌───────────────┐
