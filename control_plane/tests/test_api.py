@@ -153,4 +153,19 @@ def test_lineage_ai_chat_root_cause_intent(tmp_path):
     assert data["tenant_id"] == "tenant123"
     assert "Upstream Root Cause Analysis" in data["reply"]
     assert "synthesized_prompt" in data
+    assert "FORMATTING RULE: Do NOT use LaTeX math formatting" in data["synthesized_prompt"]
+
+
+def test_clean_latex_to_unicode():
+    from control_plane.src.main import clean_latex_to_unicode
+
+    assert clean_latex_to_unicode("raw_customers $\\rightarrow$ stg_customers") == "raw_customers → stg_customers"
+    assert clean_latex_to_unicode("source $\\to$ target") == "source → target"
+    assert clean_latex_to_unicode("model_a \\rightarrow model_b") == "model_a → model_b"
+    assert clean_latex_to_unicode("$\\text{raw\\_orders} \\rightarrow \\text{stg\\_orders}$") == "raw_orders → stg_orders"
+    assert clean_latex_to_unicode("target $\\leftarrow$ source") == "target ← source"
+    assert clean_latex_to_unicode("a $\\Rightarrow$ b") == "a ⇒ b"
+    assert clean_latex_to_unicode("x $\\approx$ y") == "x ≈ y"
+    assert clean_latex_to_unicode(None) is None
+    assert clean_latex_to_unicode("") == ""
 
