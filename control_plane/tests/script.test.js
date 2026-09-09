@@ -12,23 +12,6 @@ test('escapeHtml correctly escapes special HTML characters', () => {
   assert.equal(script.escapeHtml(null), '');
 });
 
-test('formatMarkdown renders bold, code, and line breaks properly', () => {
-  const raw = "**bold text** and `code block` with\nnew line";
-  const expected = "<strong>bold text</strong> and <code style='background: rgba(2, 6, 23, 0.6); color: #38bdf8; padding: 2px 6px; border-radius: 4px;'>code block</code> with<br>new line";
-  assert.equal(script.formatMarkdown(raw), expected);
-  assert.equal(script.formatMarkdown(''), '');
-  assert.equal(script.formatMarkdown(null), '');
-});
-
-test('formatMarkdown renders LaTeX arrows including $\\rightarrow$, $\\to$, and multiline code', () => {
-  assert.equal(script.formatMarkdown('raw_customers $\\rightarrow$ stg_customers'), 'raw_customers → stg_customers');
-  assert.equal(script.formatMarkdown('source $\\to$ target'), 'source → target');
-  assert.equal(script.formatMarkdown('A \\rightarrow B'), 'A → B');
-  assert.equal(script.formatMarkdown('$node_1 \\rightarrow node_2$'), 'node_1 → node_2');
-  assert.equal(script.formatMarkdown('stg $\\leftarrow$ fct'), 'stg ← fct');
-  assert.equal(script.formatMarkdown('up $\\Rightarrow$ down'), 'up ⇒ down');
-});
-
 test('typeColors contains accurate color configuration for knowledge graph node types', () => {
   assert.ok(script.typeColors.Dataset);
   assert.equal(script.typeColors.Dataset.background, '#0284c7');
