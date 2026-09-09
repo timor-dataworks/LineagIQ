@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import logging
 import urllib.request
@@ -369,6 +370,58 @@ def calculate_time_travel_diff(
     }
 
 
+def clean_latex_to_unicode(text: str) -> str:
+    """Sanitizes LaTeX math formatting from LLM responses into clean Unicode and plain text."""
+    if not text:
+        return text
+
+    # Strip \text{...}, \mathrm{...}, \mathbf{...}, \mathit{...} wrappers
+    text = re.sub(r"\\text\{([^}]+)\}", r"\1", text)
+    text = re.sub(r"\\mathrm\{([^}]+)\}", r"\1", text)
+    text = re.sub(r"\\mathbf\{([^}]+)\}", r"\1", text)
+    text = re.sub(r"\\mathit\{([^}]+)\}", r"\1", text)
+
+    # Convert escaped underscores often generated in LaTeX
+    text = re.sub(r"\\_", "_", text)
+
+    # Clean LaTeX arrows into clean Unicode
+    text = re.sub(r"\$\s*\\+(?:rightarrow|to)\s*\$", "→", text)
+    text = re.sub(r"\\+(?:rightarrow|to)\b", "→", text)
+    text = re.sub(r"\$\s*\\+leftarrow\s*\$", "←", text)
+    text = re.sub(r"\\+leftarrow\b", "←", text)
+    text = re.sub(r"\$\s*\\+Rightarrow\s*\$", "⇒", text)
+    text = re.sub(r"\\+Rightarrow\b", "⇒", text)
+    text = re.sub(r"\$\s*\\+Leftarrow\s*\$", "⇐", text)
+    text = re.sub(r"\\+Leftarrow\b", "⇐", text)
+    text = re.sub(r"\$\s*\\+leftrightarrow\s*\$", "↔", text)
+    text = re.sub(r"\\+leftrightarrow\b", "↔", text)
+    text = re.sub(r"\$\s*\\+Leftrightarrow\s*\$", "⇔", text)
+    text = re.sub(r"\\+Leftrightarrow\b", "⇔", text)
+    text = re.sub(r"\$\s*\\+(?:longrightarrow|mapsto|implies)\s*\$", "⟶", text)
+    text = re.sub(r"\\+(?:longrightarrow|mapsto|implies)\b", "⟶", text)
+
+    # Common math symbols
+    text = re.sub(r"\$\s*\\+approx\s*\$", "≈", text)
+    text = re.sub(r"\\+approx\b", "≈", text)
+    text = re.sub(r"\$\s*\\+neq\s*\$", "≠", text)
+    text = re.sub(r"\\+neq\b", "≠", text)
+    text = re.sub(r"\$\s*\\+(?:le|leq)\s*\$", "≤", text)
+    text = re.sub(r"\\+(?:le|leq)\b", "≤", text)
+    text = re.sub(r"\$\s*\\+(?:ge|geq)\s*\$", "≥", text)
+    text = re.sub(r"\\+(?:ge|geq)\b", "≥", text)
+    text = re.sub(r"\$\s*\\+times\s*\$", "×", text)
+    text = re.sub(r"\\+times\b", "×", text)
+    text = re.sub(r"\$\s*\\+cdot\s*\$", "·", text)
+    text = re.sub(r"\\+cdot\b", "·", text)
+    text = re.sub(r"\$\s*\\+(?:dots|cdots)\s*\$", "...", text)
+    text = re.sub(r"\\+(?:dots|cdots)\b", "...", text)
+
+    # Unwrap $...$ wrapping around arrow or simple math expressions
+    text = re.sub(r"\$([^$\n]*?[→←⇒⇐↔⇔⟶⟵⟹↦][^$\n]*?)\$", r"\1", text)
+    text = re.sub(r"\{([→←⇒⇐↔⇔⟶⟵⟹↦])\}", r"\1", text)
+
+    return text
+
 
 def call_openai_llm(
     prompt: str,
@@ -415,7 +468,12 @@ def call_openai_llm(
         "messages": [
             {
                 "role": "system",
-                "content": "You are LineagIQ AI Assistant, an expert data lineage, governance, and blast radius reasoning agent.",
+                "content": (
+                    "You are LineagIQ AI Assistant, an expert data lineage, governance, and blast radius reasoning agent.\n"
+                    "CRITICAL FORMATTING INSTRUCTION: Do NOT use LaTeX math formatting, dollar signs ($), or LaTeX commands "
+                    "(e.g. \\rightarrow, \\to, \\leftarrow). Always use clean plain text or standard Unicode symbols "
+                    "(such as '→' for lineage transitions, '←', '⇒', bullet points, bold markdown)."
+                ),
             },
             {"role": "user", "content": prompt},
         ],
@@ -428,7 +486,7 @@ def call_openai_llm(
         if choices and isinstance(choices, list) and len(choices) > 0:
             content = choices[0].get("message", {}).get("content")
             if content:
-                return content, None
+                return clean_latex_to_unicode(content), None
 
     return None, err
 
@@ -447,7 +505,11 @@ def call_gemini_llm(prompt: str, api_key: Optional[str] = None) -> Tuple[Optiona
     if not key:
         return None, None
 
-    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    formatting_rule = (
+        "\n\nCRITICAL FORMATTING INSTRUCTION: Do NOT use LaTeX math formatting, dollar signs ($), or LaTeX commands "
+        "(e.g. \\rightarrow, \\to). Always output clean plain text or Unicode symbols (e.g. '→' for lineage flow).\n"
+    )
+    payload = {"contents": [{"parts": [{"text": prompt + formatting_rule}]}]}
     last_err = None
 
     for model_name in ["gemini-3.6-flash"]:
@@ -458,7 +520,7 @@ def call_gemini_llm(prompt: str, api_key: Optional[str] = None) -> Tuple[Optiona
             if candidates and isinstance(candidates, list) and len(candidates) > 0:
                 parts = candidates[0].get("content", {}).get("parts", [])
                 if parts and parts[0].get("text"):
-                    return parts[0]["text"], None
+                    return clean_latex_to_unicode(parts[0]["text"]), None
         if err:
             last_err = err
 
@@ -486,11 +548,11 @@ def call_llm(
     """
     openai_res, openai_err = call_openai_llm(prompt, api_key=openai_key, base_url=openai_base_url, model=openai_model)
     if openai_res:
-        return openai_res, None
+        return clean_latex_to_unicode(openai_res), None
 
     gemini_res, gemini_err = call_gemini_llm(prompt, api_key=openai_key)
     if gemini_res:
-        return gemini_res, None
+        return clean_latex_to_unicode(gemini_res), None
 
     return None, openai_err or gemini_err
 

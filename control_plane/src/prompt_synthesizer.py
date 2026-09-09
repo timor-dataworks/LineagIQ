@@ -69,6 +69,7 @@ class PromptSynthesizer:
             "1. Analyze the downstream operational blast radius if the target asset schema changes or fails.",
             "2. Identify high-risk downstream consumers (e.g. BI dashboards, pipelines, key business users).",
             "3. Recommend remediation steps and notify owners of impacted downstream components.",
+            "4. FORMATTING RULE: Do NOT use LaTeX math formatting, dollar signs ($), or LaTeX commands (e.g. \\rightarrow, \\to). Always output clean plain text or Unicode symbols (e.g. use '→' for lineage transitions, '←', '⇒', bullet points, bold markdown).",
             "================================================================================",
         ])
 
@@ -114,6 +115,7 @@ class PromptSynthesizer:
             "1. Explain how the matched data assets address the user's discovery query.",
             "2. Provide schema guidance, join paths, and dataset ownership details.",
             "3. Note any data governance terms or usage constraints.",
+            "4. FORMATTING RULE: Do NOT use LaTeX math formatting, dollar signs ($), or LaTeX commands (e.g. \\rightarrow, \\to). Always output clean plain text or Unicode symbols (e.g. use '→' for lineage transitions, '←', '⇒', bullet points, bold markdown).",
             "================================================================================",
         ])
 
@@ -180,6 +182,7 @@ class PromptSynthesizer:
             "1. Trace the data lineage back to root ingestion sources and upstream transformation models.",
             "2. Identify potential failure points, schema breaking changes, or upstream pipeline latency causing issues in the target asset.",
             "3. Provide actionable troubleshooting steps to pinpoint the root cause upstream.",
+            "4. FORMATTING RULE: Do NOT use LaTeX math formatting, dollar signs ($), or LaTeX commands (e.g. \\rightarrow, \\to). Always output clean plain text or Unicode symbols (e.g. use '→' for lineage transitions, '←', '⇒', bullet points, bold markdown).",
             "================================================================================",
         ])
 
@@ -242,6 +245,7 @@ class PromptSynthesizer:
             "1. Evaluate the impact of schema additions, deletions, and lineage shifts between T1 and T2.",
             "2. Identify breaking changes or removed dependencies causing downstream consumer failures.",
             "3. Provide actionable remediation guidance to restore lineage stability.",
+            "4. FORMATTING RULE: Do NOT use LaTeX math formatting, dollar signs ($), or LaTeX commands (e.g. \\rightarrow, \\to). Always output clean plain text or Unicode symbols (e.g. use '→' for lineage transitions, '←', '⇒', bullet points, bold markdown).",
             "================================================================================",
         ])
 
