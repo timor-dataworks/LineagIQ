@@ -65,6 +65,7 @@ body {
   background-color: var(--bg-dark);
   color: var(--text-primary);
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -226,6 +227,106 @@ select:focus {
 select {
   cursor: pointer;
 }
+
+/* Lineage View Mode Toggle Switch */
+.switch-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid var(--border-subtle);
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  user-select: none;
+  transition: var(--transition-normal);
+  white-space: nowrap;
+  height: 31px;
+}
+
+.switch-control:hover {
+  background: rgba(51, 65, 85, 0.6);
+  border-color: var(--border-medium);
+}
+
+.switch-control:has(input:checked) {
+  border-color: rgba(6, 182, 212, 0.4);
+  background: rgba(6, 182, 212, 0.08);
+}
+
+.switch-control:has(input:focus-visible) {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.3);
+}
+
+.switch-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: var(--transition-fast);
+}
+
+.switch-control:has(input:checked) .switch-label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 32px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+  margin: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(71, 85, 105, 0.7);
+  border: 1px solid var(--border-subtle);
+  transition: var(--transition-normal);
+  border-radius: 18px;
+}
+
+.toggle-slider::before {
+  position: absolute;
+  content: "";
+  height: 12px;
+  width: 12px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #94a3b8;
+  transition: var(--transition-normal);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  border-color: transparent;
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(14px);
+  background-color: #ffffff;
+}
+
+.toggle-switch input:focus-visible + .toggle-slider {
+  box-shadow: 0 0 0 2px var(--bg-dark), 0 0 0 4px var(--accent-cyan);
+}
+
 
 /* Buttons System */
 .btn {
@@ -674,10 +775,16 @@ select {
   gap: 12px;
   z-index: 15;
   box-shadow: var(--shadow-lg);
+  width: fit-content;
+  max-width: calc(100vw - 48px);
+  height: auto;
+  max-height: fit-content;
+  flex-shrink: 0;
 }
 
 .timeline-slider {
   width: 180px;
+  max-width: 180px;
   accent-color: var(--accent-cyan);
   cursor: pointer;
   flex-shrink: 0;
@@ -687,10 +794,9 @@ select {
   font-size: 11px;
   font-weight: 600;
   color: var(--text-primary);
-  min-width: 220px;
   white-space: nowrap;
-  display: inline-block;
   font-family: 'Fira Code', monospace;
+  flex-shrink: 0;
 }
 
 /* Modal Backdrop & Time Travel Diff Dashboard */
@@ -893,4 +999,306 @@ select {
   font-weight: 700;
   margin-right: 6px;
 }
+
+/* Mobile Sheet Drag Handle */
+.sheet-drag-handle {
+  display: none;
+}
+
+/* Mobile Drawer Backdrop Overlay */
+.drawer-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(2, 6, 23, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 35;
+  transition: opacity var(--transition-normal);
+}
+
+/* Toast Notifications */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.toast-notification {
+  background: var(--surface-card);
+  border: 1px solid var(--border-focus);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+  pointer-events: auto;
+  animation: toast-slideup 0.25s ease forwards;
+}
+
+.toast-fadeout {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: all 0.25s ease;
+}
+
+@keyframes toast-slideup {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   Responsive Breakpoints & Mobile Friendly Layouts
+   ========================================================================== */
+
+/* Tablet Viewport (<= 1024px) */
+@media (max-width: 1024px) {
+  header {
+    padding: 0 12px;
+    gap: 10px;
+  }
+
+  .stats-bar {
+    gap: 8px;
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+
+  .controls-group {
+    gap: 6px;
+  }
+
+  .search-input {
+    width: 115px;
+  }
+
+  .sidebar {
+    width: 360px;
+  }
+}
+
+/* Mobile Viewport (<= 768px) */
+@media (max-width: 768px) {
+  /* Header adjustments for mobile */
+  header {
+    height: auto;
+    min-height: 58px;
+    padding: 8px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+    overflow-x: visible;
+  }
+
+  .brand-container {
+    gap: 8px;
+  }
+
+  .brand-title {
+    font-size: 16px;
+  }
+
+  .brand-tag {
+    display: none;
+  }
+
+  /* Stats bar moved under brand on mobile */
+  .stats-bar {
+    order: 3;
+    width: 100%;
+    justify-content: space-around;
+    padding: 5px 8px;
+    font-size: 10px;
+    margin-top: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  .stat-item {
+    gap: 4px;
+  }
+
+  .controls-group {
+    order: 2;
+    margin-left: auto;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .search-input {
+    width: 110px;
+    font-size: 11px;
+    height: 36px;
+  }
+
+  .switch-control {
+    height: 36px;
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
+  .switch-label {
+    font-size: 11px;
+  }
+
+  .btn {
+    min-height: 36px;
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+
+  /* Mobile Bottom Sheet: Node Inspector Drawer */
+  .sidebar {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    height: 65vh !important;
+    max-height: 80vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    border-left: none !important;
+    border-top: 1px solid var(--border-medium) !important;
+    box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.75) !important;
+    z-index: 40 !important;
+    padding: 12px 16px 24px 16px !important;
+    animation: sheet-slideup 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Mobile Bottom Sheet: AI Assistant Chat Drawer */
+  .chat-drawer {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    height: 80vh !important;
+    max-height: 90vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    border-top: 1px solid var(--border-medium) !important;
+    box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.75) !important;
+    z-index: 45 !important;
+    animation: sheet-slideup 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Show sheet drag handle on mobile */
+  .sheet-drag-handle {
+    display: block;
+    width: 44px;
+    height: 5px;
+    background: rgba(148, 163, 184, 0.4);
+    border-radius: 3px;
+    margin: 4px auto 12px auto;
+    flex-shrink: 0;
+    cursor: grab;
+  }
+
+  /* Desktop-only docking button hidden on mobile */
+  #dock-btn {
+    display: none !important;
+  }
+
+  /* Floating Timeline Panel for mobile (compact banner under header) */
+  .timeline-panel {
+    position: absolute !important;
+    top: 10px !important;
+    bottom: auto !important;
+    left: 10px !important;
+    right: 10px !important;
+    width: auto !important;
+    max-width: calc(100% - 20px) !important;
+    height: auto !important;
+    max-height: fit-content !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 8px 12px !important;
+    gap: 8px !important;
+    border-radius: var(--radius-sm) !important;
+  }
+
+  .timeline-slider {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    order: 2;
+    margin: 4px 0 !important;
+  }
+
+  .timeline-label {
+    min-width: 0 !important;
+    font-size: 10px !important;
+    order: 1;
+    flex: 1;
+    text-align: right;
+  }
+
+  /* Time Diff Modal on mobile */
+  .modal-container {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    height: 90vh !important;
+    max-height: 90vh !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  .diff-selectors {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .diff-select-col {
+    width: 100% !important;
+  }
+
+  .diff-tabs-bar {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .diff-tab {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  /* Canvas legend position on mobile */
+  .legend-panel {
+    bottom: 10px !important;
+    left: 10px !important;
+    padding: 6px 12px !important;
+    gap: 10px !important;
+    max-width: calc(100% - 20px) !important;
+    flex-wrap: wrap !important;
+    font-size: 11px !important;
+  }
+}
+
+@keyframes sheet-slideup {
+  from {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 

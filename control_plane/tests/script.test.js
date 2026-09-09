@@ -139,3 +139,99 @@ test('updateChatDrawerPosition moves drawer slightly left when node properties o
   assert.equal(drawerStyle.left, 'auto');
 });
 
+test('getViewMode returns high_level when switch is checked and all when unchecked', () => {
+  const elements = {};
+  global.document = {
+    getElementById: (id) => elements[id] || null
+  };
+
+  // Case 1: view-mode-switch checkbox is checked
+  elements['view-mode-switch'] = { checked: true, type: 'checkbox' };
+  assert.equal(script.getViewMode(), 'high_level');
+
+  // Case 2: view-mode-switch checkbox is unchecked
+  elements['view-mode-switch'] = { checked: false, type: 'checkbox' };
+  assert.equal(script.getViewMode(), 'all');
+
+  // Case 3: fallback to view-mode element if switch missing
+  delete elements['view-mode-switch'];
+  elements['view-mode'] = { value: 'all', type: 'text' };
+  assert.equal(script.getViewMode(), 'all');
+
+  elements['view-mode'] = { checked: true, type: 'checkbox' };
+  assert.equal(script.getViewMode(), 'high_level');
+
+  // Case 4: default fallback when no elements exist
+  delete elements['view-mode'];
+  assert.equal(script.getViewMode(), 'high_level');
+});
+
+test('closeAllDrawers hides sidebar, chat drawer, and mobile backdrop', () => {
+  const sidebarEl = { style: { display: 'flex' } };
+  const drawerEl = { style: { display: 'flex' } };
+  const backdropEl = { style: { display: 'block' } };
+
+  global.document = {
+    getElementById: (id) => {
+      if (id === 'sidebar') return sidebarEl;
+      if (id === 'chat-drawer') return drawerEl;
+      if (id === 'drawer-backdrop') return backdropEl;
+      return null;
+    }
+  };
+
+  script.closeAllDrawers();
+
+  assert.equal(sidebarEl.style.display, 'none');
+  assert.equal(drawerEl.style.display, 'none');
+  assert.equal(backdropEl.style.display, 'none');
+});
+
+test('saveLlmSettings and loadLlmSettings correctly store and restore configuration', () => {
+  const store = {};
+  global.localStorage = {
+    getItem: (k) => store[k] || null,
+    setItem: (k, v) => { store[k] = v; }
+  };
+
+  const elements = {
+    'cfg-api-key': { value: 'sk-test-123' },
+    'cfg-base-url': { value: 'https://api.test.com' },
+    'cfg-model': { value: 'gpt-4o' }
+  };
+
+  global.document = {
+    getElementById: (id) => elements[id] || null
+  };
+
+  script.saveLlmSettings();
+
+  assert.equal(store['lineagiq_api_key'], 'sk-test-123');
+  assert.equal(store['lineagiq_base_url'], 'https://api.test.com');
+  assert.equal(store['lineagiq_model'], 'gpt-4o');
+
+  // Clear inputs and load back
+  elements['cfg-api-key'].value = '';
+  elements['cfg-base-url'].value = '';
+  elements['cfg-model'].value = '';
+
+  script.loadLlmSettings();
+
+  assert.equal(elements['cfg-api-key'].value, 'sk-test-123');
+  assert.equal(elements['cfg-base-url'].value, 'https://api.test.com');
+  assert.equal(elements['cfg-model'].value, 'gpt-4o');
+});
+
+test('api module exports all expected REST endpoints and helpers', () => {
+  const api = require(path.join(__dirname, '../src/static/api.js'));
+  assert.equal(typeof api.fetchGraph, 'function');
+  assert.equal(typeof api.fetchTimeline, 'function');
+  assert.equal(typeof api.searchDiscovery, 'function');
+  assert.equal(typeof api.fetchBlastRadius, 'function');
+  assert.equal(typeof api.fetchRootCause, 'function');
+  assert.equal(typeof api.sendChat, 'function');
+  assert.equal(typeof api.fetchTimeDiff, 'function');
+});
+
+
+

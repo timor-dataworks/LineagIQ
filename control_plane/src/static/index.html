@@ -66,10 +66,14 @@
           aria-label="Search Lineage" oninput="handleSearchInput()">
       </div>
 
-      <select id="view-mode" onchange="filterGraph()" title="Lineage View Mode" aria-label="Lineage View Mode">
-        <option value="high_level" selected>High-Level Lineage</option>
-        <option value="all">Full Detail (All Nodes)</option>
-      </select>
+      <input type="hidden" id="view-mode" value="high_level">
+      <label class="switch-control" for="view-mode-switch" title="Toggle between High-Level Lineage (collapsed to dataset level) and Full Detail (all nodes)">
+        <span class="switch-label">High-Level Lineage</span>
+        <span class="toggle-switch">
+          <input type="checkbox" id="view-mode-switch" checked onchange="filterGraph()" aria-label="Toggle High-Level Lineage" role="switch" aria-checked="true">
+          <span class="toggle-slider"></span>
+        </span>
+      </label>
 
       <button class="btn btn-secondary" onclick="fitGraphView()" title="Fit all nodes in viewport" aria-label="Fit View">
         🎯 Fit View
@@ -94,8 +98,8 @@
       <button class="btn" style="padding: 2px 8px; font-size: 10px; background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));" onclick="openTimeDiffModal()">⚡ Compare Diff</button>
     </div>
 
-    <!-- Right Sidebar Inspector Drawer (Hidden when not in use) -->
     <aside class="sidebar" id="sidebar" style="display: none;">
+      <div class="sheet-drag-handle" aria-hidden="true"></div>
 
       <!-- Populated State -->
       <div id="inspector-content" style="display: none; height: 100%; flex-direction: column; gap: 20px;">
@@ -174,6 +178,7 @@
 
     <!-- AI Assistant Chat Drawer -->
     <div class="chat-drawer" id="chat-drawer" style="display: none;">
+      <div class="sheet-drag-handle" aria-hidden="true"></div>
       <div class="chat-header">
         <div class="chat-title-group">
           <div class="chat-bot-icon">
@@ -320,7 +325,10 @@
     </div>
   </div>
 
-  <script src="/static/script.js?v=no_popups_v2"></script>
+  <!-- Mobile Backdrop Overlay -->
+  <div id="drawer-backdrop" class="drawer-backdrop" onclick="closeAllDrawers()" aria-label="Close drawer"></div>
+
+  <script type="module" src="/static/script.js"></script>
 </body>
 
 </html>
