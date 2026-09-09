@@ -1019,7 +1019,7 @@ async function sendChatMessage() {
     const data = await response.json();
 
     const bubble = aiLoadingDiv.querySelector('.msg-bubble');
-    if (bubble) bubble.textContent = data.reply || '';
+    if (bubble) bubble.innerHTML = data.reply || '';
 
     if (data.target_node_id && typeof highlightConnected === 'function') {
       selectedNodeId = data.target_node_id;

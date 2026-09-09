@@ -574,13 +574,13 @@ select {
   font-size: 13px;
   line-height: 1.5;
   word-break: break-word;
-  white-space: pre-wrap;
 }
 
 .chat-msg-user .msg-bubble {
   background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
   color: #ffffff;
   border-bottom-right-radius: 2px;
+  white-space: pre-wrap;
 }
 
 .chat-msg-ai .msg-bubble {
@@ -588,6 +588,38 @@ select {
   border: 1px solid var(--border-subtle);
   color: var(--text-primary);
   border-bottom-left-radius: 2px;
+  line-height: 1.6;
+}
+
+.chat-msg-ai .msg-bubble p {
+  margin-bottom: 8px;
+}
+
+.chat-msg-ai .msg-bubble p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-msg-ai .msg-bubble ul,
+.chat-msg-ai .msg-bubble ol {
+  margin: 6px 0 8px 18px;
+}
+
+.chat-msg-ai .msg-bubble li {
+  margin-bottom: 4px;
+}
+
+.chat-msg-ai .msg-bubble code {
+  background: rgba(2, 6, 23, 0.6);
+  color: var(--accent-cyan);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+}
+
+.chat-msg-ai .msg-bubble strong {
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
 .chat-prompts-bar {

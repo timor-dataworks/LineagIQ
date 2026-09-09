@@ -152,8 +152,9 @@ def test_lineage_ai_chat_root_cause_intent(tmp_path):
     data = response.json()
     assert data["tenant_id"] == "tenant123"
     assert "Upstream Root Cause Analysis" in data["reply"]
+    assert "<strong>" in data["reply"]
     assert "synthesized_prompt" in data
-    assert "FORMATTING RULE: Do NOT use LaTeX math formatting" in data["synthesized_prompt"]
+    assert "FORMATTING RULE: Format your response using clean, semantic HTML tags" in data["synthesized_prompt"]
 
 
 def test_clean_latex_to_unicode():
