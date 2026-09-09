@@ -470,9 +470,9 @@ def call_openai_llm(
                 "role": "system",
                 "content": (
                     "You are LineagIQ AI Assistant, an expert data lineage, governance, and blast radius reasoning agent.\n"
-                    "CRITICAL FORMATTING INSTRUCTION: Do NOT use LaTeX math formatting, dollar signs ($), or LaTeX commands "
-                    "(e.g. \\rightarrow, \\to, \\leftarrow). Always use clean plain text or standard Unicode symbols "
-                    "(such as '→' for lineage transitions, '←', '⇒', bullet points, bold markdown)."
+                    "CRITICAL FORMATTING INSTRUCTION: Format your responses using clean, semantic HTML tags "
+                    "(e.g. <p>, <strong>, <code>, <ul>, <li>, <em>, <br>). Do NOT use Markdown formatting and do NOT use LaTeX math formatting. "
+                    "Use standard Unicode arrows (such as '→' for lineage transitions, '←', '⇒')."
                 ),
             },
             {"role": "user", "content": prompt},
@@ -506,8 +506,8 @@ def call_gemini_llm(prompt: str, api_key: Optional[str] = None) -> Tuple[Optiona
         return None, None
 
     formatting_rule = (
-        "\n\nCRITICAL FORMATTING INSTRUCTION: Do NOT use LaTeX math formatting, dollar signs ($), or LaTeX commands "
-        "(e.g. \\rightarrow, \\to). Always output clean plain text or Unicode symbols (e.g. '→' for lineage flow).\n"
+        "\n\nCRITICAL FORMATTING INSTRUCTION: Format your response using clean, semantic HTML tags "
+        "(e.g. <p>, <strong>, <code>, <ul>, <li>, <em>, <br>). Do NOT use Markdown or LaTeX. Use Unicode arrows ('→').\n"
     )
     payload = {"contents": [{"parts": [{"text": prompt + formatting_rule}]}]}
     last_err = None
@@ -622,17 +622,17 @@ def lineage_ai_chat(
             if llm_reply:
                 reply = llm_reply
             elif llm_err and _has_api_key_configured(request):
-                reply = f"⚠️ **LLM Provider Error**:\n\n`{llm_err}`\n\nPlease check your API key and model settings in the ⚙️ settings panel."
+                reply = f"<p>⚠️ <strong>LLM Provider Error</strong>:</p><p><code>{llm_err}</code></p><p>Please check your API key and model settings in the ⚙️ settings panel.</p>"
             else:
                 impacted_names = [n["name"] for n in result["impacted_nodes"] if n["id"] != target_node["id"]]
                 impacted_count = len(result["impacted_nodes"])
-                reply = f"**⚡ Blast Radius Analysis for `{target_node['name']}`**:\n\n"
-                reply += f"Downstream impact affects **{impacted_count}** data assets across max traversal depth **{result.get('depth_reached', 0)}**.\n\n"
+                reply = f"<p><strong>⚡ Blast Radius Analysis for <code>{target_node['name']}</code></strong>:</p>"
+                reply += f"<p>Downstream impact affects <strong>{impacted_count}</strong> data assets across max traversal depth <strong>{result.get('depth_reached', 0)}</strong>.</p>"
                 if impacted_names:
-                    reply += "Impacted downstream assets:\n" + "\n".join(f"- `{name}`" for name in impacted_names)
+                    reply += "<p>Impacted downstream assets:</p><ul>" + "".join(f"<li><code>{name}</code></li>" for name in impacted_names) + "</ul>"
                 else:
-                    reply += "No downstream assets are impacted."
-                reply += "\n\n*💡 Tip: Set `OPENAI_API_KEY` or `GEMINI_API_KEY` environment variable to enable live LLM responses.*"
+                    reply += "<p>No downstream assets are impacted.</p>"
+                reply += "<p><em>💡 Tip: Set <code>OPENAI_API_KEY</code> or <code>GEMINI_API_KEY</code> environment variable to enable live LLM responses.</em></p>"
 
             return {
                 "tenant_id": tenant_id,
@@ -664,17 +664,17 @@ def lineage_ai_chat(
             if llm_reply:
                 reply = llm_reply
             elif llm_err and _has_api_key_configured(request):
-                reply = f"⚠️ **LLM Provider Error**:\n\n`{llm_err}`\n\nPlease check your API key and model settings in the ⚙️ settings panel."
+                reply = f"<p>⚠️ <strong>LLM Provider Error</strong>:</p><p><code>{llm_err}</code></p><p>Please check your API key and model settings in the ⚙️ settings panel.</p>"
             else:
                 upstream_names = [n["name"] for n in result["upstream_nodes"] if n["id"] != target_node["id"]]
                 upstream_count = len(result["upstream_nodes"])
-                reply = f"**🔍 Upstream Root Cause Analysis for `{target_node['name']}`**:\n\n"
-                reply += f"Upstream lineage traces back to **{upstream_count}** data assets across max traversal depth **{result.get('depth_reached', 0)}**.\n\n"
+                reply = f"<p><strong>🔍 Upstream Root Cause Analysis for <code>{target_node['name']}</code></strong>:</p>"
+                reply += f"<p>Upstream lineage traces back to <strong>{upstream_count}</strong> data assets across max traversal depth <strong>{result.get('depth_reached', 0)}</strong>.</p>"
                 if upstream_names:
-                    reply += "Upstream source assets & dependencies:\n" + "\n".join(f"- `{name}`" for name in upstream_names)
+                    reply += "<p>Upstream source assets & dependencies:</p><ul>" + "".join(f"<li><code>{name}</code></li>" for name in upstream_names) + "</ul>"
                 else:
-                    reply += "No upstream source dependencies found."
-                reply += "\n\n*💡 Tip: Set `OPENAI_API_KEY` or `GEMINI_API_KEY` environment variable to enable live LLM responses.*"
+                    reply += "<p>No upstream source dependencies found.</p>"
+                reply += "<p><em>💡 Tip: Set <code>OPENAI_API_KEY</code> or <code>GEMINI_API_KEY</code> environment variable to enable live LLM responses.</em></p>"
 
             return {
                 "tenant_id": tenant_id,
@@ -697,19 +697,19 @@ def lineage_ai_chat(
     if llm_reply:
         reply = llm_reply
     elif llm_err and _has_api_key_configured(request):
-        reply = f"⚠️ **LLM Provider Error**:\n\n`{llm_err}`\n\nPlease check your API key, base URL, and model settings in the ⚙️ settings panel."
+        reply = f"<p>⚠️ <strong>LLM Provider Error</strong>:</p><p><code>{llm_err}</code></p><p>Please check your API key, base URL, and model settings in the ⚙️ settings panel.</p>"
     elif matched_nodes:
-        reply = f"LineagIQ Knowledge Graph matched **{len(matched_nodes)}** relevant data assets for **\"{request.message}\"**:\n\n"
+        reply = f"<p>LineagIQ Knowledge Graph matched <strong>{len(matched_nodes)}</strong> relevant data assets for <strong>\"{request.message}\"</strong>:</p><ul>"
         for n in matched_nodes:
             desc = n.get("description") or "No description specified"
-            reply += f"• **`{n['name']}`** ({n['type']}): {desc}\n"
-        reply += "\n*💡 Tip: Set `OPENAI_API_KEY` or `GEMINI_API_KEY` environment variable to enable live LLM responses.*"
+            reply += f"<li><strong><code>{n['name']}</code></strong> ({n['type']}): {desc}</li>"
+        reply += "</ul><p><em>💡 Tip: Set <code>OPENAI_API_KEY</code> or <code>GEMINI_API_KEY</code> environment variable to enable live LLM responses.</em></p>"
     else:
         full_graph = engine.get_full_graph(as_of=request.as_of)
         nodes_count = len(full_graph.get("nodes", []))
         edges_count = len(full_graph.get("edges", []))
-        reply = f"LineagIQ Knowledge Graph active for tenant `{tenant_id}` containing **{nodes_count} nodes** and **{edges_count} edges**.\n\nHow can I help you trace asset dependencies or compute impact blast radius?"
-        reply += "\n\n*💡 Tip: Set `OPENAI_API_KEY` or `GEMINI_API_KEY` environment variable to enable live LLM responses.*"
+        reply = f"<p>LineagIQ Knowledge Graph active for tenant <code>{tenant_id}</code> containing <strong>{nodes_count} nodes</strong> and <strong>{edges_count} edges</strong>.</p><p>How can I help you trace asset dependencies or compute impact blast radius?</p>"
+        reply += "<p><em>💡 Tip: Set <code>OPENAI_API_KEY</code> or <code>GEMINI_API_KEY</code> environment variable to enable live LLM responses.</em></p>"
 
     return {
         "tenant_id": tenant_id,
