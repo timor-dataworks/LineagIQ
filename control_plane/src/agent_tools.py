@@ -1,7 +1,7 @@
 import os
 from typing import Optional
-import requests
 
+from control_plane.src.services.http_client import post_json
 from control_plane.src.query_engine import DuckDBQueryEngine
 from control_plane.src.prompt_synthesizer import PromptSynthesizer
 
@@ -51,13 +51,14 @@ class LineagIQGraphRAGClient:
             )
 
         url = f"{self.base_url}/api/v1/tenants/{tenant_id}/blast-radius"
-        response = requests.post(
+        res, err = post_json(
             url,
-            json={"node_id": node_id, "max_depth": max_depth, "data_path": data_path},
+            payload={"node_id": node_id, "max_depth": max_depth, "data_path": data_path},
             timeout=10,
         )
-        response.raise_for_status()
-        return response.json()["synthesized_prompt"]
+        if err or not res:
+            raise RuntimeError(f"Blast radius request failed: {err}")
+        return res["synthesized_prompt"]
 
     def get_discovery_prompt(
         self,
@@ -86,13 +87,14 @@ class LineagIQGraphRAGClient:
             return synthesizer.synthesize_discovery_prompt(query_text=query, matched_nodes=matched_nodes)
 
         url = f"{self.base_url}/api/v1/tenants/{tenant_id}/discovery"
-        response = requests.post(
+        res, err = post_json(
             url,
-            json={"query": query, "top_k": top_k, "data_path": data_path},
+            payload={"query": query, "top_k": top_k, "data_path": data_path},
             timeout=10,
         )
-        response.raise_for_status()
-        return response.json()["synthesized_prompt"]
+        if err or not res:
+            raise RuntimeError(f"Discovery request failed: {err}")
+        return res["synthesized_prompt"]
 
     def get_time_travel_diff_prompt(
         self,
@@ -125,9 +127,9 @@ class LineagIQGraphRAGClient:
             )
 
         url = f"{self.base_url}/api/v1/tenants/{tenant_id}/time-travel/diff"
-        response = requests.post(
+        res, err = post_json(
             url,
-            json={
+            payload={
                 "node_id": node_id,
                 "timestamp_t1": timestamp_t1,
                 "timestamp_t2": timestamp_t2,
@@ -135,8 +137,9 @@ class LineagIQGraphRAGClient:
             },
             timeout=10,
         )
-        response.raise_for_status()
-        return response.json()["synthesized_prompt"]
+        if err or not res:
+            raise RuntimeError(f"Time travel diff request failed: {err}")
+        return res["synthesized_prompt"]
 
 
 # Standalone Helper Functions / Agent Tools

@@ -170,3 +170,22 @@ def test_clean_latex_to_unicode():
     assert clean_latex_to_unicode(None) is None
     assert clean_latex_to_unicode("") == ""
 
+
+def test_modular_architecture_imports():
+    """Verifies that modular schemas, config, services, and routers are imported cleanly."""
+    from control_plane.src.config import resolve_data_path, STATIC_DIR
+    from control_plane.src.schemas import BlastRadiusRequest, ChatRequest, DiscoveryRequest
+    from control_plane.src.services import clean_latex_to_unicode, call_llm, post_json
+    from control_plane.src.routers import lineage_router, chat_router, visualizer_router
+
+    assert STATIC_DIR.exists()
+    assert resolve_data_path("test_t") == "/tmp/tenants/test_t"
+    assert BlastRadiusRequest(node_id="test_node").max_depth == 5
+    assert callable(clean_latex_to_unicode)
+    assert callable(call_llm)
+    assert callable(post_json)
+    assert lineage_router is not None
+    assert chat_router is not None
+    assert visualizer_router is not None
+
+
