@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LineagIQ | Enterprise Semantic Knowledge Graph & Real-Time Lineage Intelligence</title>
+  <meta name="description" content="LineagIQ models enterprise data landscapes into an intelligent, queryable semantic knowledge graph. Serverless Delta Lake & DuckDB architecture with sub-second time-travel lineage diffing and automated blast-radius intelligence.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Ambient Glow Effects -->
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
+  <!-- Header Navigation -->
+  <header class="site-header">
+    <div class="container nav-container">
+      <a href="#" class="logo-brand">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="6" cy="6" r="3"></circle>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="12" r="3"></circle>
+            <line x1="8.5" y1="7.5" x2="15.5" y2="10.5"></line>
+            <line x1="8.5" y1="16.5" x2="15.5" y2="13.5"></line>
+          </svg>
+        </div>
+        <span class="logo-text">LineagIQ</span>
+      </a>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="#executive" class="nav-link active">Executive Summary</a></li>
+          <li><a href="#time-travel" class="nav-link">Time Travel</a></li>
+          <li><a href="#blast-radius" class="nav-link">Blast Radius</a></li>
+          <li><a href="#slim-stack" class="nav-link">Slim Stack & TCO</a></li>
+          <li><a href="#architecture" class="nav-link">Developer & Arch</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-actions">
+        <a href="http://localhost:8000/" target="_blank" class="btn btn-primary" id="btn-live-demo">
+          <span>Launch Live Visualizer</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container hero-content">
+      <div class="hero-badge-wrap">
+        <span class="badge badge-indigo">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"></circle></svg>
+          Next-Gen Data Governance & Semantic Lineage
+        </span>
+      </div>
+
+      <h1 class="hero-title">
+        The Enterprise Knowledge Graph <br>
+        <span class="gradient-text">Engineered for Zero Operational Drag</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        LineagIQ transforms complex, multi-cloud enterprise data pipelines into a continuous, queryable knowledge graph. 
+        Featuring <strong>point-in-time time-travel schema drift analysis</strong>, <strong>instant recursive blast-radius intelligence</strong>, and a <strong>radically slim serverless architecture</strong> with zero expensive graph clusters.
+      </p>
+
+      <div class="hero-cta-group">
+        <a href="http://localhost:8000/" target="_blank" class="btn btn-primary btn-lg">
+          <span>Explore Interactive UI</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="#slim-stack" class="btn btn-outline btn-lg">
+          <span>Why Slim Stack? (TCO Review)</span>
+        </a>
+        <a href="#architecture" class="btn btn-outline btn-lg">
+          <span>Technical Architecture</span>
+        </a>
+      </div>
+
+      <!-- Executive C-Level Value Metrics -->
+      <div class="executive-metrics-grid" id="executive">
+        <div class="metric-card">
+          <div class="metric-value">92%</div>
+          <div class="metric-label">Reduction in TCO</div>
+          <div class="metric-desc">Replaces 6-figure Neo4j/Neptune clusters with serverless S3 Delta Lake & in-process DuckDB.</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-value">&lt; 30s</div>
+          <div class="metric-label">Root Cause Attribution</div>
+          <div class="metric-desc">Recursively traces silent schema breaks upstream to the exact source commit and PR.</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-value">100%</div>
+          <div class="metric-label">Point-in-Time Auditability</div>
+          <div class="metric-desc">ACID historical commit logs for regulatory compliance (GDPR, BCBS 239, HIPAA).</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-value">0</div>
+          <div class="metric-label">Heavyweight Daemons</div>
+          <div class="metric-desc">Zero long-running graph database servers, memory bloat, or customer data exfiltration.</div>
+        </div>
+      </div>
+
+      <!-- Hero Product Showcase Frame -->
+      <div class="hero-showcase">
+        <div class="showcase-inner" data-caption="LineagIQ Interactive Knowledge Graph - Visualizing multi-source lineage, streaming Kafka feeds, ML pipelines, and executive dashboards with bottom timeline scrubber.">
+          <img src="assets/lineage_main_graph.png" alt="LineagIQ Knowledge Graph Visualizer Overview" loading="eager">
+          <div class="showcase-badge-overlay">
+            <span class="pulse-dot"></span>
+            <span>Live Delta Lake Graph: 37 Entities, 46 Lineage Edges, 3 Historical Time Travel Commits</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Feature 1: Time Travel & Historical Schema Drift -->
+  <section class="feature-split-section" id="time-travel">
+    <div class="container">
+      <div class="feature-split">
+        <div class="feature-content">
+          <span class="feature-pill time-travel">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            Historical ACID Time Travel
+          </span>
+          <h2 class="feature-title">Eliminate Silent Data Drift With Time-Travel Diffing</h2>
+          <p class="feature-desc">
+            Data pipelines break silently when an upstream team alters a column type or drops a field without notice. 
+            LineagIQ tracks every schema revision and lineage modification across time using Delta Lake's transactional commit logs.
+          </p>
+          <ul class="feature-bullets">
+            <li class="feature-bullet-item">
+              <span class="bullet-icon">✓</span>
+              <div>
+                <strong>ISO 8601 Timestamp Scrubbing:</strong>
+                Scrub through interactive time-travel sliders to reconstruct and visualize the exact state of your enterprise data estate on any date or commit.
+              </div>
+            </li>
+            <li class="feature-bullet-item">
+              <span class="bullet-icon">✓</span>
+              <div>
+                <strong>Automated Snapshot Diffing (T₁ → T₂):</strong>
+                Instantly compute added, removed, or mutated assets, column attributes, and altered lineage connections between any two points in time.
+              </div>
+            </li>
+            <li class="feature-bullet-item">
+              <span class="bullet-icon">✓</span>
+              <div>
+                <strong>Audit-Grade Compliance:</strong>
+                Satisfy strict financial and data privacy mandates (BCBS 239, GDPR Right-to-be-Forgotten) with immutable verification of past lineage states.
+              </div>
+            </li>
+          </ul>
+          <a href="http://localhost:8000/" target="_blank" class="btn btn-outline">Test Time Travel in Live Demo →</a>
+        </div>
+
+        <div class="feature-media">
+          <div class="screenshot-card" data-caption="LineagIQ Time Travel Lineage Diff Modal - Comparing V0 (Initial Core) vs V2 (AI Churn & Streaming Expansion) identifying 10 added assets, 1 deleted column, and 16 new edges.">
+            <img src="assets/lineage_time_travel_diff.png" alt="LineagIQ Time Travel Diff Modal" loading="lazy">
+            <div class="screenshot-overlay-tag">
+              <span>Click to Zoom</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature 2: Upstream & Downstream Blast Radius -->
+  <section class="feature-split-section" id="blast-radius">
+    <div class="container">
+      <div class="feature-split reverse">
+        <div class="feature-content">
+          <span class="feature-pill blast-radius">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            Impact & Root-Cause Search
+          </span>
+          <h2 class="feature-title">Instant Blast Radius & Root-Cause Attribution</h2>
+          <p class="feature-desc">
+            Before engineering modifies an upstream landing table or refactors a dbt model, LineagIQ calculates the downstream blast radius in milliseconds—guaranteeing zero unexpected outages for C-level dashboards.
+          </p>
+          <ul class="feature-bullets">
+            <li class="feature-bullet-item">
+              <span class="bullet-icon">⚡</span>
+              <div>
+                <strong>Downstream Blast Radius:</strong>
+                Traverse multi-hop relationships across raw databases, feature stores, ML inference tables, reverse-ETL triggers, and executive Tableau dashboards.
+              </div>
+            </li>
+            <li class="feature-bullet-item">
+              <span class="bullet-icon">⚡</span>
+              <div>
+                <strong>Upstream Root-Cause Tracing:</strong>
+                When an executive KPI diverges, trace upstream through data marts, dbt models, and source databases in a single click to isolate the broken ingestion feed.
+              </div>
+            </li>
+            <li class="feature-bullet-item">
+              <span class="bullet-icon">⚡</span>
+              <div>
+                <strong>Ownership & Accountability:</strong>
+                Automatically identify the exact data engineering and business stakeholder teams impacted by any pipeline failure.
+              </div>
+            </li>
+          </ul>
+          <a href="http://localhost:8000/" target="_blank" class="btn btn-outline">Explore Blast Radius in Live Demo →</a>
+        </div>
+
+        <div class="feature-media">
+          <div class="screenshot-card" data-caption="LineagIQ Blast Radius Analysis - Selecting raw customer dataset instantly isolates 11 downstream impacted assets across dbt models, ML predictors, and executive Tableau reports.">
+            <img src="assets/lineage_blast_radius.png" alt="LineagIQ Downstream Blast Radius Highlight" loading="lazy">
+            <div class="screenshot-overlay-tag">
+              <span>Click to Zoom</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature 3: AI Assistant & GraphRAG -->
+  <section class="feature-split-section">
+    <div class="container">
+      <div class="feature-split">
+        <div class="feature-content">
+          <span class="feature-pill ai-copilot">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            GraphRAG AI Copilot
+          </span>
+          <h2 class="feature-title">Autonomous AI Assistant for Architectural Governance</h2>
+          <p class="feature-desc">
+            LineagIQ pairs its semantic graph with an autonomous AI Assistant. Using Graph-Augmented Generation (GraphRAG), LLMs reason over your actual data topology with zero hallucination.
+          </p>
+          <ul class="feature-bullets">
+            <li class="feature-bullet-item">
+              <span class="bullet-icon">🤖</span>
+              <div>
+                <strong>Zero-Configuration Local & Cloud LLMs:</strong>
+                Connect seamlessly to local Ollama (Llama 3, Mistral) with zero external network egress, or cloud models (OpenAI GPT-4o, Google Gemini).
+              </div>
+            </li>
+            <li class="feature-bullet-item">
+              <span class="bullet-icon">🤖</span>
+              <div>
+                <strong>One-Click Diff Impact Synthesis:</strong>
+                Feed schema drift diffs directly into the AI Assistant for natural language risk summaries and automated migration playbooks.
+              </div>
+            </li>
+            <li class="feature-bullet-item">
+              <span class="bullet-icon">🤖</span>
+              <div>
+                <strong>Pre-Built Retriever Tools:</strong>
+                Agentic tool wrappers for LangChain, AutoGen, and LlamaIndex to query blast radius and lineage history programmatically.
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="feature-media">
+          <div class="screenshot-card" data-caption="LineagIQ Autonomous AI Assistant Drawer - GraphRAG context injection provides real-time natural language root-cause analysis and remediation suggestions.">
+            <img src="assets/lineage_ai_assistant.png" alt="LineagIQ AI Assistant Drawer" loading="lazy">
+            <div class="screenshot-overlay-tag">
+              <span>Click to Zoom</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slim Deployment Stack & TCO Breakdown -->
+  <section class="comparison-section" id="slim-stack">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Total Cost of Ownership</span>
+        <h2 class="section-title">The "Slim Stack" Revolution: Why No Dedicated Graph DB?</h2>
+        <p class="section-subtitle">
+          Legacy enterprise catalogs mandate dedicated Neo4j, TigerGraph, or AWS Neptune clusters with 24/7 memory footprints, heavy JVM overhead, and specialized query skillsets. LineagIQ re-architects graph intelligence from first principles.
+        </p>
+      </div>
+
+      <div class="tco-grid">
+        <!-- Legacy Approach -->
+        <div class="tco-card legacy">
+          <div class="tco-header">
+            <div>
+              <span class="badge" style="background: rgba(244,63,94,0.15); color: #fda4af;">Legacy Data Catalogs</span>
+              <h3 class="tco-title" style="margin-top: 10px;">Collibra / Alation / Neo4j Stack</h3>
+            </div>
+            <div class="tco-price">$250k+ <span style="font-size: 0.85rem; font-weight: normal; color: var(--text-muted);">/ year</span></div>
+          </div>
+
+          <ul class="tco-items">
+            <li class="tco-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+              <span><strong>Heavy Infrastructure:</strong> 24/7 dedicated JVM graph instances (Neo4j Enterprise / Neptune) with massive RAM requirements.</span>
+            </li>
+            <li class="tco-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+              <span><strong>Data Privacy Risk:</strong> Requires granting third-party SaaS vendors continuous outbound tunnel access into your operational warehouses.</span>
+            </li>
+            <li class="tco-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+              <span><strong>No True Time Travel:</strong> Graph databases overwrite node state in-place. Historical point-in-time state requires complex manual snapshots.</span>
+            </li>
+            <li class="tco-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+              <span><strong>Proprietary Lock-in:</strong> Data locked in proprietary graph formats (Cypher/Gremlin) inaccessible to standard data analytics stacks.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- LineagIQ Slim Stack -->
+        <div class="tco-card lineagiq">
+          <div class="tco-header">
+            <div>
+              <span class="badge badge-emerald">LineagIQ Slim Stack</span>
+              <h3 class="tco-title" style="margin-top: 10px;">Serverless S3 Delta + In-Process DuckDB</h3>
+            </div>
+            <div class="tco-price">&lt; $5k <span style="font-size: 0.85rem; font-weight: normal; color: var(--text-muted);">/ year</span></div>
+          </div>
+
+          <ul class="tco-items">
+            <li class="tco-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              <span><strong>Zero Server Cost:</strong> Stored on cheap object storage (S3/GCS) in open Delta Lake parquet format. Scalable to billions of nodes.</span>
+            </li>
+            <li class="tco-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              <span><strong>Stateless Ephemeral Collection:</strong> Ingestion agents run as ephemeral 30-second CronJobs inside your VPC. Raw data never leaves your perimeter.</span>
+            </li>
+            <li class="tco-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              <span><strong>Native ACID Time Travel:</strong> Delta commit logs preserve every past lineage revision automatically with zero storage duplication.</span>
+            </li>
+            <li class="tco-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              <span><strong>C++ In-Process Performance:</strong> DuckDB executes recursive lineage queries via standard SQL CTEs in milliseconds directly over Parquet files.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Technical Architecture & Developer Overview -->
+  <section class="architecture-section" id="architecture">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Engineering Specification</span>
+        <h2 class="section-title">Developer & Architecture Deep Dive</h2>
+        <p class="section-subtitle">
+          Engineered for software engineers, platform architects, and data engineers. LineagIQ decouples semantic modeling from ingestion and query runtime.
+        </p>
+      </div>
+
+      <!-- Architecture Tabs -->
+      <div class="arch-tabs-nav">
+        <button class="arch-tab-btn active" data-tab="tab-tiers">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+          Three-Tier System Design
+        </button>
+        <button class="arch-tab-btn" data-tab="tab-query">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+          DuckDB Recursive Traversal
+        </button>
+        <button class="arch-tab-btn" data-tab="tab-code">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"></path></svg>
+          AI Agent Retriever Tools
+        </button>
+      </div>
+
+      <!-- Tab 1: Three Tier System Design -->
+      <div class="arch-tab-panel active" id="tab-tiers">
+        <div class="diagram-card">
+          <div class="diagram-flow">
+            <!-- Tier 1 -->
+            <div class="diagram-tier">
+              <div class="tier-number">Tier 01 // Ephemeral Edge</div>
+              <h4 class="tier-title">Stateless Ingestion Agent</h4>
+              <p class="tier-desc">Runs as an ephemeral Kubernetes CronJob or GitHub Action inside customer VPCs. Extracts metadata from static files and read-only catalogs.</p>
+              <div class="tier-chips">
+                <span class="tier-chip">dbt manifest.json</span>
+                <span class="tier-chip">INFORMATION_SCHEMA</span>
+                <span class="tier-chip">QUERY_HISTORY</span>
+                <span class="tier-chip">OpenLineage JSON</span>
+                <span class="tier-chip">bge-small INT8 ONNX</span>
+              </div>
+            </div>
+
+            <!-- Tier 2 -->
+            <div class="diagram-tier">
+              <div class="tier-number">Tier 02 // Storage Layer</div>
+              <h4 class="tier-title">Multi-Tenant Delta Lake</h4>
+              <p class="tier-desc">Standard Amazon S3 / GCS bucket prefixes storing nodes, edges, and dense vector embeddings with immutable ACID transaction logs.</p>
+              <div class="tier-chips">
+                <span class="tier-chip">s3://.../graph/nodes/</span>
+                <span class="tier-chip">s3://.../graph/edges/</span>
+                <span class="tier-chip">s3://.../vectors/</span>
+                <span class="tier-chip">_delta_log/</span>
+                <span class="tier-chip">Snappy Parquet</span>
+              </div>
+            </div>
+
+            <!-- Tier 3 -->
+            <div class="diagram-tier">
+              <div class="tier-number">Tier 03 // Query & GraphRAG</div>
+              <h4 class="tier-title">Serverless Control Plane</h4>
+              <p class="tier-desc">FastAPI microservice executing C++ DuckDB recursive CTE graph queries directly over S3 Delta tables. Powers Web UI and GraphRAG APIs.</p>
+              <div class="tier-chips">
+                <span class="tier-chip">DuckDB C++ Engine</span>
+                <span class="tier-chip">FastAPI REST</span>
+                <span class="tier-chip">Vector Similarity</span>
+                <span class="tier-chip">Timeline Scrubbing</span>
+                <span class="tier-chip">GraphRAG Agent Tools</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: DuckDB Recursive Traversal -->
+      <div class="arch-tab-panel" id="tab-query">
+        <div class="diagram-card">
+          <h4 class="tier-title">Ultra-Fast Recursive Graph Traversal in SQL</h4>
+          <p class="tier-desc">
+            Rather than relying on proprietary graph languages, LineagIQ leverages DuckDB's vectorized execution engine using standard recursive Common Table Expressions (CTEs) executed directly against Delta snapshots:
+          </p>
+
+          <div class="code-container">
+            <div class="code-header">
+              <span class="code-title">duckdb_store.py — Recursive Downstream Blast Radius Query</span>
+              <button class="copy-btn" data-code="snippet-sql">Copy SQL</button>
+            </div>
+            <pre><code id="snippet-sql">-- LineagIQ Recursive Downstream Lineage Traversal
+WITH RECURSIVE downstream_traverse AS (
+    -- Anchor: Immediate downstream dependencies of target node
+    SELECT source_id, target_id, type, 1 as depth
+    FROM delta_edges_view
+    WHERE source_id = 'postgres.raw.raw_customers'
+      AND type != 'BELONGS_TO'
+
+    UNION ALL
+
+    -- Recursive Step: Multi-hop graph expansion up to max_depth
+    SELECT e.source_id, e.target_id, e.type, d.depth + 1
+    FROM delta_edges_view e
+    JOIN downstream_traverse d ON e.source_id = d.target_id
+    WHERE d.depth &lt; 5 AND e.type != 'BELONGS_TO'
+)
+SELECT DISTINCT source_id, target_id, type, depth
+FROM downstream_traverse;</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: AI Agent Code Integration -->
+      <div class="arch-tab-panel" id="tab-code">
+        <div class="diagram-card">
+          <h4 class="tier-title">Programmatic GraphRAG Integration for AI Agents</h4>
+          <p class="tier-desc">
+            Integrate LineagIQ's retriever tools into your Python AI frameworks (LangChain, AutoGen, LlamaIndex) with three lines of code:
+          </p>
+
+          <div class="code-container">
+            <div class="code-header">
+              <span class="code-title">agent_example.py — Autonomous Impact Assessment</span>
+              <button class="copy-btn" data-code="snippet-py">Copy Python</button>
+            </div>
+            <pre><code id="snippet-py">from openai import OpenAI
+from control_plane.src.agent_tools import (
+    get_dataset_blast_radius,
+    get_lineage_time_travel_diff
+)
+
+# 1. Retrieve Graph Context & Synthesized GraphRAG Prompt
+blast_radius_prompt = get_dataset_blast_radius(
+    tenant_id="demo_tenant",
+    dataset_id="postgres.raw.raw_customers",
+    data_path="/tmp/tenants/demo_tenant",
+    max_depth=5
+)
+
+# 2. Dispatch Context to LLM of your choice (OpenAI, Gemini, or local Ollama)
+client = OpenAI()
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are LineagIQ AI Agent, an expert enterprise data architect."},
+        {"role": "user", "content": blast_radius_prompt}
+    ]
+)
+
+print(response.choices[0].message.content)</code></pre>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Lightbox Modal for Screenshots -->
+  <div class="lightbox-modal" id="lightbox-modal">
+    <div class="lightbox-content">
+      <button class="lightbox-close" id="lightbox-close">&times;</button>
+      <img src="" alt="" class="lightbox-img" id="lightbox-img">
+      <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="#" class="logo-brand">
+            <div class="logo-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="6" r="3"></circle>
+                <circle cx="6" cy="18" r="3"></circle>
+                <circle cx="18" cy="12" r="3"></circle>
+                <line x1="8.5" y1="7.5" x2="15.5" y2="10.5"></line>
+                <line x1="8.5" y1="16.5" x2="15.5" y2="13.5"></line>
+              </svg>
+            </div>
+            <span class="logo-text">LineagIQ</span>
+          </a>
+          <p>Enterprise Semantic Knowledge Graph & Real-Time Lineage Intelligence Platform.</p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Capabilities</h4>
+          <ul>
+            <li><a href="#time-travel">Time Travel Diffing</a></li>
+            <li><a href="#blast-radius">Blast Radius Intelligence</a></li>
+            <li><a href="#blast-radius">Root Cause Attribution</a></li>
+            <li><a href="#architecture">GraphRAG AI Assistant</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Architecture</h4>
+          <ul>
+            <li><a href="#slim-stack">Slim Stack & TCO</a></li>
+            <li><a href="#architecture">Delta Lake Commit Log</a></li>
+            <li><a href="#architecture">DuckDB C++ Traversal</a></li>
+            <li><a href="#architecture">Stateless Collectors</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Product Access</h4>
+          <ul>
+            <li><a href="http://localhost:8000/" target="_blank">Visualizer UI (Port 8000)</a></li>
+            <li><a href="http://localhost:8000/docs" target="_blank">Swagger API Specs</a></li>
+            <li><a href="http://localhost:8000/redoc" target="_blank">ReDoc Documentation</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>&copy; 2026 LineagIQ. Enterprise Semantic Knowledge Graph Platform. All rights reserved.</div>
+        <div>Built with Delta Lake, DuckDB & PyArrow.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
