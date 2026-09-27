@@ -1052,8 +1052,131 @@ footer.site-footer {
   color: var(--text-muted);
 }
 
+/* Integrations Section */
+.integrations-section {
+  padding: 90px 0;
+  background: #f8fafc;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.feature-pill.integrations {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid rgba(2, 132, 199, 0.3);
+}
+
+.integrations-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+  margin-top: 44px;
+}
+
+.integration-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.integration-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: #6366f1;
+}
+
+.integration-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.integration-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.integration-icon.dbt {
+  background: #ffefe5;
+  color: #ff694b;
+}
+
+.integration-icon.sql {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.integration-icon.logs {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.integration-icon.openlineage {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.integration-title-group h3 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+
+.integration-subtitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent-indigo);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.integration-desc {
+  font-size: 0.925rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  flex-grow: 1;
+}
+
+.integration-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.integration-cli {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.775rem;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  color: #1e293b;
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
+  .integrations-grid {
+    grid-template-columns: 1fr;
+  }
+
   .hero-title {
     font-size: 3rem;
   }

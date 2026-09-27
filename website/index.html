@@ -40,6 +40,7 @@
           <li><a href="#executive" class="nav-link active">Executive Summary</a></li>
           <li><a href="#time-travel" class="nav-link">Time Travel</a></li>
           <li><a href="#blast-radius" class="nav-link">Blast Radius</a></li>
+          <li><a href="#integrations" class="nav-link">Integrations</a></li>
           <li><a href="#slim-stack" class="nav-link">Slim Stack & TCO</a></li>
           <li><a href="#architecture" class="nav-link">Developer & Arch</a></li>
         </ul>
@@ -280,6 +281,112 @@
               <span>Click to Zoom</span>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Universal Source System Ingestion Section -->
+  <section class="integrations-section" id="integrations">
+    <div class="container">
+      <div class="section-header">
+        <span class="feature-pill integrations">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+          Universal Source Ingestion
+        </span>
+        <h2 class="section-title">Inject Any Enterprise Data Source Directly Into the Collection Agent</h2>
+        <p class="section-subtitle">
+          The LineagIQ Collection Agent runs statelessly and securely inside your private VPC, CI/CD runner, or Kubernetes cluster. 
+          It extracts schema contracts, SQL catalogs, query histories, and orchestrator run events into normalized Graph payloads and dense vector embeddings—without exposing raw customer data.
+        </p>
+      </div>
+
+      <div class="integrations-grid">
+        <!-- Source 1: dbt -->
+        <div class="integration-card">
+          <div class="integration-header">
+            <div class="integration-icon dbt">⚡</div>
+            <div class="integration-title-group">
+              <h3>dbt Core & dbt Cloud</h3>
+              <span class="integration-subtitle">Data Build Tool Artifacts</span>
+            </div>
+          </div>
+          <p class="integration-desc">
+            Directly ingests <code>manifest.json</code> and <code>catalog.json</code> compilation artifacts. Extracts models, seeds, snapshots, source tables, column documentation, tags, tests, and compiles the complete dependency graph into <code>DERIVED_FROM</code> lineage edges.
+          </p>
+          <div class="integration-chips">
+            <span class="tier-chip">dbt Core</span>
+            <span class="tier-chip">dbt Cloud</span>
+            <span class="tier-chip">Snowflake</span>
+            <span class="tier-chip">BigQuery</span>
+            <span class="tier-chip">Databricks</span>
+          </div>
+          <code class="integration-cli">python -m collection_agent.src.cli --dbt-manifest &lt;path&gt; --dbt-catalog &lt;path&gt;</code>
+        </div>
+
+        <!-- Source 2: SQL Catalogs & Information Schema -->
+        <div class="integration-card">
+          <div class="integration-header">
+            <div class="integration-icon sql">🗄️</div>
+            <div class="integration-title-group">
+              <h3>SQL Catalogs & Schemas</h3>
+              <span class="integration-subtitle">INFORMATION_SCHEMA DDL</span>
+            </div>
+          </div>
+          <p class="integration-desc">
+            Parses standard <code>INFORMATION_SCHEMA.TABLES</code>, <code>COLUMNS</code>, and foreign key constraint dictionaries. Maps table/view hierarchies, column data types, ordinal positions, nullability flags, and physical <code>JOINS_WITH</code> relationships across relational warehouses.
+          </p>
+          <div class="integration-chips">
+            <span class="tier-chip">PostgreSQL</span>
+            <span class="tier-chip">Snowflake</span>
+            <span class="tier-chip">Databricks Unity</span>
+            <span class="tier-chip">AWS Redshift</span>
+            <span class="tier-chip">Google BigQuery</span>
+          </div>
+          <code class="integration-cli">python -m collection_agent.src.cli --sql-schema &lt;path_to_schema.json&gt;</code>
+        </div>
+
+        <!-- Source 3: Query Logs & Access History -->
+        <div class="integration-card">
+          <div class="integration-header">
+            <div class="integration-icon logs">📜</div>
+            <div class="integration-title-group">
+              <h3>SQL Query Logs & Audit History</h3>
+              <span class="integration-subtitle">Runtime Access & Join Mining</span>
+            </div>
+          </div>
+          <p class="integration-desc">
+            Mines operational query logs (Snowflake <code>QUERY_HISTORY</code>, BigQuery <code>INFORMATION_SCHEMA.JOBS</code>, Databricks Query History). Identifies real-world user dataset consumption patterns (<code>CONSUMED_BY</code>), execution frequencies, and implicit multi-table join predicates.
+          </p>
+          <div class="integration-chips">
+            <span class="tier-chip">Snowflake History</span>
+            <span class="tier-chip">BigQuery Jobs</span>
+            <span class="tier-chip">Databricks Logs</span>
+            <span class="tier-chip">Athena / CloudTrail</span>
+          </div>
+          <code class="integration-cli">python -m collection_agent.src.cli --query-logs &lt;path_to_logs.json&gt;</code>
+        </div>
+
+        <!-- Source 4: OpenLineage Standard -->
+        <div class="integration-card">
+          <div class="integration-header">
+            <div class="integration-icon openlineage">🌐</div>
+            <div class="integration-title-group">
+              <h3>OpenLineage Standard Events</h3>
+              <span class="integration-subtitle">Airflow, Spark & Flink Ingestion</span>
+            </div>
+          </div>
+          <p class="integration-desc">
+            Parses standard OpenLineage JSON run events emitted by workflow orchestrators and distributed compute engines. Seamlessly extracts job execution run IDs, event timestamps, pipeline input datasets (<code>CONSUMED_BY</code>), and output datasets (<code>PRODUCED_BY</code>).
+          </p>
+          <div class="integration-chips">
+            <span class="tier-chip">Apache Airflow</span>
+            <span class="tier-chip">Apache Spark</span>
+            <span class="tier-chip">Dagster</span>
+            <span class="tier-chip">Apache Flink</span>
+            <span class="tier-chip">dbt-ol</span>
+          </div>
+          <code class="integration-cli">OpenLineage Extractor: parse_event(event_data)</code>
         </div>
       </div>
     </div>
@@ -586,7 +693,7 @@ docker compose up -d control_plane</code></pre>
           <ul>
             <li><a href="#time-travel">Time Travel Diffing</a></li>
             <li><a href="#blast-radius">Blast Radius Intelligence</a></li>
-            <li><a href="#blast-radius">Root Cause Attribution</a></li>
+            <li><a href="#integrations">Universal Integrations</a></li>
             <li><a href="#architecture">GraphRAG AI Assistant</a></li>
           </ul>
         </div>
