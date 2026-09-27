@@ -26,8 +26,8 @@ def test_local_embedder_payload():
 
 
 def create_dummy_onnx_embedding_model(filepath: str):
-    import onnx
-    from onnx import helper, TensorProto
+    import onnx  # type: ignore
+    from onnx import helper, TensorProto  # type: ignore
     import numpy as np
 
     weights = np.random.randn(30522, 384).astype(np.float32)
@@ -52,6 +52,8 @@ def create_dummy_onnx_embedding_model(filepath: str):
 
 
 def test_local_embedder_onnx_runtime_inference(tmp_path):
+    pytest.importorskip("onnx")
+    pytest.importorskip("onnxruntime")
     model_file = str(tmp_path / "embedding_model.onnx")
     create_dummy_onnx_embedding_model(model_file)
 
@@ -67,6 +69,7 @@ def test_local_embedder_onnx_runtime_inference(tmp_path):
 
 
 def test_local_embedder_production_onnx_model(tmp_path):
+    pytest.importorskip("onnxruntime")
     import os
     import urllib.request
 

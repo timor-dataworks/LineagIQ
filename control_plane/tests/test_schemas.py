@@ -20,15 +20,15 @@ def test_blast_radius_request_defaults():
 def test_blast_radius_request_validation():
     with pytest.raises(ValidationError):
         # Missing required node_id
-        BlastRadiusRequest()
+        BlastRadiusRequest()  # type: ignore
 
     with pytest.raises(ValidationError):
         # max_depth out of bounds (> 10)
-        BlastRadiusRequest(node_id="test", max_depth=15)
+        BlastRadiusRequest(node_id="test", max_depth=15)  # type: ignore
 
     with pytest.raises(ValidationError):
         # max_depth < 1
-        BlastRadiusRequest(node_id="test", max_depth=0)
+        BlastRadiusRequest(node_id="test", max_depth=0)  # type: ignore
 
 
 def test_root_cause_request_validation():
@@ -37,7 +37,7 @@ def test_root_cause_request_validation():
     assert req.max_depth == 3
 
     with pytest.raises(ValidationError):
-        RootCauseRequest()
+        RootCauseRequest()  # type: ignore
 
 
 def test_discovery_request_validation():
@@ -46,7 +46,7 @@ def test_discovery_request_validation():
     assert req.top_k == 10
 
     with pytest.raises(ValidationError):
-        DiscoveryRequest(query="test", top_k=100)  # top_k > 50
+        DiscoveryRequest(query="test", top_k=100)  # type: ignore
 
 
 def test_chat_request_fields():
@@ -74,4 +74,4 @@ def test_time_travel_diff_request_validation():
 
     with pytest.raises(ValidationError):
         # Missing timestamp_t2
-        TimeTravelDiffRequest(node_id="dataset.orders", timestamp_t1="2026-09-08T10:00:00Z")
+        TimeTravelDiffRequest(node_id="dataset.orders", timestamp_t1="2026-09-08T10:00:00Z")  # type: ignore

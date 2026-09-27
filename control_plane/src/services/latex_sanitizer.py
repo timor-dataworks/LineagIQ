@@ -1,7 +1,8 @@
 import re
+from typing import Optional
 
 
-def clean_latex_to_unicode(text: str) -> str:
+def clean_latex_to_unicode(text: Optional[str]) -> Optional[str]:
     """Sanitizes LaTeX math formatting from LLM responses into clean Unicode and plain text."""
     if not text:
         return text

@@ -3,7 +3,7 @@ import json
 import re
 import datetime
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 import duckdb
 from deltalake import DeltaTable
 from control_plane.src.query_engine.base import BaseGraphStore
@@ -17,82 +17,258 @@ from core.constants import (
 logger = logging.getLogger(__name__)
 
 
+_EXTENSIONS_LOADED = set()
+_S3_CONFIGURED = set()
+
+
+def _fetchall_dicts(rel: duckdb.DuckDBPyConnection) -> List[Dict[str, Any]]:
+    """Fast extraction of DuckDB query results to dictionaries without Pandas overhead."""
+    cols = [d[0] for d in rel.description]
+    return [dict(zip(cols, row)) for row in rel.fetchall()]
+
+
 def _quote_id(val: str) -> str:
     """Escapes single quotes and wraps string in SQL single quotes."""
     return "'" + val.replace("'", "''") + "'"
 
 
-def resolve_delta_or_parquet_table(
+def ensure_duckdb_extensions(con: duckdb.DuckDBPyConnection) -> None:
+    """Ensures required DuckDB extensions (delta, httpfs) are installed and loaded."""
+    con_id = id(con)
+    if con_id in _EXTENSIONS_LOADED:
+        return
+
+    for ext in ["delta", "httpfs"]:
+        try:
+            con.execute(f"LOAD {ext};")
+        except Exception:
+            try:
+                con.execute(f"INSTALL {ext}; LOAD {ext};")
+            except Exception as e:
+                logger.debug(f"DuckDB extension {ext} not loaded: {e}")
+    _EXTENSIONS_LOADED.add(con_id)
+
+
+def configure_duckdb_s3(con: duckdb.DuckDBPyConnection, storage_options: Optional[Dict[str, Any]] = None) -> None:
+    """Configures DuckDB S3 credentials/endpoint for direct S3 delta_scan access."""
+    if not storage_options:
+        return
+
+    cfg_key = (id(con), str(sorted(storage_options.items())))
+    if cfg_key in _S3_CONFIGURED:
+        return
+
+    endpoint = (
+        storage_options.get("AWS_ENDPOINT_URL")
+        or storage_options.get("endpoint_url")
+        or storage_options.get("s3_endpoint")
+    )
+    ak = storage_options.get("AWS_ACCESS_KEY_ID") or storage_options.get("access_key_id")
+    sk = storage_options.get("AWS_SECRET_ACCESS_KEY") or storage_options.get("secret_access_key")
+    region = storage_options.get("AWS_REGION") or storage_options.get("region") or "us-east-1"
+    allow_http = (
+        str(storage_options.get("AWS_ALLOW_HTTP", "")).lower() == "true"
+        or "http://" in str(endpoint)
+    )
+
+    if endpoint or (ak and sk):
+        try:
+            clean_endpoint = endpoint
+            if clean_endpoint and clean_endpoint.startswith("http://"):
+                clean_endpoint = clean_endpoint[7:]
+            elif clean_endpoint and clean_endpoint.startswith("https://"):
+                clean_endpoint = clean_endpoint[8:]
+
+            use_ssl_val = "false" if allow_http else "true"
+            con.execute("LOAD httpfs;")
+            secret_sql = f"""
+            CREATE OR REPLACE SECRET lineagiq_s3 (
+                TYPE S3,
+                KEY_ID '{ak or "mock"}',
+                SECRET '{sk or "mock"}',
+                REGION '{region}',
+                USE_SSL {use_ssl_val},
+                URL_STYLE 'path'
+                {f", ENDPOINT '{clean_endpoint}'" if clean_endpoint else ""}
+            );
+            """
+            con.execute(secret_sql)
+            _S3_CONFIGURED.add(cfg_key)
+        except Exception as e:
+            logger.debug(f"Could not configure DuckDB S3 secret: {e}")
+
+
+def resolve_delta_table(
     con: duckdb.DuckDBPyConnection,
     target_path: str,
     view_name: str,
     as_of: Optional[str] = None,
+    storage_options: Optional[Dict[str, Any]] = None,
+    view_cache: Optional[Dict[str, Any]] = None,
 ) -> bool:
-    """Registers Delta Lake or Parquet dataset as a DuckDB SQL view.
+    """Registers a Delta Lake dataset as a DuckDB SQL view.
 
-    If target_path is a Delta Lake table directory, resolves the target version
-    corresponding to `as_of` timestamp (if provided) and registers PyArrow table.
-    Otherwise, registers standard Parquet file SQL view.
+    Exclusively uses native DuckDB C++ `ATTACH '<path>' AS <alias> (TYPE delta);`
+    with direct time-travel querying `SELECT * FROM <alias> AT (VERSION => <version>);`.
+    Supports local Delta tables and remote s3:// Delta tables without delta-rs or Parquet fallbacks.
 
     Args:
         con: Active DuckDB connection instance.
-        target_path: File or directory path to dataset.
+        target_path: File or directory path to Delta dataset (local path or s3:// URI).
         view_name: Registered SQL view name in DuckDB connection.
-        as_of: Optional ISO 8601 timestamp string.
+        as_of: Optional ISO 8601 timestamp string or integer version string for historical snapshots.
+        storage_options: Optional remote storage backend options (e.g. S3 credentials / endpoint).
+        view_cache: Optional dict cache of currently registered views for fast no-op returns.
 
     Returns:
-        True if table/file exists and view was registered, False otherwise.
+        True if Delta table exists and view was registered, False otherwise.
     """
-    table_dir = target_path
-    if os.path.isfile(target_path) and target_path.endswith(".parquet"):
-        table_dir = os.path.dirname(target_path)
-
-    if os.path.exists(table_dir) and DeltaTable.is_deltatable(table_dir):
-        try:
-            dt = DeltaTable(table_dir)
-            target_ms = parse_iso_to_epoch_ms(as_of)
-            if target_ms is not None:
-                history = dt.history()
-                matching_ver = 0
-                for commit in sorted(history, key=lambda x: x.get("version", 0)):
-                    if commit.get("timestamp", 0) <= target_ms + 100:
-                        matching_ver = commit.get("version", 0)
-                dt.load_as_version(matching_ver)
-
-            pa_table = dt.to_pyarrow_table()
-            con.register(view_name, pa_table)
-            return True
-        except Exception as e:
-            logger.warning(f"Failed to load Delta table at {table_dir}: {e}")
-
-    # Fallback to direct parquet file scan
-    p_file = target_path
-    if os.path.isdir(target_path):
-        data_parquet = os.path.join(target_path, "data.parquet")
-        nodes_parquet = os.path.join(target_path, "nodes.parquet")
-        if os.path.exists(data_parquet):
-            p_file = data_parquet
-        elif os.path.exists(nodes_parquet):
-            p_file = nodes_parquet
-
-    if os.path.exists(p_file) and os.path.isfile(p_file):
-        p_file_escaped = p_file.replace("'", "''")
-        con.execute(f"CREATE VIEW {view_name} AS SELECT * FROM read_parquet('{p_file_escaped}');")
+    if view_cache is not None and view_cache.get(view_name) == (target_path, as_of):
         return True
 
-    return False
+    table_dir = target_path
+    is_s3 = target_path.startswith("s3://")
+    if not is_s3 and os.path.isfile(target_path) and target_path.endswith(".parquet"):
+        table_dir = os.path.dirname(target_path)
+
+    if not is_s3 and not os.path.exists(table_dir):
+        return False
+
+    try:
+        ensure_duckdb_extensions(con)
+        if is_s3 and storage_options:
+            configure_duckdb_s3(con, storage_options)
+
+        # Determine historical version if as_of is provided
+        target_ver = None
+        if as_of is not None:
+            if isinstance(as_of, int) or (isinstance(as_of, str) and as_of.isdigit()):
+                target_ver = int(as_of)
+            else:
+                target_ms = parse_iso_to_epoch_ms(as_of)
+                if target_ms is not None:
+                    base_tenant_dir = table_dir
+                    for sub in ["/graph/nodes", "/graph/edges", "/vectors"]:
+                        if table_dir.endswith(sub):
+                            base_tenant_dir = table_dir[: -len(sub)]
+                            break
+                    ts_list = get_available_timestamps(base_tenant_dir, storage_options=storage_options)
+                    for commit in ts_list:
+                        if commit.get("timestamp_ms", 0) <= target_ms + 100:
+                            target_ver = commit.get("version", 0)
+
+        attach_alias = f"delta_{view_name}"
+        escaped_path = (target_path if is_s3 else os.path.abspath(table_dir)).replace("'", "''")
+
+        attached_map = view_cache.setdefault("_attached_delta", {}) if view_cache is not None else {}
+        if attached_map.get(attach_alias) != escaped_path:
+            try:
+                con.execute(f"DETACH {attach_alias};")
+            except Exception:
+                pass
+            con.execute(f"ATTACH '{escaped_path}' AS {attach_alias} (TYPE delta);")
+            if view_cache is not None:
+                attached_map[attach_alias] = escaped_path
+
+        if target_ver is not None:
+            con.execute(f"CREATE OR REPLACE VIEW {view_name} AS SELECT * FROM {attach_alias} AT (VERSION => {target_ver});")
+        else:
+            con.execute(f"CREATE OR REPLACE VIEW {view_name} AS SELECT * FROM {attach_alias};")
+
+        if view_cache is not None:
+            view_cache[view_name] = (target_path, as_of)
+        return True
+    except Exception as e:
+        logger.warning(f"Failed to attach Delta table at {target_path}: {e}")
+        return False
 
 
-def get_available_timestamps(data_base_path: str) -> List[Dict[str, Any]]:
+resolve_delta_or_parquet_table = resolve_delta_table
+
+
+
+def get_available_timestamps(
+    data_base_path: str, storage_options: Optional[Dict[str, Any]] = None
+) -> List[Dict[str, Any]]:
     """Retrieves commit history timestamps from tenant Delta Lake table logs.
 
     Args:
-        data_base_path: Base path to tenant data directory.
+        data_base_path: Base path to tenant data directory or S3 URI (s3://bucket/tenant).
+        storage_options: Optional remote storage backend options (e.g. S3 credentials / endpoint).
 
     Returns:
         List of dictionaries with 'version', 'timestamp' (ISO 8601), and 'operation'.
     """
-    nodes_dir = get_nodes_table_path(data_base_path)
+    is_s3 = data_base_path.startswith("s3://")
+    nodes_dir = f"{data_base_path.rstrip('/')}/graph/nodes" if is_s3 else get_nodes_table_path(data_base_path)
+
+    if is_s3:
+        try:
+            import boto3
+            s3_path = nodes_dir[5:]
+            bucket = s3_path.split("/")[0]
+            prefix = s3_path[len(bucket) + 1 :].strip("/")
+            log_prefix = f"{prefix}/_delta_log/"
+
+            endpoint = None
+            ak = None
+            sk = None
+            region = "us-east-1"
+            if storage_options:
+                endpoint = storage_options.get("AWS_ENDPOINT_URL") or storage_options.get("endpoint_url")
+                ak = storage_options.get("AWS_ACCESS_KEY_ID") or storage_options.get("access_key_id")
+                sk = storage_options.get("AWS_SECRET_ACCESS_KEY") or storage_options.get("secret_access_key")
+                region = storage_options.get("AWS_REGION") or storage_options.get("region") or region
+
+            client_kwargs = {"region_name": region}
+            if endpoint:
+                client_kwargs["endpoint_url"] = endpoint
+            if ak and sk:
+                client_kwargs["aws_access_key_id"] = ak
+                client_kwargs["aws_secret_access_key"] = sk
+
+            s3 = boto3.client("s3", **client_kwargs)
+            paginator = s3.get_paginator("list_objects_v2")
+            commit_files = []
+            for page in paginator.paginate(Bucket=bucket, Prefix=log_prefix):
+                for item in page.get("Contents", []):
+                    key = item["Key"]
+                    filename = key.split("/")[-1]
+                    if filename.endswith(".json") and filename[:-5].isdigit():
+                        ver = int(filename[:-5])
+                        commit_files.append((ver, key))
+
+            results = []
+            for ver, key in sorted(commit_files, key=lambda x: x[0]):
+                obj = s3.get_object(Bucket=bucket, Key=key)
+                content = obj["Body"].read().decode("utf-8")
+                commit_info = {}
+                for line in content.strip().split("\n"):
+                    try:
+                        record = json.loads(line)
+                        if "commitInfo" in record:
+                            commit_info = record["commitInfo"]
+                            break
+                    except Exception:
+                        continue
+
+                commit_ms = commit_info.get("timestamp", 0)
+                if commit_ms:
+                    dt_obj = datetime.datetime.fromtimestamp(commit_ms / 1000, tz=datetime.timezone.utc)
+                    iso_str = dt_obj.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+                else:
+                    iso_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+                results.append({
+                    "version": ver,
+                    "timestamp": iso_str,
+                    "timestamp_ms": commit_ms,
+                    "operation": commit_info.get("operation", "WRITE"),
+                })
+            return results
+        except Exception as e:
+            logger.warning(f"Error fetching S3 Delta timestamps via boto3: {e}")
+
     if not os.path.exists(nodes_dir) or not DeltaTable.is_deltatable(nodes_dir):
         return []
 
@@ -116,23 +292,40 @@ def get_available_timestamps(data_base_path: str) -> List[Dict[str, Any]]:
         return []
 
 
+
 class DuckDBGraphStore(BaseGraphStore):
     """DuckDB & Parquet/Delta Lake Implementation of `BaseGraphStore`.
 
     Executes in-memory SQL queries over Parquet dataset files or Delta Lake tables
     (`graph/nodes` and `graph/edges`) for recursive graph traversals, metadata queries,
-    and historical time-travel analysis.
+    and historical time-travel analysis. Supports local file paths and s3:// URIs.
 
     Args:
-        data_base_path: Root directory path containing graph and vector Parquet/Delta data.
+        data_base_path: Root directory path or s3:// URI containing graph and vector Parquet/Delta data.
+        storage_options: Optional remote storage backend options (e.g. S3 credentials / endpoint).
     """
 
-    def __init__(self, data_base_path: str):
+    def __init__(self, data_base_path: str, storage_options: Optional[Dict[str, Any]] = None):
         self.base_path = data_base_path
-        self.nodes_dir = get_nodes_table_path(data_base_path)
-        self.edges_dir = get_edges_table_path(data_base_path)
-        self.nodes_file = os.path.join(self.nodes_dir, FILE_DATA_PARQUET)
-        self.edges_file = os.path.join(self.edges_dir, FILE_DATA_PARQUET)
+        self.storage_options = storage_options
+        if data_base_path.startswith("s3://"):
+            base_clean = data_base_path.rstrip("/")
+            self.nodes_dir = f"{base_clean}/graph/nodes"
+            self.edges_dir = f"{base_clean}/graph/edges"
+            self.nodes_file = ""
+            self.edges_file = ""
+        else:
+            self.nodes_dir = get_nodes_table_path(data_base_path)
+            self.edges_dir = get_edges_table_path(data_base_path)
+            self.nodes_file = os.path.join(self.nodes_dir, FILE_DATA_PARQUET)
+            self.edges_file = os.path.join(self.edges_dir, FILE_DATA_PARQUET)
+
+        # Persistent DuckDB connection with pre-loaded extensions and S3 secrets
+        self.con = duckdb.connect(database=":memory:")
+        self._registered_views: Dict[str, Tuple[str, Optional[str]]] = {}
+        ensure_duckdb_extensions(self.con)
+        if self.storage_options:
+            configure_duckdb_s3(self.con, self.storage_options)
 
     def _synthesize_missing_nodes(self, nodes: List[Dict[str, Any]], target_ids: set) -> List[Dict[str, Any]]:
         """
@@ -142,7 +335,7 @@ class DuckDBGraphStore(BaseGraphStore):
         :param target_ids: Set of all node IDs referenced in edges or lineage traversals.
         :return: Updated nodes list with synthesized placeholder nodes added.
         """
-        found_ids = {n["id"] for n in nodes}
+        found_ids = {n["id"] for n in nodes if isinstance(n, dict) and "id" in n}
         for nid in target_ids:
             if nid not in found_ids:
                 name = nid.split(".")[-1] if "." in nid else nid
@@ -166,17 +359,26 @@ class DuckDBGraphStore(BaseGraphStore):
         Returns:
             Dictionary containing 'nodes' list and 'edges' list.
         """
-        con = duckdb.connect(database=":memory:")
-        if not resolve_delta_or_parquet_table(con, self.nodes_dir, "nodes_view", as_of=as_of):
+        con = self.con
+        if not resolve_delta_or_parquet_table(
+            con, self.nodes_dir, "nodes_view", as_of=as_of, storage_options=self.storage_options, view_cache=self._registered_views
+        ):
             return {"nodes": [], "edges": []}
-        if not resolve_delta_or_parquet_table(con, self.edges_dir, "edges_view", as_of=as_of):
+        if not resolve_delta_or_parquet_table(
+            con, self.edges_dir, "edges_view", as_of=as_of, storage_options=self.storage_options, view_cache=self._registered_views
+        ):
             return {"nodes": [], "edges": []}
 
-        nodes_df = con.execute("SELECT id, FIRST(type) as type, FIRST(name) as name, FIRST(description) as description, FIRST(properties) as properties FROM nodes_view GROUP BY id").df()
-        edges_df = con.execute("SELECT DISTINCT source_id, target_id, type, properties FROM edges_view").df()
-
-        nodes = nodes_df.to_dict(orient="records")
-        edges = edges_df.to_dict(orient="records")
+        nodes = _fetchall_dicts(
+            con.execute(
+                "SELECT id, FIRST(type) as type, FIRST(name) as name, FIRST(description) as description, FIRST(properties) as properties FROM nodes_view GROUP BY id"
+            )
+        )
+        edges = _fetchall_dicts(
+            con.execute(
+                "SELECT DISTINCT source_id, target_id, type, properties FROM edges_view"
+            )
+        )
 
         # Synthesize missing nodes referenced in edges so the graph is always complete
         referenced_ids = {e["source_id"] for e in edges} | {e["target_id"] for e in edges}
@@ -195,17 +397,21 @@ class DuckDBGraphStore(BaseGraphStore):
         :param as_of: Optional ISO 8601 timestamp string for historical time travel.
         :return: Traversal payload containing 'root_node', 'impacted_nodes', 'edges', and 'depth_reached'.
         """
-        con = duckdb.connect(database=":memory:")
-        if not resolve_delta_or_parquet_table(con, self.nodes_dir, "nodes_view", as_of=as_of):
+        con = self.con
+        if not resolve_delta_or_parquet_table(
+            con, self.nodes_dir, "nodes_view", as_of=as_of, storage_options=self.storage_options, view_cache=self._registered_views
+        ):
             return {"impacted_nodes": [], "edges": [], "root_node": None, "depth_reached": 0}
-        if not resolve_delta_or_parquet_table(con, self.edges_dir, "edges_view", as_of=as_of):
+        if not resolve_delta_or_parquet_table(
+            con, self.edges_dir, "edges_view", as_of=as_of, storage_options=self.storage_options, view_cache=self._registered_views
+        ):
             return {"impacted_nodes": [], "edges": [], "root_node": None, "depth_reached": 0}
 
         query = f"""
         WITH RECURSIVE downstream_traverse(source_id, target_id, type, depth) AS (
             SELECT source_id, target_id, type, 1 AS depth
             FROM edges_view
-            WHERE source_id = {_quote_id(start_node_id)}
+            WHERE source_id = ?
             
             UNION ALL
             
@@ -218,8 +424,8 @@ class DuckDBGraphStore(BaseGraphStore):
         FROM downstream_traverse;
         """
 
-        edges_df = con.execute(query).df()
-        edges = edges_df.to_dict(orient="records")
+        edges_rel = con.execute(query, [start_node_id])
+        edges = _fetchall_dicts(edges_rel)
 
         impacted_node_ids = set()
         for e in edges:
@@ -229,14 +435,13 @@ class DuckDBGraphStore(BaseGraphStore):
         if not impacted_node_ids:
             impacted_node_ids.add(start_node_id)
 
-        node_id_list_str = ", ".join(_quote_id(nid) for nid in impacted_node_ids)
-        nodes_query = f"""
+        nodes_query = """
         SELECT id, type, name, description, properties
         FROM nodes_view
-        WHERE id IN ({node_id_list_str});
+        WHERE id = ANY(?);
         """
-        nodes_df = con.execute(nodes_query).df()
-        nodes = nodes_df.to_dict(orient="records")
+        nodes_rel = con.execute(nodes_query, [list(impacted_node_ids)])
+        nodes = _fetchall_dicts(nodes_rel)
 
         nodes = self._synthesize_missing_nodes(nodes, impacted_node_ids)
         root_node = next((n for n in nodes if n["id"] == start_node_id), None)
@@ -259,17 +464,21 @@ class DuckDBGraphStore(BaseGraphStore):
         :param as_of: Optional ISO 8601 timestamp string for historical time travel.
         :return: Traversal payload containing 'target_node', 'upstream_nodes', 'edges', and 'depth_reached'.
         """
-        con = duckdb.connect(database=":memory:")
-        if not resolve_delta_or_parquet_table(con, self.nodes_dir, "nodes_view", as_of=as_of):
+        con = self.con
+        if not resolve_delta_or_parquet_table(
+            con, self.nodes_dir, "nodes_view", as_of=as_of, storage_options=self.storage_options, view_cache=self._registered_views
+        ):
             return {"upstream_nodes": [], "edges": [], "target_node": None, "depth_reached": 0}
-        if not resolve_delta_or_parquet_table(con, self.edges_dir, "edges_view", as_of=as_of):
+        if not resolve_delta_or_parquet_table(
+            con, self.edges_dir, "edges_view", as_of=as_of, storage_options=self.storage_options, view_cache=self._registered_views
+        ):
             return {"upstream_nodes": [], "edges": [], "target_node": None, "depth_reached": 0}
 
         query = f"""
         WITH RECURSIVE upstream_traverse(source_id, target_id, type, depth) AS (
             SELECT source_id, target_id, type, 1 AS depth
             FROM edges_view
-            WHERE target_id = {_quote_id(start_node_id)} AND type != 'BELONGS_TO'
+            WHERE target_id = ? AND type != 'BELONGS_TO'
             
             UNION ALL
             
@@ -282,8 +491,8 @@ class DuckDBGraphStore(BaseGraphStore):
         FROM upstream_traverse;
         """
 
-        edges_df = con.execute(query).df()
-        edges = edges_df.to_dict(orient="records")
+        edges_rel = con.execute(query, [start_node_id])
+        edges = _fetchall_dicts(edges_rel)
 
         upstream_node_ids = set()
         for e in edges:
@@ -293,14 +502,13 @@ class DuckDBGraphStore(BaseGraphStore):
         if not upstream_node_ids:
             upstream_node_ids.add(start_node_id)
 
-        node_id_list_str = ", ".join(_quote_id(nid) for nid in upstream_node_ids)
-        nodes_query = f"""
+        nodes_query = """
         SELECT id, type, name, description, properties
         FROM nodes_view
-        WHERE id IN ({node_id_list_str});
+        WHERE id = ANY(?);
         """
-        nodes_df = con.execute(nodes_query).df()
-        nodes = nodes_df.to_dict(orient="records")
+        nodes_rel = con.execute(nodes_query, [list(upstream_node_ids)])
+        nodes = _fetchall_dicts(nodes_rel)
 
         nodes = self._synthesize_missing_nodes(nodes, upstream_node_ids)
         target_node = next((n for n in nodes if n["id"] == start_node_id), None)
@@ -325,18 +533,19 @@ class DuckDBGraphStore(BaseGraphStore):
         if not node_ids:
             return []
 
-        con = duckdb.connect(database=":memory:")
-        if not resolve_delta_or_parquet_table(con, self.nodes_dir, "nodes_view", as_of=as_of):
+        con = self.con
+        if not resolve_delta_or_parquet_table(
+            con, self.nodes_dir, "nodes_view", as_of=as_of, storage_options=self.storage_options, view_cache=self._registered_views
+        ):
             return []
 
-        v_ids_str = ", ".join(_quote_id(vid) for vid in node_ids)
-        query = f"""
+        query = """
         SELECT id, type, name, description, properties
         FROM nodes_view
-        WHERE id IN ({v_ids_str});
+        WHERE id = ANY(?);
         """
-        results_df = con.execute(query).df()
-        records = results_df.to_dict(orient="records")
+        rel = con.execute(query, [node_ids])
+        records = _fetchall_dicts(rel)
         record_map = {r["id"]: r for r in records}
         return [record_map[vid] for vid in node_ids if vid in record_map]
 
@@ -351,22 +560,31 @@ class DuckDBGraphStore(BaseGraphStore):
         :param as_of: Optional ISO 8601 timestamp string for historical time travel.
         :return: List of matching node metadata dictionaries.
         """
-        con = duckdb.connect(database=":memory:")
-        if not resolve_delta_or_parquet_table(con, self.nodes_dir, "nodes_view", as_of=as_of):
+        if not query_text or not query_text.strip():
+            return []
+
+        con = self.con
+        if not resolve_delta_or_parquet_table(
+            con, self.nodes_dir, "nodes_view", as_of=as_of, storage_options=self.storage_options, view_cache=self._registered_views
+        ):
             return []
 
         terms = extract_search_terms(query_text)
-        where_clauses = []
-        for t in terms:
-            t_escaped = t.replace("'", "''")
-            where_clauses.append(f"LOWER(name) LIKE '%{t_escaped}%'")
-            where_clauses.append(f"LOWER(id) LIKE '%{t_escaped}%'")
-            where_clauses.append(f"LOWER(COALESCE(description, '')) LIKE '%{t_escaped}%'")
-            where_clauses.append(f"LOWER(type) LIKE '%{t_escaped}%'")
-            where_clauses.append(f"LOWER(CAST(properties AS VARCHAR)) LIKE '%{t_escaped}%'")
-
-        if not where_clauses:
+        if not terms:
             return []
+
+        where_clauses = []
+        params = []
+        for t in terms:
+            param = f"%{t.lower()}%"
+            where_clauses.extend([
+                "LOWER(name) LIKE ?",
+                "LOWER(id) LIKE ?",
+                "LOWER(COALESCE(description, '')) LIKE ?",
+                "LOWER(type) LIKE ?",
+                "LOWER(CAST(properties AS VARCHAR)) LIKE ?",
+            ])
+            params.extend([param] * 5)
 
         where_stmt = " OR ".join(where_clauses)
         query = f"""
@@ -375,8 +593,8 @@ class DuckDBGraphStore(BaseGraphStore):
         WHERE {where_stmt}
         LIMIT {top_k * 2};
         """
-        results_df = con.execute(query).df()
-        return results_df.to_dict(orient="records")
+        rel = con.execute(query, params)
+        return _fetchall_dicts(rel)
 
     def _get_scoped_node_ids(self, graph: Dict[str, Any], start_node_id: Optional[str], as_of: Optional[str] = None) -> set:
         """Helper to compute set of node IDs connected to start_node_id (upstream + downstream)."""

@@ -6,7 +6,7 @@ or deterministic token-hashing pseudo-embeddings for zero-dependency local execu
 
 import re
 import hashlib
-from typing import List, Optional
+from typing import List, Optional, Any
 from core.models import Node, GraphPayload
 from core.constants import DEFAULT_EMBEDDING_DIM
 
@@ -45,7 +45,7 @@ class LocalEmbedder:
         """
         self.model_path = model_path
         self.embedding_dim = DEFAULT_EMBEDDING_DIM
-        self._onnx_session = None
+        self._onnx_session: Any = None
 
         if model_path:
             try:
@@ -104,6 +104,8 @@ class LocalEmbedder:
         Returns:
             384-dimensional float vector list if inference succeeds, or None if failed.
         """
+        if self._onnx_session is None:
+            return None
         try:
             import numpy as np
 

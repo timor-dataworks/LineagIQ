@@ -45,7 +45,7 @@ class Node(BaseModel):
 
 class DatasetNode(Node):
     """Data Asset node representing tables, views, topics, or files."""
-    type: Literal[NodeType.DATASET] = NodeType.DATASET
+    type: NodeType = NodeType.DATASET
     database: Optional[str] = None
     schema_name: Optional[str] = Field(default=None, alias="schema")
     table_type: Optional[str] = "BASE TABLE"
@@ -54,7 +54,7 @@ class DatasetNode(Node):
 
 class ColumnNode(Node):
     """Column Attribute node representing a single schema column in a Dataset."""
-    type: Literal[NodeType.COLUMN] = NodeType.COLUMN
+    type: NodeType = NodeType.COLUMN
     dataset_id: str = Field(..., description="Parent Dataset node ID")
     data_type: Optional[str] = None
     is_nullable: bool = True
@@ -63,20 +63,20 @@ class ColumnNode(Node):
 
 class PipelineNode(Node):
     """Data Pipeline node representing dbt models, Airflow DAGs, or Spark jobs."""
-    type: Literal[NodeType.PIPELINE] = NodeType.PIPELINE
+    type: NodeType = NodeType.PIPELINE
     resource_type: Optional[str] = "model"
     owner: Optional[str] = None
 
 
 class UserTeamNode(Node):
     """User or Team node representing data consumers and owners."""
-    type: Union[Literal[NodeType.USER], Literal[NodeType.TEAM]] = NodeType.USER
+    type: NodeType = NodeType.USER
     email: Optional[str] = None
 
 
 class BusinessTermNode(Node):
     """Business Glossary Term node representing data governance terms."""
-    type: Literal[NodeType.BUSINESS_TERM] = NodeType.BUSINESS_TERM
+    type: NodeType = NodeType.BUSINESS_TERM
     definition: Optional[str] = None
     domain: Optional[str] = None
 

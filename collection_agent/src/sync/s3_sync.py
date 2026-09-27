@@ -75,3 +75,85 @@ class S3Uploader:
                 uploaded_keys.append(f"s3://{self.bucket}/tenants/{self.tenant_id}/{s3_key}")
 
         return uploaded_keys
+
+
+class S3Downloader:
+    """
+    S3 Downloader for retrieving multi-tenant Delta Lake and Parquet datasets from S3.
+
+    Downloads tenant artifacts from S3 data lake paths:
+    `s3://<bucket>/tenants/<tenant_id>/...` to local filesystem directories.
+    """
+
+    def __init__(
+        self,
+        bucket: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+        s3_client: Optional[Any] = None,
+    ):
+        """
+        Initializes S3Downloader.
+
+        :param bucket: Optional target S3 bucket name (defaults to env `LINEAGIQ_S3_BUCKET`).
+        :param tenant_id: Optional LineagIQ tenant ID (defaults to env `LINEAGIQ_TENANT_ID`).
+        :param s3_client: Optional boto3 S3 client instance.
+        """
+        self.bucket = bucket or os.getenv("LINEAGIQ_S3_BUCKET", "control-plane-lake")
+        self.tenant_id = tenant_id or os.getenv("LINEAGIQ_TENANT_ID", "default_tenant")
+        self.s3_client = s3_client
+
+        if not self.s3_client:
+            try:
+                import boto3
+                self.s3_client = boto3.client("s3")
+            except Exception:
+                self.s3_client = None
+
+    def download_file(self, s3_key: str, local_path: str) -> bool:
+        """
+        Downloads a single object from S3 under the tenant prefix (`tenants/<tenant_id>/<s3_key>`).
+
+        :param s3_key: Relative S3 key path.
+        :param local_path: Absolute destination local file path.
+        :return: True if download succeeded, False if boto3 S3 client is unavailable.
+        """
+        full_key = f"tenants/{self.tenant_id}/{s3_key.lstrip('/')}"
+        if self.s3_client:
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            self.s3_client.download_file(self.bucket, full_key, local_path)
+            return True
+        return False
+
+    def download_directory(self, local_dir: str, prefix: str = "") -> List[str]:
+        """
+        Recursively downloads all artifact files (including Delta Lake logs and parquet files)
+        from S3 under the tenant prefix into `local_dir`.
+
+        :param local_dir: Absolute destination directory path.
+        :param prefix: Optional subdirectory prefix under the tenant prefix.
+        :return: List of downloaded local absolute file paths.
+        """
+        if not self.s3_client:
+            return []
+
+        tenant_base_prefix = f"tenants/{self.tenant_id}/"
+        search_prefix = (
+            f"tenants/{self.tenant_id}/{prefix.lstrip('/')}" if prefix else tenant_base_prefix
+        )
+        if prefix and not search_prefix.endswith("/"):
+            search_prefix += "/"
+
+        downloaded_files = []
+        paginator = self.s3_client.get_paginator("list_objects_v2")
+
+        for page in paginator.paginate(Bucket=self.bucket, Prefix=search_prefix):
+            for obj in page.get("Contents", []):
+                key = obj["Key"]
+                rel_path = key[len(tenant_base_prefix):]
+                dest_path = os.path.join(local_dir, rel_path)
+                os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                self.s3_client.download_file(self.bucket, key, dest_path)
+                downloaded_files.append(dest_path)
+
+        return downloaded_files
+
