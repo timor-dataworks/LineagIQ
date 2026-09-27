@@ -3,7 +3,7 @@
 import os
 import shutil
 import time
-from typing import List, Any
+from typing import List, Any, Optional
 
 from core.models import (
     DatasetNode,
@@ -273,11 +273,24 @@ def build_version_2() -> GraphPayload:
     return GraphPayload(nodes=nodes, edges=edges)
 
 
-def main():
-    target_dir = "/tmp/tenants/demo_tenant"
-    if os.path.exists(target_dir):
-        shutil.rmtree(target_dir)
-    os.makedirs(target_dir, exist_ok=True)
+def run_multiversion_generation(target_dir: Optional[str] = None) -> None:
+    """Generates and writes 3 progressive versions of lineage and schema metadata."""
+    effective_dir = target_dir or os.environ.get("DATA_PATH")
+    if not effective_dir:
+        raise ValueError("DATA_PATH environment variable must be set.")
+
+    if os.path.exists(effective_dir):
+        for item in os.listdir(effective_dir):
+            item_path = os.path.join(effective_dir, item)
+            if os.path.isdir(item_path):
+                shutil.rmtree(item_path, ignore_errors=True)
+            else:
+                try:
+                    os.remove(item_path)
+                except OSError:
+                    pass
+    os.makedirs(effective_dir, exist_ok=True)
+
 
     embedder = LocalEmbedder()
     writer = ArtifactWriter()
@@ -286,7 +299,7 @@ def main():
     print("Writing Version 0 (Initial Core E-Commerce Platform)...")
     p0 = build_version_0()
     p0 = embedder.embed_payload(p0)
-    writer.write_all(p0, target_dir, mode="overwrite")
+    writer.write_all(p0, effective_dir, mode="overwrite")
     print(f"  V0 committed: {len(p0.nodes)} nodes, {len(p0.edges)} edges")
 
     time.sleep(2)
@@ -295,7 +308,7 @@ def main():
     print("Writing Version 1 (Multi-Currency & GDPR Compliance Overhaul)...")
     p1 = build_version_1()
     p1 = embedder.embed_payload(p1)
-    writer.write_all(p1, target_dir, mode="overwrite")
+    writer.write_all(p1, effective_dir, mode="overwrite")
     print(f"  V1 committed: {len(p1.nodes)} nodes, {len(p1.edges)} edges")
 
     time.sleep(2)
@@ -304,10 +317,21 @@ def main():
     print("Writing Version 2 (AI-Powered Churn Prediction & Real-Time Streaming)...")
     p2 = build_version_2()
     p2 = embedder.embed_payload(p2)
-    writer.write_all(p2, target_dir, mode="overwrite")
+    writer.write_all(p2, effective_dir, mode="overwrite")
     print(f"  V2 committed: {len(p2.nodes)} nodes, {len(p2.edges)} edges")
 
-    print("\nAll 3 versions committed successfully to Delta Lake at:", target_dir)
+    print("\nAll 3 versions committed successfully to Delta Lake at:", effective_dir)
+
+
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Generate 3-version historical lineage dataset for LineagIQ demo")
+    parser.parse_args()
+
+    target_dir = os.environ.get("DATA_PATH")
+    if not target_dir:
+        raise ValueError("DATA_PATH environment variable must be set.")
+    run_multiversion_generation(target_dir)
 
 
 if __name__ == "__main__":

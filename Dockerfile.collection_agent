@@ -1,0 +1,37 @@
+# ==============================================================================
+# LineagIQ Collection Agent - Ephemeral Edge Metadata Ingestion Container
+# ==============================================================================
+FROM python:3.11-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    DATA_PATH=/data
+
+WORKDIR /app
+
+# Install minimal system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy dependency specifications
+COPY core/requirements.txt /app/core/requirements.txt
+COPY collection_agent/requirements.txt /app/collection_agent/requirements.txt
+
+# Install python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r /app/core/requirements.txt && \
+    pip install --no-cache-dir -r /app/collection_agent/requirements.txt
+
+# Copy source code and default fixtures
+COPY core/ /app/core/
+COPY collection_agent/ /app/collection_agent/
+COPY scripts/ /app/scripts/
+
+# Output directory volume for artifacts
+VOLUME ["/data"]
+
+# Default entrypoint executes Collection Agent CLI
+ENTRYPOINT ["python", "-m", "collection_agent.src.cli"]
+CMD []

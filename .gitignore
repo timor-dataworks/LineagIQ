@@ -20,3 +20,4 @@ ENV/
 *.parquet
 *.lance/
 *.log
+data/

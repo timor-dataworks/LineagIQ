@@ -41,3 +41,13 @@ def test_visualizer_missing_file(monkeypatch):
     response = client.get("/")
     assert response.status_code == 404
     assert "Visualizer index.html not found" in response.json()["detail"]
+
+
+def test_app_config_endpoint(monkeypatch):
+    monkeypatch.setenv("DATA_PATH", "/data/lineagiq")
+    client = get_test_client()
+    response = client.get("/api/v1/config")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["data_path"] == "/data/lineagiq"
+    assert data["env_data_path_set"] is True

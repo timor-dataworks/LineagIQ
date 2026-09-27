@@ -1,7 +1,8 @@
-from typing import Dict
+import os
+from typing import Dict, Any
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse
-from control_plane.src.config import STATIC_INDEX_FILE
+from control_plane.src.config import STATIC_INDEX_FILE, resolve_data_path
 
 router = APIRouter(tags=["Visualizer & Health"])
 
@@ -14,6 +15,19 @@ def health_check() -> Dict[str, str]:
         Dictionary indicating status 'ok' and service name.
     """
     return {"status": "ok", "service": "lineagiq-control-plane"}
+
+
+@router.get("/api/v1/config")
+def get_app_config() -> Dict[str, Any]:
+    """Returns application environment configuration for the web UI.
+
+    Ensures the web GUI operates on server-enforced data path settings.
+    """
+    data_path = resolve_data_path()
+    return {
+        "data_path": data_path,
+        "env_data_path_set": bool(os.getenv("DATA_PATH")),
+    }
 
 
 @router.get("/", response_class=HTMLResponse)

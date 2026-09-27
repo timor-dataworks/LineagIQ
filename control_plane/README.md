@@ -46,13 +46,13 @@ control_plane/
 | :--- | :--- | :--- |
 | `/healthz` | `GET` | Health check endpoint |
 | `/visualizer` | `GET` | Interactive Knowledge Graph Visualizer & Timeline Slider UI |
-| `/api/v1/tenants/{tenant_id}/timeline` | `GET` | Fetches available Delta Lake commit timestamps for UI timeline scrubbing |
-| `/api/v1/tenants/{tenant_id}/graph` | `GET` | Returns full graph nodes and edges as of optional `as_of` ISO 8601 timestamp |
-| `/api/v1/tenants/{tenant_id}/blast-radius` | `POST` | Calculates downstream operational blast radius as of optional `as_of` timestamp |
-| `/api/v1/tenants/{tenant_id}/root-cause` | `POST` | Calculates upstream root cause lineage as of optional `as_of` timestamp |
-| `/api/v1/tenants/{tenant_id}/discovery` | `POST` | Semantic vector search over data assets as of optional `as_of` timestamp |
-| `/api/v1/tenants/{tenant_id}/time-travel/diff` | `POST` | Computes historical schema drift & lineage diff between $T_1$ and $T_2$ |
-| `/api/v1/tenants/{tenant_id}/chat` | `POST` | Interactive GraphRAG LLM Lineage Chat assistant |
+| `/api/v1/timeline` | `GET` | Fetches available Delta Lake commit timestamps for UI timeline scrubbing |
+| `/api/v1/graph` | `GET` | Returns full graph nodes and edges as of optional `as_of` ISO 8601 timestamp |
+| `/api/v1/blast-radius` | `POST` | Calculates downstream operational blast radius as of optional `as_of` timestamp |
+| `/api/v1/root-cause` | `POST` | Calculates upstream root cause lineage as of optional `as_of` timestamp |
+| `/api/v1/discovery` | `POST` | Semantic vector search over data assets as of optional `as_of` timestamp |
+| `/api/v1/time-travel/diff` | `POST` | Computes historical schema drift & lineage diff between $T_1$ and $T_2$ |
+| `/api/v1/chat` | `POST` | Interactive GraphRAG LLM Lineage Chat assistant |
 
 ---
 
@@ -71,25 +71,23 @@ from control_plane.src.agent_tools import (
 )
 
 @tool
-def blast_radius_tool(tenant_id: str, dataset_id: str) -> str:
+def blast_radius_tool(dataset_id: str) -> str:
     """Calculates downstream operational blast radius for a data asset before schema modifications or deployments."""
-    return get_dataset_blast_radius(tenant_id=tenant_id, dataset_id=dataset_id, data_path="/tmp/tenants/demo_tenant")
+    return get_dataset_blast_radius(dataset_id=dataset_id)
 
 @tool
-def time_travel_diff_tool(tenant_id: str, node_id: str, timestamp_t1: str, timestamp_t2: str) -> str:
+def time_travel_diff_tool(node_id: str, timestamp_t1: str, timestamp_t2: str) -> str:
     """Computes schema additions, deletions, and lineage edge changes between historical timestamps T1 and T2."""
     return get_lineage_time_travel_diff(
-        tenant_id=tenant_id,
         node_id=node_id,
         timestamp_t1=timestamp_t1,
         timestamp_t2=timestamp_t2,
-        data_path="/tmp/tenants/demo_tenant",
     )
 
 @tool
-def data_discovery_tool(tenant_id: str, search_query: str) -> str:
+def data_discovery_tool(search_query: str) -> str:
     """Searches enterprise datasets, columns, and pipelines for semantic discovery and schema details."""
-    return search_enterprise_data_catalog(tenant_id=tenant_id, query=search_query, data_path="/tmp/tenants/demo_tenant")
+    return search_enterprise_data_catalog(query=search_query)
 ```
 
 ### 2. End-to-End Agent Execution Flow with OpenAI / LLMs
@@ -103,11 +101,9 @@ client = LineagIQGraphRAGClient()
 
 # 2. Retrieve Historical Time Travel Diff Prompt for a target dataset
 synthesized_prompt = client.get_time_travel_diff_prompt(
-    tenant_id="demo_tenant",
     node_id="model.jaffle_shop.stg_customers",
     timestamp_t1="2026-09-08T08:00:00Z",
     timestamp_t2="2026-09-08T10:00:00Z",
-    data_path="/tmp/tenants/demo_tenant"
 )
 
 # 3. Pass Synthesized Prompt to LLM Provider

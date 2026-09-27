@@ -54,12 +54,10 @@ export function buildColumnToDatasetMap(nodes, edges) {
 }
 
 export async function loadGraph(refreshTimeline = true) {
-  const tenantId = getVal('tenant-input', 'demo_tenant');
-  const dataPath = getVal('data-path-input');
   const asOf = getCurrentAsOfTimestamp();
 
   try {
-    const data = await fetchGraph(tenantId, dataPath, asOf);
+    const data = await fetchGraph(asOf);
     rawNodes = data.nodes || [];
     rawEdges = data.edges || [];
 
@@ -85,12 +83,10 @@ export function handleSearchInput() {
 }
 
 export async function performVectorSearch(queryText) {
-  const tenantId = getVal('tenant-input', 'demo_tenant');
-  const dataPath = getVal('data-path-input');
   const asOf = getCurrentAsOfTimestamp();
 
   try {
-    const data = await searchDiscovery(tenantId, dataPath, queryText, asOf);
+    const data = await searchDiscovery(queryText, asOf);
     vectorMatchedIds = new Set((data.matched_nodes || []).map(n => n.id));
   } catch (err) {
     console.warn("Vector search fallback to local filter:", err);
@@ -673,8 +669,6 @@ export function resetSidebar() {
 
 export async function triggerBlastRadius() {
   if (!selectedNodeId) return;
-  const tenantId = getVal('tenant-input', 'demo_tenant');
-  const dataPath = getVal('data-path-input');
   const blastBtn = getEl('blast-btn');
 
   try {
@@ -682,7 +676,7 @@ export async function triggerBlastRadius() {
       blastBtn.innerText = '⏳ Calculating Blast Radius...';
       blastBtn.disabled = true;
     }
-    const result = await fetchBlastRadius(tenantId, dataPath, selectedNodeId, 5);
+    const result = await fetchBlastRadius(selectedNodeId, 5);
 
     const impactedIds = new Set((result.impacted_nodes || []).map(n => n.id));
     if (nodesDataSet) {
@@ -715,8 +709,6 @@ export async function triggerBlastRadius() {
 
 export async function triggerRootCause() {
   if (!selectedNodeId) return;
-  const tenantId = getVal('tenant-input', 'demo_tenant');
-  const dataPath = getVal('data-path-input');
   const rootBtn = getEl('root-cause-btn');
 
   try {
@@ -724,7 +716,7 @@ export async function triggerRootCause() {
       rootBtn.innerText = '⏳ Calculating Root Cause...';
       rootBtn.disabled = true;
     }
-    const result = await fetchRootCause(tenantId, dataPath, selectedNodeId, 5);
+    const result = await fetchRootCause(selectedNodeId, 5);
 
     const upstreamIds = new Set((result.upstream_nodes || []).map(n => n.id));
     if (nodesDataSet) {

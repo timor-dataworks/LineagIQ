@@ -31,11 +31,8 @@ export function setCurrentAsOfTimestamp(ts) {
 }
 
 export async function loadTimeline() {
-  const tenantId = getVal('tenant-input', 'demo_tenant');
-  const dataPath = getVal('data-path-input');
-
   try {
-    const data = await fetchTimeline(tenantId, dataPath);
+    const data = await fetchTimeline();
     availableTimestamps = data.timestamps || [];
 
     const panel = getEl('timeline-panel');
@@ -164,8 +161,6 @@ export async function executeTimeDiff() {
   const t1 = getVal('diff-t1-select');
   const t2 = getVal('diff-t2-select');
   const nodeId = getVal('diff-node-input');
-  const tenantId = getVal('tenant-input', 'demo_tenant');
-  const dataPath = getVal('data-path-input');
 
   if (!t1 || !t2) {
     alert("Please select baseline (T1) and compare (T2) timestamps.");
@@ -173,7 +168,7 @@ export async function executeTimeDiff() {
   }
 
   try {
-    const data = await fetchTimeDiff(tenantId, dataPath, nodeId, t1, t2);
+    const data = await fetchTimeDiff(nodeId, t1, t2);
     lastDiffResult = data;
 
     const diff = data.diff || {};

@@ -224,3 +224,91 @@ python3 -m pytest collection_agent/tests/ control_plane/tests/
 # Run JavaScript visualizer client test suite (4 tests)
 node --test control_plane/tests/script.test.js
 ```
+
+---
+
+### 7. Docker Packaging & Deployment
+
+LineagIQ provides production-ready Docker images for both the **Collection Agent** and the **Control Plane**.
+
+#### A. Build with Docker Compose
+```bash
+# Start Control Plane web service on port 8000
+docker compose up -d control_plane
+
+# Ingest metadata via ephemeral Collection Agent
+docker compose run --rm collection_agent
+```
+
+#### B. Build & Run Standalone Containers
+
+##### 1. Collection Agent (Ephemeral Edge Ingestion)
+```bash
+# Build standalone image
+docker build -f Dockerfile.collection_agent -t lineagiq-collection-agent:latest .
+
+# Run metadata extraction using default DATA_PATH (/data)
+docker run --rm \
+  -v $(pwd)/data:/data \
+  lineagiq-collection-agent:latest
+
+# Or override DATA_PATH via environment variable
+docker run --rm \
+  -e DATA_PATH=/data/custom \
+  -v $(pwd)/data:/data \
+  lineagiq-collection-agent:latest
+```
+
+##### 2. Control Plane (Serverless Query Engine & Visualizer Web UI)
+```bash
+# Build standalone image
+docker build -f Dockerfile.control_plane -t lineagiq-control-plane:latest .
+
+# Run web service on port 8000 with mounted data lake storage (uses DATA_PATH=/data)
+docker run -d --name lineagiq-control-plane \
+  -p 8000:8000 \
+  -v $(pwd)/data:/data \
+  lineagiq-control-plane:latest
+
+# Or override DATA_PATH to point to another path
+docker run -d --name lineagiq-control-plane \
+  -p 8000:8000 \
+  -e DATA_PATH=/data/custom \
+  -v $(pwd)/data:/data \
+  lineagiq-control-plane:latest
+```
+
+##### 3. Unified Multi-Stage Target Builds
+You can also build using the root multi-stage `Dockerfile`:
+```bash
+# Build collection agent target
+docker build --target collection-agent -t lineagiq-collection-agent .
+
+# Build control plane target (default)
+docker build --target control-plane -t lineagiq-control-plane .
+```
+
+#### C. Generate 3-Version Time-Travel Demo Dataset in Docker
+You can run the multi-version generator inside Docker to create realistic historical schema evolution (V0: E-commerce, V1: GDPR/Multi-currency, V2: Real-time Streaming & AI Churn):
+
+##### Option 1: Via Collection Agent Container (uses DATA_PATH)
+```bash
+docker run --rm \
+  -v $(pwd)/data:/data \
+  lineagiq-collection-agent:latest \
+  --multiversion-demo
+```
+
+##### Option 2: Via Docker Compose
+```bash
+docker compose run --rm demo_generator
+```
+
+##### Option 3: Direct Python Module Invocation
+```bash
+docker run --rm \
+  -v $(pwd)/data:/data \
+  --entrypoint python \
+  lineagiq-collection-agent:latest \
+  -m scripts.generate_multiversion_demo
+```

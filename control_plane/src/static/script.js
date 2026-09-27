@@ -136,7 +136,7 @@ if (typeof window !== 'undefined') {
   window.closeAllDrawers = closeAllDrawers;
   window.showToast = showToast;
 
-  window.addEventListener('DOMContentLoaded', () => {
+  window.addEventListener('DOMContentLoaded', async () => {
     loadLlmSettings();
     loadGraph();
   });

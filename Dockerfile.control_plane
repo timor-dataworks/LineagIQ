@@ -1,0 +1,45 @@
+# ==============================================================================
+# LineagIQ Control Plane - Serverless Query Engine & Visualizer Web Service
+# ==============================================================================
+FROM python:3.11-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    PORT=8000 \
+    HOST=0.0.0.0 \
+    DATA_PATH=/data
+
+WORKDIR /app
+
+# Install minimal system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy dependency specifications
+COPY core/requirements.txt /app/core/requirements.txt
+COPY control_plane/requirements.txt /app/control_plane/requirements.txt
+
+# Install python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r /app/core/requirements.txt && \
+    pip install --no-cache-dir -r /app/control_plane/requirements.txt
+
+# Copy source code
+COPY core/ /app/core/
+COPY control_plane/ /app/control_plane/
+COPY scripts/ /app/scripts/
+
+# Expose FastAPI web visualizer & GraphRAG API port
+EXPOSE 8000
+
+# Mountable volume for tenant data lake storage
+VOLUME ["/data"]
+
+# Healthcheck to verify FastAPI server readiness
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/ || exit 1
+
+# Start Uvicorn ASGI server
+CMD ["sh", "-c", "exec uvicorn control_plane.src.main:app --host ${HOST} --port ${PORT}"]

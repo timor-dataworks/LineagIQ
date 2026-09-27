@@ -1,7 +1,6 @@
 import os
 import json
 import argparse
-import tempfile
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -63,9 +62,7 @@ def load_demo_fixtures(builder: GraphBuilder) -> None:
 
 
 def run_pipeline(
-    output_dir: Optional[str] = None,
     sync_s3: bool = False,
-    tenant_id: Optional[str] = None,
     bucket: Optional[str] = None,
     dbt_manifest: Optional[str] = None,
     dbt_catalog: Optional[str] = None,
@@ -79,8 +76,11 @@ def run_pipeline(
     2. Local Vector Embedding
     3. Parquet & DuckDB VSS Vector Artifact Serialization
     4. Optional Multi-part S3 Lake Sync
+    Data path is strictly read from DATA_PATH environment variable.
     """
-    target_dir = output_dir or tempfile.mkdtemp(prefix="lineagiq_collection_")
+    target_dir = os.getenv("DATA_PATH")
+    if not target_dir:
+        raise ValueError("DATA_PATH environment variable must be set.")
 
     builder = GraphBuilder()
 
@@ -131,7 +131,7 @@ def run_pipeline(
     # S3 Lake Sync
     synced_keys = []
     if sync_s3:
-        uploader = S3Uploader(bucket=bucket, tenant_id=tenant_id)
+        uploader = S3Uploader(bucket=bucket)
         synced_keys = uploader.sync_directory(target_dir)
 
     return {
@@ -145,21 +145,29 @@ def run_pipeline(
 
 def main():
     parser = argparse.ArgumentParser(description="LineagIQ Collection Agent CLI")
-    parser.add_argument("--output-dir", type=str, help="Output directory for artifacts")
     parser.add_argument("--sync", action="store_true", help="Sync output artifacts to S3")
-    parser.add_argument("--tenant-id", type=str, help="LineagIQ Tenant ID")
     parser.add_argument("--bucket", type=str, help="S3 Bucket Name")
     parser.add_argument("--dbt-manifest", type=str, help="Path to dbt manifest.json")
     parser.add_argument("--dbt-catalog", type=str, help="Path to dbt catalog.json")
     parser.add_argument("--sql-schema", type=str, help="Path to SQL INFORMATION_SCHEMA JSON")
     parser.add_argument("--query-logs", type=str, help="Path to query logs JSON")
     parser.add_argument("--no-demo", action="store_true", help="Do not load sample demo data if no inputs provided")
+    parser.add_argument("--multiversion-demo", action="store_true", help="Generate 3-version historical lineage demo dataset")
 
     args = parser.parse_args()
+
+    target_dir = os.getenv("DATA_PATH")
+    if not target_dir:
+        raise ValueError("DATA_PATH environment variable must be set.")
+
+    if args.multiversion_demo:
+        from scripts.generate_multiversion_demo import run_multiversion_generation
+        run_multiversion_generation()
+        print(f"Multi-version demo generation completed successfully in {target_dir}")
+        return
+
     results = run_pipeline(
-        output_dir=args.output_dir,
         sync_s3=args.sync,
-        tenant_id=args.tenant_id,
         bucket=args.bucket,
         dbt_manifest=args.dbt_manifest,
         dbt_catalog=args.dbt_catalog,

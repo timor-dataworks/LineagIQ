@@ -13,7 +13,6 @@ def test_blast_radius_request_defaults():
     req = BlastRadiusRequest(node_id="analytics.orders")
     assert req.node_id == "analytics.orders"
     assert req.max_depth == 5
-    assert req.data_path is None
     assert req.as_of is None
 
 

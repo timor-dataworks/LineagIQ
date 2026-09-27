@@ -288,12 +288,12 @@ def test_s3_sync_roundtrip_with_uploader_and_downloader(moto_s3_server):
         writer.write_all(payload, base_dir=temp_write_dir)
 
         # 3. Upload to S3 with S3Uploader
-        uploader = S3Uploader(bucket=bucket_name, tenant_id="tenant_beta", s3_client=s3_client)
+        uploader = S3Uploader(bucket=bucket_name, prefix="lake", s3_client=s3_client)
         uploaded = uploader.sync_directory(temp_write_dir)
         assert len(uploaded) > 0
 
         # 4. Download from S3 with S3Downloader into clean temp_read_dir
-        downloader = S3Downloader(bucket=bucket_name, tenant_id="tenant_beta", s3_client=s3_client)
+        downloader = S3Downloader(bucket=bucket_name, prefix="lake", s3_client=s3_client)
         downloaded = downloader.download_directory(temp_read_dir)
         assert len(downloaded) == len(uploaded)
 

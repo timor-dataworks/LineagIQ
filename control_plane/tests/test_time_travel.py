@@ -93,7 +93,7 @@ def test_time_travel_api_endpoints(client, tmp_path, monkeypatch):
     writer = ArtifactWriter()
     embedder = LocalEmbedder()
     base_dir = str(tmp_path)
-    monkeypatch.setenv("TENANT_DATA_DIR", base_dir)
+    monkeypatch.setenv("DATA_PATH", base_dir)
 
     ds1 = DatasetNode(id="model.users", name="users", description="Users catalog")
     payload1 = embedder.embed_payload(GraphPayload(nodes=[ds1], edges=[]))
@@ -104,20 +104,20 @@ def test_time_travel_api_endpoints(client, tmp_path, monkeypatch):
     t1_iso = timestamps[0]["timestamp"]
 
     # Timeline endpoint test
-    res_timeline = client.get("/api/v1/tenants/test_tenant/timeline")
+    res_timeline = client.get("/api/v1/timeline")
     assert res_timeline.status_code == 200
     timeline_json = res_timeline.json()
     assert timeline_json["timestamps_count"] >= 1
 
     # Graph endpoint with as_of query parameter test
-    res_graph = client.get(f"/api/v1/tenants/test_tenant/graph?as_of={t1_iso}")
+    res_graph = client.get(f"/api/v1/graph?as_of={t1_iso}")
     assert res_graph.status_code == 200
     graph_json = res_graph.json()
     assert len(graph_json["nodes"]) == 1
 
     # Time Travel Diff REST API test
     res_diff = client.post(
-        "/api/v1/tenants/test_tenant/time-travel/diff",
+        "/api/v1/time-travel/diff",
         json={"node_id": "model.users", "timestamp_t1": t1_iso, "timestamp_t2": t1_iso},
     )
     assert res_diff.status_code == 200

@@ -163,9 +163,6 @@ export async function sendChatMessage() {
   const message = inputEl.value.trim();
   if (!message) return;
 
-  const tenantId = getVal('tenant-input', 'demo_tenant');
-  const dataPath = getVal('data-path-input');
-
   const apiKey = getVal('cfg-api-key') || undefined;
   const baseUrl = getVal('cfg-base-url') || undefined;
   const model = getVal('cfg-model') || undefined;
@@ -188,7 +185,7 @@ export async function sendChatMessage() {
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
   try {
-    const data = await sendChat(tenantId, dataPath, message, {
+    const data = await sendChat(message, {
       apiKey,
       baseUrl,
       model

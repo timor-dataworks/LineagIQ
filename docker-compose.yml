@@ -1,0 +1,50 @@
+services:
+  control_plane:
+    build:
+      context: .
+      dockerfile: Dockerfile.control_plane
+    image: lineagiq-control-plane:latest
+    container_name: lineagiq-control-plane
+    ports:
+      - "8000:8000"
+    volumes:
+      - lineagiq_data:/data
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - DATA_PATH=/data
+    restart: unless-stopped
+
+  collection_agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.collection_agent
+    image: lineagiq-collection-agent:latest
+    container_name: lineagiq-collection-agent
+    volumes:
+      - lineagiq_data:/data
+    environment:
+      - DATA_PATH=/data
+    command: []
+    profiles:
+      - agent
+      - full
+
+  demo_generator:
+    build:
+      context: .
+      dockerfile: Dockerfile.collection_agent
+    image: lineagiq-collection-agent:latest
+    container_name: lineagiq-demo-generator
+    volumes:
+      - lineagiq_data:/data
+    environment:
+      - DATA_PATH=/data
+    command: ["--multiversion-demo"]
+    profiles:
+      - demo
+      - full
+
+volumes:
+  lineagiq_data:
+    name: lineagiq_data
