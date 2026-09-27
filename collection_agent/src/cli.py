@@ -68,6 +68,7 @@ def run_pipeline(
     dbt_catalog: str | None = None,
     sql_schema: str | None = None,
     query_logs: str | None = None,
+    openlineage: str | None = None,
     load_demo: bool = True,
 ) -> dict[str, Any]:
     """
@@ -84,7 +85,7 @@ def run_pipeline(
 
     builder = GraphBuilder()
 
-    has_custom_inputs = any([dbt_manifest, sql_schema, query_logs])
+    has_custom_inputs = any([dbt_manifest, sql_schema, query_logs, openlineage])
 
     if has_custom_inputs:
         if dbt_manifest:
@@ -116,6 +117,14 @@ def run_pipeline(
             access_edges = ql_ext.parse_user_access(ql_data)
             join_edges = ql_ext.parse_join_predicates(ql_data)
             builder.ingesting_query_logs(access_edges, join_edges)
+
+        if openlineage:
+            with open(openlineage) as f:
+                ol_data = json.load(f)
+            ol_ext = OpenLineageExtractor()
+            parsed_events = ol_ext.parse_events(ol_data)
+            for event in parsed_events:
+                builder.ingesting_openlineage(event)
     elif load_demo:
         load_demo_fixtures(builder)
 
@@ -151,6 +160,13 @@ def main():
     parser.add_argument("--dbt-catalog", type=str, help="Path to dbt catalog.json")
     parser.add_argument("--sql-schema", type=str, help="Path to SQL INFORMATION_SCHEMA JSON")
     parser.add_argument("--query-logs", type=str, help="Path to query logs JSON")
+    parser.add_argument(
+        "--openlineage",
+        "--openlineage-event",
+        dest="openlineage",
+        type=str,
+        help="Path to OpenLineage JSON event or events list file",
+    )
     parser.add_argument("--no-demo", action="store_true", help="Do not load sample demo data if no inputs provided")
     parser.add_argument("--multiversion-demo", action="store_true", help="Generate 3-version historical lineage demo dataset")
 
@@ -173,6 +189,7 @@ def main():
         dbt_catalog=args.dbt_catalog,
         sql_schema=args.sql_schema,
         query_logs=args.query_logs,
+        openlineage=args.openlineage,
         load_demo=not args.no_demo,
     )
     print("Collection Agent Pipeline Completed Successfully:")
@@ -182,3 +199,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

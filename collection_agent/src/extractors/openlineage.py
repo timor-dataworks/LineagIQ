@@ -65,3 +65,15 @@ class OpenLineageExtractor:
             "outputs": output_datasets,
             "edges": edges,
         }
+
+    def parse_events(self, events: list[dict[str, Any]] | dict[str, Any]) -> list[dict[str, Any]]:
+        """
+        Parses one or multiple OpenLineage run event payloads.
+
+        :param events: Loaded JSON dictionary (single event) or list of event dictionaries.
+        :return: List of parsed event dictionaries.
+        """
+        if isinstance(events, dict):
+            return [self.parse_event(events)]
+        return [self.parse_event(e) for e in events if isinstance(e, dict)]
+

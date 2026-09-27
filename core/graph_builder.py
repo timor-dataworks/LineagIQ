@@ -341,7 +341,9 @@ class GraphBuilder:
         Args:
             event_data: Parsed OpenLineage event dictionary.
         """
-        pipeline_id = event_data["pipeline_id"]
+        pipeline_id = event_data.get("pipeline_id")
+        if not pipeline_id:
+            return
         pipeline_node = PipelineNode(
             id=pipeline_id,
             name=pipeline_id.split(".")[-1],

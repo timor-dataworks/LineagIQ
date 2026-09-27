@@ -139,6 +139,21 @@ Nodes: 37, Edges: 46
 Artifacts Path: /tmp/lineagiq_data
 ```
 
+**Inject custom production data sources directly into the collector:**
+```bash
+# Ingest dbt manifests & catalogs
+python3 -m collection_agent.src.cli --dbt-manifest path/to/manifest.json --dbt-catalog path/to/catalog.json
+
+# Ingest SQL DDL / INFORMATION_SCHEMA
+python3 -m collection_agent.src.cli --sql-schema path/to/schema.json
+
+# Ingest warehouse query logs
+python3 -m collection_agent.src.cli --query-logs path/to/query_logs.json
+
+# Ingest OpenLineage run events (Airflow, Spark, Flink, Dagster)
+python3 -m collection_agent.src.cli --openlineage path/to/openlineage_events.json
+```
+
 ---
 
 ### 3. Launch the Control Plane FastAPI Web Server
