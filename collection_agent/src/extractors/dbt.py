@@ -1,5 +1,4 @@
-import json
-from typing import Dict, Any, List
+from typing import Any
 
 
 class DbtExtractor:
@@ -9,7 +8,7 @@ class DbtExtractor:
     Extracts models, seeds, sources, column attributes, and dbt graph lineage dependencies.
     """
 
-    def parse_manifest(self, manifest_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def parse_manifest(self, manifest_data: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Parses dbt `manifest.json` data to extract dataset and pipeline model metadata.
 
@@ -37,7 +36,7 @@ class DbtExtractor:
                 nodes.append(extracted_node)
         return nodes
 
-    def parse_catalog(self, catalog_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def parse_catalog(self, catalog_data: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Parses dbt `catalog.json` output to extract physical schema types and column definitions.
 
@@ -71,7 +70,7 @@ class DbtExtractor:
             catalog_nodes.append(catalog_node)
         return catalog_nodes
 
-    def extract_lineage(self, manifest_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def extract_lineage(self, manifest_data: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Extracts parent-child dataset lineage dependencies (`depends_on.nodes`) from `manifest.json`.
 

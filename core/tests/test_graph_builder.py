@@ -1,19 +1,18 @@
 import json
 from pathlib import Path
+
+from collection_agent.src.extractors.dbt import DbtExtractor
+from collection_agent.src.extractors.openlineage import OpenLineageExtractor
+from collection_agent.src.extractors.query_logs import QueryLogExtractor
+from collection_agent.src.extractors.sql import SqlCatalogExtractor
 from core import (
+    ColumnNode,
+    DatasetNode,
+    Edge,
+    EdgeType,
     GraphBuilder,
     NodeType,
-    EdgeType,
-    DatasetNode,
-    ColumnNode,
-    Edge,
-    PipelineNode,
-    UserTeamNode,
 )
-from collection_agent.src.extractors.dbt import DbtExtractor
-from collection_agent.src.extractors.sql import SqlCatalogExtractor
-from collection_agent.src.extractors.query_logs import QueryLogExtractor
-from collection_agent.src.extractors.openlineage import OpenLineageExtractor
 
 FIXTURES_DIR = Path(__file__).parent.parent.parent / "collection_agent" / "tests" / "fixtures"
 

@@ -1,4 +1,4 @@
-from typing import Dict, Any, List
+from typing import Any
 
 
 class OpenLineageExtractor:
@@ -9,7 +9,7 @@ class OpenLineageExtractor:
     and output dataset production edges (`PRODUCED_BY`).
     """
 
-    def parse_event(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
+    def parse_event(self, event_data: dict[str, Any]) -> dict[str, Any]:
         """
         Parses a single OpenLineage run event payload.
 

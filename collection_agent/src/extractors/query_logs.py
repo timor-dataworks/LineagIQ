@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Any, List
+from typing import Any
 
 
 class QueryLogExtractor:
@@ -10,7 +10,7 @@ class QueryLogExtractor:
     and column-level join predicates (`JOINS_WITH`).
     """
 
-    def parse_user_access(self, query_rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def parse_user_access(self, query_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Parses query execution records to extract user dataset consumption patterns.
 
@@ -33,7 +33,7 @@ class QueryLogExtractor:
                 })
         return access_edges
 
-    def parse_join_predicates(self, query_rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def parse_join_predicates(self, query_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Parses query text to extract explicit column equality join conditions (e.g., `t1.id = t2.user_id`).
 

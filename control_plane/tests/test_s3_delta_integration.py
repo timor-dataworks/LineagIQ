@@ -5,24 +5,24 @@ directly to mock AWS S3 buckets using ArtifactWriter and querying them with Duck
 and DuckDBVectorStore, as well as multi-tenant S3 synchronization.
 """
 
-import os
+import shutil
 import socket
 import tempfile
-import shutil
+
 import pytest
+
 pytest.importorskip("moto")
 import boto3
 from moto.server import ThreadedMotoServer  # type: ignore
 
-from core.models import Node, Edge, GraphPayload, NodeType, EdgeType
-from core.writer import ArtifactWriter
-from collection_agent.src.sync.s3_sync import S3Uploader, S3Downloader
+from collection_agent.src.sync.s3_sync import S3Downloader, S3Uploader
 from control_plane.src.query_engine.duckdb_store import (
     DuckDBGraphStore,
     get_available_timestamps,
-    resolve_delta_or_parquet_table,
 )
 from control_plane.src.query_engine.duckdb_vector_store import DuckDBVectorStore
+from core.models import Edge, EdgeType, GraphPayload, Node, NodeType
+from core.writer import ArtifactWriter
 
 
 def get_free_port() -> int:

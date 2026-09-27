@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+
 from collection_agent.src.extractors.dbt import DbtExtractor
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"

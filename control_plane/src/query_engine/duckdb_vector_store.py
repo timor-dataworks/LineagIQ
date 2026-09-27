@@ -1,13 +1,12 @@
-import os
-import glob
 import logging
-from typing import List, Optional
+
 import duckdb
+
 from control_plane.src.query_engine.base import BaseVectorStore
 from control_plane.src.query_engine.duckdb_store import (
-    resolve_delta_or_parquet_table,
-    ensure_duckdb_extensions,
     configure_duckdb_s3,
+    ensure_duckdb_extensions,
+    resolve_delta_or_parquet_table,
 )
 from core.constants import get_vectors_table_path
 
@@ -24,7 +23,7 @@ class DuckDBVectorStore(BaseVectorStore):
         storage_options: Optional remote storage backend options (e.g. S3 credentials / endpoint).
     """
 
-    def __init__(self, data_base_path: str, storage_options: Optional[dict] = None):
+    def __init__(self, data_base_path: str, storage_options: dict | None = None):
         self.data_base_path = data_base_path
         self.storage_options = storage_options
         if data_base_path.startswith("s3://"):
@@ -45,11 +44,11 @@ class DuckDBVectorStore(BaseVectorStore):
 
     def search_vectors(
         self,
-        query_vector: List[float],
+        query_vector: list[float],
         top_k: int = 5,
         max_distance: float = 0.75,
-        as_of: Optional[str] = None,
-    ) -> List[str]:
+        as_of: str | None = None,
+    ) -> list[str]:
         """Searches for top-k matching node IDs using DuckDB array_cosine_distance as of timestamp.
 
         Args:
@@ -89,7 +88,7 @@ class DuckDBVectorStore(BaseVectorStore):
 
             rows = con.execute(query, [query_vector, query_vector]).fetchall()
             seen = set()
-            node_ids: List[str] = []
+            node_ids: list[str] = []
             for row in rows:
                 nid = row[0]
                 if nid and nid not in seen:

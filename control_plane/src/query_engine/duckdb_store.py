@@ -1,18 +1,19 @@
-import os
-import json
-import re
 import datetime
+import json
 import logging
-from typing import Dict, Any, List, Optional, Tuple
+import os
+from typing import Any
+
 import duckdb
 from deltalake import DeltaTable
+
 from control_plane.src.query_engine.base import BaseGraphStore
-from core.utils import STOP_WORDS, extract_search_terms, parse_iso_to_epoch_ms
 from core.constants import (
-    get_nodes_table_path,
-    get_edges_table_path,
     FILE_DATA_PARQUET,
+    get_edges_table_path,
+    get_nodes_table_path,
 )
+from core.utils import extract_search_terms, parse_iso_to_epoch_ms
 
 logger = logging.getLogger(__name__)
 
@@ -21,10 +22,11 @@ _EXTENSIONS_LOADED = set()
 _S3_CONFIGURED = set()
 
 
-def _fetchall_dicts(rel: duckdb.DuckDBPyConnection) -> List[Dict[str, Any]]:
+def _fetchall_dicts(rel: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
     """Fast extraction of DuckDB query results to dictionaries without Pandas overhead."""
     cols = [d[0] for d in rel.description]
-    return [dict(zip(cols, row)) for row in rel.fetchall()]
+    return [dict(zip(cols, row, strict=True)) for row in rel.fetchall()]
+
 
 
 def _quote_id(val: str) -> str:
@@ -49,7 +51,7 @@ def ensure_duckdb_extensions(con: duckdb.DuckDBPyConnection) -> None:
     _EXTENSIONS_LOADED.add(con_id)
 
 
-def configure_duckdb_s3(con: duckdb.DuckDBPyConnection, storage_options: Optional[Dict[str, Any]] = None) -> None:
+def configure_duckdb_s3(con: duckdb.DuckDBPyConnection, storage_options: dict[str, Any] | None = None) -> None:
     """Configures DuckDB S3 credentials/endpoint for direct S3 delta_scan access."""
     if not storage_options:
         return
@@ -102,9 +104,9 @@ def resolve_delta_table(
     con: duckdb.DuckDBPyConnection,
     target_path: str,
     view_name: str,
-    as_of: Optional[str] = None,
-    storage_options: Optional[Dict[str, Any]] = None,
-    view_cache: Optional[Dict[str, Any]] = None,
+    as_of: str | None = None,
+    storage_options: dict[str, Any] | None = None,
+    view_cache: dict[str, Any] | None = None,
 ) -> bool:
     """Registers a Delta Lake dataset as a DuckDB SQL view.
 
@@ -188,8 +190,8 @@ resolve_delta_or_parquet_table = resolve_delta_table
 
 
 def get_available_timestamps(
-    data_base_path: str, storage_options: Optional[Dict[str, Any]] = None
-) -> List[Dict[str, Any]]:
+    data_base_path: str, storage_options: dict[str, Any] | None = None
+) -> list[dict[str, Any]]:
     """Retrieves commit history timestamps from tenant Delta Lake table logs.
 
     Args:
@@ -254,10 +256,10 @@ def get_available_timestamps(
 
                 commit_ms = commit_info.get("timestamp", 0)
                 if commit_ms:
-                    dt_obj = datetime.datetime.fromtimestamp(commit_ms / 1000, tz=datetime.timezone.utc)
+                    dt_obj = datetime.datetime.fromtimestamp(commit_ms / 1000, tz=datetime.UTC)
                     iso_str = dt_obj.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
                 else:
-                    iso_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+                    iso_str = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
                 results.append({
                     "version": ver,
@@ -278,7 +280,7 @@ def get_available_timestamps(
         results = []
         for commit in sorted(history, key=lambda x: x.get("version", 0)):
             commit_ms = commit.get("timestamp", 0)
-            dt_obj = datetime.datetime.fromtimestamp(commit_ms / 1000, tz=datetime.timezone.utc)
+            dt_obj = datetime.datetime.fromtimestamp(commit_ms / 1000, tz=datetime.UTC)
             iso_str = dt_obj.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
             results.append({
                 "version": commit.get("version", 0),
@@ -305,7 +307,7 @@ class DuckDBGraphStore(BaseGraphStore):
         storage_options: Optional remote storage backend options (e.g. S3 credentials / endpoint).
     """
 
-    def __init__(self, data_base_path: str, storage_options: Optional[Dict[str, Any]] = None):
+    def __init__(self, data_base_path: str, storage_options: dict[str, Any] | None = None):
         self.base_path = data_base_path
         self.storage_options = storage_options
         if data_base_path.startswith("s3://"):
@@ -322,12 +324,12 @@ class DuckDBGraphStore(BaseGraphStore):
 
         # Persistent DuckDB connection with pre-loaded extensions and S3 secrets
         self.con = duckdb.connect(database=":memory:")
-        self._registered_views: Dict[str, Tuple[str, Optional[str]]] = {}
+        self._registered_views: dict[str, tuple[str, str | None]] = {}
         ensure_duckdb_extensions(self.con)
         if self.storage_options:
             configure_duckdb_s3(self.con, self.storage_options)
 
-    def _synthesize_missing_nodes(self, nodes: List[Dict[str, Any]], target_ids: set) -> List[Dict[str, Any]]:
+    def _synthesize_missing_nodes(self, nodes: list[dict[str, Any]], target_ids: set) -> list[dict[str, Any]]:
         """
         Helper method to synthesize node metadata for any edge endpoint IDs not present in nodes table.
 
@@ -350,7 +352,7 @@ class DuckDBGraphStore(BaseGraphStore):
                 found_ids.add(nid)
         return nodes
 
-    def get_full_graph(self, as_of: Optional[str] = None) -> Dict[str, Any]:
+    def get_full_graph(self, as_of: str | None = None) -> dict[str, Any]:
         """Retrieves all graph nodes and edges as of optional ISO 8601 timestamp.
 
         Args:
@@ -387,8 +389,8 @@ class DuckDBGraphStore(BaseGraphStore):
         return {"nodes": nodes, "edges": edges}
 
     def get_downstream_blast_radius(
-        self, start_node_id: str, max_depth: int = 5, as_of: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, start_node_id: str, max_depth: int = 5, as_of: str | None = None
+    ) -> dict[str, Any]:
         """
         Executes recursive CTE traversal in DuckDB to compute downstream blast radius starting from `start_node_id`.
 
@@ -412,9 +414,9 @@ class DuckDBGraphStore(BaseGraphStore):
             SELECT source_id, target_id, type, 1 AS depth
             FROM edges_view
             WHERE source_id = ?
-            
+
             UNION ALL
-            
+
             SELECT e.source_id, e.target_id, e.type, d.depth + 1
             FROM edges_view e
             JOIN downstream_traverse d ON e.source_id = d.target_id
@@ -454,8 +456,8 @@ class DuckDBGraphStore(BaseGraphStore):
         }
 
     def get_upstream_root_cause(
-        self, start_node_id: str, max_depth: int = 5, as_of: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, start_node_id: str, max_depth: int = 5, as_of: str | None = None
+    ) -> dict[str, Any]:
         """
         Executes recursive CTE traversal in DuckDB to compute upstream root cause dependencies starting from `start_node_id`.
 
@@ -479,9 +481,9 @@ class DuckDBGraphStore(BaseGraphStore):
             SELECT source_id, target_id, type, 1 AS depth
             FROM edges_view
             WHERE target_id = ? AND type != 'BELONGS_TO'
-            
+
             UNION ALL
-            
+
             SELECT e.source_id, e.target_id, e.type, u.depth + 1
             FROM edges_view e
             JOIN upstream_traverse u ON e.target_id = u.source_id
@@ -521,8 +523,8 @@ class DuckDBGraphStore(BaseGraphStore):
         }
 
     def get_nodes_by_ids(
-        self, node_ids: List[str], as_of: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        self, node_ids: list[str], as_of: str | None = None
+    ) -> list[dict[str, Any]]:
         """
         Retrieves full node metadata records for a given list of node IDs.
 
@@ -550,8 +552,8 @@ class DuckDBGraphStore(BaseGraphStore):
         return [record_map[vid] for vid in node_ids if vid in record_map]
 
     def search_nodes_by_terms(
-        self, query_text: str, top_k: int = 5, as_of: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        self, query_text: str, top_k: int = 5, as_of: str | None = None
+    ) -> list[dict[str, Any]]:
         """
         Searches node metadata fields (name, id, description, type, properties) using SQL LIKE clauses.
 
@@ -596,7 +598,7 @@ class DuckDBGraphStore(BaseGraphStore):
         rel = con.execute(query, params)
         return _fetchall_dicts(rel)
 
-    def _get_scoped_node_ids(self, graph: Dict[str, Any], start_node_id: Optional[str], as_of: Optional[str] = None) -> set:
+    def _get_scoped_node_ids(self, graph: dict[str, Any], start_node_id: str | None, as_of: str | None = None) -> set:
         """Helper to compute set of node IDs connected to start_node_id (upstream + downstream)."""
         nodes = graph.get("nodes", [])
         if not nodes or not start_node_id:
@@ -634,8 +636,8 @@ class DuckDBGraphStore(BaseGraphStore):
         return scoped_ids
 
     def get_schema_time_travel_diff(
-        self, start_node_id: Optional[str], timestamp_t1: str, timestamp_t2: str
-    ) -> Dict[str, Any]:
+        self, start_node_id: str | None, timestamp_t1: str, timestamp_t2: str
+    ) -> dict[str, Any]:
         """Computes schema and lineage graph diff between two historical ISO 8601 timestamps,
         optionally scoped to target start_node_id and its connected lineage sub-graph.
 

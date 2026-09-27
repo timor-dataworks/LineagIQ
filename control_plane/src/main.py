@@ -7,19 +7,19 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from control_plane.src.config import STATIC_DIR, resolve_data_path
-from control_plane.src.services.latex_sanitizer import clean_latex_to_unicode
+from control_plane.src.routers import (
+    chat_router,
+    lineage_router,
+    visualizer_router,
+)
 from control_plane.src.schemas import (
     BlastRadiusRequest,
-    RootCauseRequest,
-    DiscoveryRequest,
     ChatRequest,
+    DiscoveryRequest,
+    RootCauseRequest,
     TimeTravelDiffRequest,
 )
-from control_plane.src.routers import (
-    visualizer_router,
-    lineage_router,
-    chat_router,
-)
+from control_plane.src.services.latex_sanitizer import clean_latex_to_unicode
 
 
 def create_app() -> FastAPI:

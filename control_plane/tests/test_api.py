@@ -1,7 +1,7 @@
-import pytest
 from fastapi.testclient import TestClient
-from core import DatasetNode, GraphPayload, ArtifactWriter
+
 from control_plane.src.main import app
+from core import ArtifactWriter, DatasetNode, GraphPayload
 
 client = TestClient(app)
 
@@ -169,10 +169,10 @@ def test_clean_latex_to_unicode():
 
 def test_modular_architecture_imports(monkeypatch):
     """Verifies that modular schemas, config, services, and routers are imported cleanly."""
-    from control_plane.src.config import resolve_data_path, STATIC_DIR
-    from control_plane.src.schemas import BlastRadiusRequest, ChatRequest, DiscoveryRequest
-    from control_plane.src.services import clean_latex_to_unicode, call_llm, post_json
-    from control_plane.src.routers import lineage_router, chat_router, visualizer_router
+    from control_plane.src.config import STATIC_DIR, resolve_data_path
+    from control_plane.src.routers import chat_router, lineage_router, visualizer_router
+    from control_plane.src.schemas import BlastRadiusRequest
+    from control_plane.src.services import call_llm, clean_latex_to_unicode, post_json
 
     monkeypatch.setenv("DATA_PATH", "/tmp/lineagiq_data")
     assert STATIC_DIR.exists()

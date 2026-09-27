@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional
+from typing import Any
 
 
 class BaseGraphStore(ABC):
@@ -11,7 +11,7 @@ class BaseGraphStore(ABC):
     """
 
     @abstractmethod
-    def get_full_graph(self, as_of: Optional[str] = None) -> Dict[str, Any]:
+    def get_full_graph(self, as_of: str | None = None) -> dict[str, Any]:
         """Retrieves all graph nodes and lineage edges as of optional ISO 8601 timestamp.
 
         Args:
@@ -24,8 +24,8 @@ class BaseGraphStore(ABC):
 
     @abstractmethod
     def get_downstream_blast_radius(
-        self, start_node_id: str, max_depth: int = 5, as_of: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, start_node_id: str, max_depth: int = 5, as_of: str | None = None
+    ) -> dict[str, Any]:
         """Computes the downstream blast radius traversal starting from a target node.
 
         Args:
@@ -40,8 +40,8 @@ class BaseGraphStore(ABC):
 
     @abstractmethod
     def get_upstream_root_cause(
-        self, start_node_id: str, max_depth: int = 5, as_of: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, start_node_id: str, max_depth: int = 5, as_of: str | None = None
+    ) -> dict[str, Any]:
         """Computes the upstream root cause traversal starting from a target node.
 
         Args:
@@ -56,8 +56,8 @@ class BaseGraphStore(ABC):
 
     @abstractmethod
     def get_nodes_by_ids(
-        self, node_ids: List[str], as_of: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        self, node_ids: list[str], as_of: str | None = None
+    ) -> list[dict[str, Any]]:
         """Retrieves full node metadata records for a given list of node IDs.
 
         Args:
@@ -71,8 +71,8 @@ class BaseGraphStore(ABC):
 
     @abstractmethod
     def search_nodes_by_terms(
-        self, query_text: str, top_k: int = 5, as_of: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        self, query_text: str, top_k: int = 5, as_of: str | None = None
+    ) -> list[dict[str, Any]]:
         """Searches graph node metadata fields (name, id, description, properties) for matching keywords.
 
         Args:
@@ -88,7 +88,7 @@ class BaseGraphStore(ABC):
     @abstractmethod
     def get_schema_time_travel_diff(
         self, start_node_id: str, timestamp_t1: str, timestamp_t2: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Computes schema and lineage graph diff between two historical ISO 8601 timestamps.
 
         Args:
@@ -111,11 +111,11 @@ class BaseVectorStore(ABC):
     @abstractmethod
     def search_vectors(
         self,
-        query_vector: List[float],
+        query_vector: list[float],
         top_k: int = 5,
         max_distance: float = 0.75,
-        as_of: Optional[str] = None,
-    ) -> List[str]:
+        as_of: str | None = None,
+    ) -> list[str]:
         """Searches the vector index for nearest-neighbor vectors satisfying a maximum distance threshold.
 
         Args:

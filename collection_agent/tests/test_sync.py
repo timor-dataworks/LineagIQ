@@ -1,6 +1,6 @@
-import os
 from unittest.mock import MagicMock
-from collection_agent.src.sync.s3_sync import S3Uploader, S3Downloader
+
+from collection_agent.src.sync.s3_sync import S3Downloader, S3Uploader
 
 
 def test_s3_uploader_file(tmp_path):

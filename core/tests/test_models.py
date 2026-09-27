@@ -1,13 +1,11 @@
-import pytest
 from core import (
-    NodeType,
-    EdgeType,
-    DatasetNode,
     ColumnNode,
-    PipelineNode,
-    BusinessTermNode,
+    DatasetNode,
     Edge,
+    EdgeType,
     GraphPayload,
+    NodeType,
+    PipelineNode,
 )
 
 

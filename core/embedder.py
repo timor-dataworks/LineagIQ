@@ -4,16 +4,17 @@ Generates dense vector embeddings for graph entities using local quantized ONNX 
 or deterministic token-hashing pseudo-embeddings for zero-dependency local execution.
 """
 
-import re
 import hashlib
-from typing import List, Optional, Any
-from core.models import Node, GraphPayload
+import re
+from typing import Any, Optional
+
 from core.constants import DEFAULT_EMBEDDING_DIM
+from core.models import GraphPayload, Node
 
 _DEFAULT_EMBEDDER: Optional["LocalEmbedder"] = None
 
 
-def get_default_embedder(model_path: Optional[str] = None) -> "LocalEmbedder":
+def get_default_embedder(model_path: str | None = None) -> "LocalEmbedder":
     """Returns a shared/cached default LocalEmbedder instance to optimize memory and performance.
 
     Args:
@@ -36,7 +37,7 @@ class LocalEmbedder:
     2. Fallback Path: Fast, deterministic token-hashing pseudo-embeddings for zero-dependency local testing.
     """
 
-    def __init__(self, model_path: Optional[str] = None):
+    def __init__(self, model_path: str | None = None):
         """Initializes the LocalEmbedder instance.
 
         Args:
@@ -75,7 +76,7 @@ class LocalEmbedder:
                 parts.append(f"Properties: {props_str}")
         return " | ".join(parts)
 
-    def _l2_normalize(self, vec: List[float]) -> List[float]:
+    def _l2_normalize(self, vec: list[float]) -> list[float]:
         """Performs L2 normalization on a raw floating-point vector to scale its magnitude to unit norm (1.0).
 
         Args:
@@ -89,7 +90,7 @@ class LocalEmbedder:
             return [x / norm for x in vec]
         return vec
 
-    def _embed_with_onnx(self, text: str) -> Optional[List[float]]:
+    def _embed_with_onnx(self, text: str) -> list[float] | None:
         """Executes ONNX Runtime neural model inference for the given text.
 
         Pipeline Steps:
@@ -146,7 +147,7 @@ class LocalEmbedder:
             print(f"ONNX embedding fallback to token hash: {e}")
             return None
 
-    def _embed_with_token_hash(self, text: str) -> List[float]:
+    def _embed_with_token_hash(self, text: str) -> list[float]:
         """Generates a deterministic 384-dimensional pseudo-embedding vector using token-based sha256 hashing.
 
         Pipeline Steps:
@@ -178,7 +179,7 @@ class LocalEmbedder:
 
         return self._l2_normalize(accum_vec)
 
-    def embed_text(self, text: str) -> List[float]:
+    def embed_text(self, text: str) -> list[float]:
         """Generates a 384-dimensional dense vector embedding for the input text string.
 
         Tries `_embed_with_onnx` first if an ONNX session is active; falls back to `_embed_with_token_hash`.

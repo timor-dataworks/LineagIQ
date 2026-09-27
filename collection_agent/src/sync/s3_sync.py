@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Any
 
 
 class S3Uploader:
@@ -13,9 +13,9 @@ class S3Uploader:
 
     def __init__(
         self,
-        bucket: Optional[str] = None,
+        bucket: str | None = None,
         prefix: str = "",
-        s3_client: Optional[Any] = None,
+        s3_client: Any | None = None,
     ):
         """
         Initializes S3Uploader.
@@ -53,7 +53,7 @@ class S3Uploader:
             return True
         return False
 
-    def sync_directory(self, local_dir: str, prefix: str = "") -> List[str]:
+    def sync_directory(self, local_dir: str, prefix: str = "") -> list[str]:
         """
         Recursively uploads all Parquet and vector artifact files from a local directory to S3.
 
@@ -89,9 +89,9 @@ class S3Downloader:
 
     def __init__(
         self,
-        bucket: Optional[str] = None,
+        bucket: str | None = None,
         prefix: str = "",
-        s3_client: Optional[Any] = None,
+        s3_client: Any | None = None,
     ):
         """
         Initializes S3Downloader.
@@ -126,7 +126,7 @@ class S3Downloader:
             return True
         return False
 
-    def download_directory(self, local_dir: str, prefix: str = "") -> List[str]:
+    def download_directory(self, local_dir: str, prefix: str = "") -> list[str]:
         """
         Recursively downloads all artifact files (including Delta Lake logs and parquet files)
         from S3 into `local_dir`.

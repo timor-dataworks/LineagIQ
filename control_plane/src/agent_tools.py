@@ -1,10 +1,9 @@
 import os
-from typing import Optional
 
-from control_plane.src.services.http_client import post_json
-from control_plane.src.query_engine import DuckDBQueryEngine
-from control_plane.src.prompt_synthesizer import PromptSynthesizer
 from control_plane.src.config import resolve_data_path
+from control_plane.src.prompt_synthesizer import PromptSynthesizer
+from control_plane.src.query_engine import DuckDBQueryEngine
+from control_plane.src.services.http_client import post_json
 
 
 class LineagIQGraphRAGClient:
@@ -18,7 +17,7 @@ class LineagIQGraphRAGClient:
             Defaults to environment variable `LINEAGIQ_CONTROL_PLANE_URL` or `http://localhost:8000`.
     """
 
-    def __init__(self, base_url: Optional[str] = None):
+    def __init__(self, base_url: str | None = None):
         self.base_url = base_url or os.getenv("LINEAGIQ_CONTROL_PLANE_URL", "http://localhost:8000")
 
     def get_blast_radius_prompt(

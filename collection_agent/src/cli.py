@@ -1,15 +1,15 @@
-import os
-import json
 import argparse
+import json
+import os
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any
 
 from collection_agent.src.extractors.dbt import DbtExtractor
-from collection_agent.src.extractors.sql import SqlCatalogExtractor
-from collection_agent.src.extractors.query_logs import QueryLogExtractor
 from collection_agent.src.extractors.openlineage import OpenLineageExtractor
-from core import GraphBuilder, LocalEmbedder, ArtifactWriter
+from collection_agent.src.extractors.query_logs import QueryLogExtractor
+from collection_agent.src.extractors.sql import SqlCatalogExtractor
 from collection_agent.src.sync.s3_sync import S3Uploader
+from core import ArtifactWriter, GraphBuilder, LocalEmbedder
 
 FIXTURES_DIR = Path(__file__).parent.parent / "tests" / "fixtures"
 
@@ -29,7 +29,7 @@ def load_demo_fixtures(builder: GraphBuilder) -> None:
         if dbt_catalog_file.exists():
             with open(dbt_catalog_file) as f:
                 catalog_data = json.load(f)
-        
+
         dbt_ext = DbtExtractor()
         manifest_nodes = dbt_ext.parse_manifest(manifest_data)
         catalog_nodes = dbt_ext.parse_catalog(catalog_data)
@@ -63,13 +63,13 @@ def load_demo_fixtures(builder: GraphBuilder) -> None:
 
 def run_pipeline(
     sync_s3: bool = False,
-    bucket: Optional[str] = None,
-    dbt_manifest: Optional[str] = None,
-    dbt_catalog: Optional[str] = None,
-    sql_schema: Optional[str] = None,
-    query_logs: Optional[str] = None,
+    bucket: str | None = None,
+    dbt_manifest: str | None = None,
+    dbt_catalog: str | None = None,
+    sql_schema: str | None = None,
+    query_logs: str | None = None,
     load_demo: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Executes end-to-end Collection Agent pipeline:
     1. Metadata Extraction & Graph Normalization

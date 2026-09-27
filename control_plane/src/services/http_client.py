@@ -1,18 +1,18 @@
 import json
 import logging
-import urllib.request
 import urllib.error
-from typing import Optional, Dict, Any, Tuple
+import urllib.request
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 def post_json(
     url: str,
-    payload: Dict[str, Any],
-    headers: Optional[Dict[str, str]] = None,
+    payload: dict[str, Any],
+    headers: dict[str, str] | None = None,
     timeout: int = 45,
-) -> Tuple[Optional[Any], Optional[str]]:
+) -> tuple[Any | None, str | None]:
     """Generic JSON POST request helper using standard urllib.
 
     Args:

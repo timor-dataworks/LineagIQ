@@ -1,10 +1,11 @@
 import pytest
 from pydantic import ValidationError
+
 from control_plane.src.schemas import (
     BlastRadiusRequest,
-    RootCauseRequest,
-    DiscoveryRequest,
     ChatRequest,
+    DiscoveryRequest,
+    RootCauseRequest,
     TimeTravelDiffRequest,
 )
 

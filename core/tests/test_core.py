@@ -1,29 +1,25 @@
 import os
+
 import pytest
-from core.models import (
-    NodeType,
-    EdgeType,
-    Node,
-    DatasetNode,
-    ColumnNode,
-    PipelineNode,
-    UserTeamNode,
-    BusinessTermNode,
-    Edge,
-    GraphPayload,
-)
+
 from core.constants import (
-    TABLE_NODES,
-    TABLE_EDGES,
-    TABLE_VECTORS,
-    get_nodes_table_path,
     get_edges_table_path,
+    get_nodes_table_path,
     get_vectors_table_path,
 )
-from core.schemas import NODE_SCHEMA, EDGE_SCHEMA, get_vector_schema
-from core.embedder import LocalEmbedder, get_default_embedder
+from core.embedder import get_default_embedder
+from core.models import (
+    ColumnNode,
+    DatasetNode,
+    Edge,
+    EdgeType,
+    GraphPayload,
+    NodeType,
+    PipelineNode,
+)
+from core.schemas import EDGE_SCHEMA, NODE_SCHEMA, get_vector_schema
+from core.utils import extract_search_terms, parse_iso_to_epoch_ms
 from core.writer import ArtifactWriter
-from core.utils import parse_iso_to_epoch_ms, extract_search_terms
 
 
 def test_core_ontology_models():

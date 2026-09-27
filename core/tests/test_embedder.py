@@ -1,5 +1,6 @@
 import pytest
-from core import LocalEmbedder, DatasetNode, ColumnNode, GraphPayload
+
+from core import ColumnNode, DatasetNode, GraphPayload, LocalEmbedder
 
 
 def test_local_embedder_vector_generation():
@@ -26,9 +27,9 @@ def test_local_embedder_payload():
 
 
 def create_dummy_onnx_embedding_model(filepath: str):
-    import onnx  # type: ignore
-    from onnx import helper, TensorProto  # type: ignore
     import numpy as np
+    import onnx  # type: ignore
+    from onnx import TensorProto, helper  # type: ignore
 
     weights = np.random.randn(30522, 384).astype(np.float32)
     weight_initializer = helper.make_tensor(

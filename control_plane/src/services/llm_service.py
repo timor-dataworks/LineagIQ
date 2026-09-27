@@ -1,15 +1,15 @@
 import os
-from typing import Optional, Tuple
+
 from control_plane.src.services.http_client import post_json
 from control_plane.src.services.latex_sanitizer import clean_latex_to_unicode
 
 
 def call_openai_llm(
     prompt: str,
-    api_key: Optional[str] = None,
-    base_url: Optional[str] = None,
-    model: Optional[str] = None,
-) -> Tuple[Optional[str], Optional[str]]:
+    api_key: str | None = None,
+    base_url: str | None = None,
+    model: str | None = None,
+) -> tuple[str | None, str | None]:
     """Calls OpenAI API or OpenAI-compatible provider (Azure, Ollama, vLLM, Groq, OpenRouter).
 
     Automatically routes Gemini API keys (AIza..., AQ...) to Google's OpenAI endpoint
@@ -72,7 +72,7 @@ def call_openai_llm(
     return None, err
 
 
-def call_gemini_llm(prompt: str, api_key: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
+def call_gemini_llm(prompt: str, api_key: str | None = None) -> tuple[str | None, str | None]:
     """Calls Google Gemini API (gemini-3.6-flash) using standard REST HTTP endpoint.
 
     Args:
@@ -110,10 +110,10 @@ def call_gemini_llm(prompt: str, api_key: Optional[str] = None) -> Tuple[Optiona
 
 def call_llm(
     prompt: str,
-    openai_key: Optional[str] = None,
-    openai_base_url: Optional[str] = None,
-    openai_model: Optional[str] = None,
-) -> Tuple[Optional[str], Optional[str]]:
+    openai_key: str | None = None,
+    openai_base_url: str | None = None,
+    openai_model: str | None = None,
+) -> tuple[str | None, str | None]:
     """Attempts to generate LLM response using configured providers in order:
     1. OpenAI / OpenAI-compatible API (including Gemini AIza keys via Google OpenAI endpoint)
     2. Google Gemini Native API

@@ -1,8 +1,9 @@
 import pytest
+
 from control_plane.src.config import (
-    resolve_data_path,
     STATIC_DIR,
     STATIC_INDEX_FILE,
+    resolve_data_path,
 )
 
 

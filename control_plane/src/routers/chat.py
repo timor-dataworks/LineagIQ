@@ -1,17 +1,18 @@
 import os
-from typing import Optional, List, Dict, Any
+from typing import Any
+
 from fastapi import APIRouter, HTTPException
 
 from control_plane.src.config import resolve_data_path
-from control_plane.src.query_engine import DuckDBQueryEngine
 from control_plane.src.prompt_synthesizer import PromptSynthesizer
+from control_plane.src.query_engine import DuckDBQueryEngine
 from control_plane.src.schemas import ChatRequest
 from control_plane.src.services.llm_service import call_llm
 
 router = APIRouter(prefix="/api/v1", tags=["AI Assistant"])
 
 
-def _find_target_node(nodes: List[Dict[str, Any]], msg_lower: str) -> Optional[Dict[str, Any]]:
+def _find_target_node(nodes: list[dict[str, Any]], msg_lower: str) -> dict[str, Any] | None:
     """Helper to locate target graph node referenced in user query string."""
     for n in nodes:
         if n.get("name", "").lower() in msg_lower or n.get("id", "").lower() in msg_lower:
@@ -31,8 +32,8 @@ def _has_api_key_configured(request: ChatRequest) -> bool:
 
 @router.post("/chat")
 def lineage_ai_chat(
-    request: Optional[ChatRequest] = None,
-) -> Dict[str, Any]:
+    request: ChatRequest | None = None,
+) -> dict[str, Any]:
     """GraphRAG LLM Lineage Chat endpoint.
 
     Integrates DuckDB query engine, PromptSynthesizer, OpenAI, and Gemini LLM

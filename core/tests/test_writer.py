@@ -1,13 +1,15 @@
 import os
+
 import pyarrow.parquet as pq
+
 from core import (
-    LocalEmbedder,
     ArtifactWriter,
-    DatasetNode,
     ColumnNode,
+    DatasetNode,
     Edge,
     EdgeType,
     GraphPayload,
+    LocalEmbedder,
 )
 
 

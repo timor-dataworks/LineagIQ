@@ -4,20 +4,21 @@ Serializes normalized GraphPayload models into Delta Lake table datasets
 for graph nodes, edges, and dense vector embeddings.
 """
 
-import os
 import json
 import logging
-from typing import Dict, Any, List, Optional
+import os
+from typing import Any
+
 import pyarrow as pa
 from deltalake import write_deltalake
 
-from core.models import GraphPayload
-from core.schemas import NODE_SCHEMA, EDGE_SCHEMA, get_vector_schema
 from core.constants import (
-    get_nodes_table_path,
     get_edges_table_path,
+    get_nodes_table_path,
     get_vectors_table_path,
 )
+from core.models import GraphPayload
+from core.schemas import EDGE_SCHEMA, NODE_SCHEMA, get_vector_schema
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ class ArtifactWriter:
         payload: GraphPayload,
         target_dir: str,
         mode: str = "overwrite",
-        storage_options: Optional[Dict[str, Any]] = None,
+        storage_options: dict[str, Any] | None = None,
     ) -> pa.Table:
         """Constructs PyArrow Table for nodes and writes to Delta Lake dataset directory.
 
@@ -94,7 +95,7 @@ class ArtifactWriter:
         payload: GraphPayload,
         target_dir: str,
         mode: str = "overwrite",
-        storage_options: Optional[Dict[str, Any]] = None,
+        storage_options: dict[str, Any] | None = None,
     ) -> pa.Table:
         """Constructs PyArrow Table for edges and writes to Delta Lake dataset directory.
 
@@ -130,7 +131,7 @@ class ArtifactWriter:
         payload: GraphPayload,
         target_dir: str,
         mode: str = "overwrite",
-        storage_options: Optional[Dict[str, Any]] = None,
+        storage_options: dict[str, Any] | None = None,
     ) -> pa.Table:
         """Constructs PyArrow Table for vectors and writes to Delta Lake dataset directory.
 
@@ -171,8 +172,8 @@ class ArtifactWriter:
         payload: GraphPayload,
         base_dir: str,
         mode: str = "overwrite",
-        storage_options: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, str]:
+        storage_options: dict[str, Any] | None = None,
+    ) -> dict[str, str]:
         """Serializes all graph nodes, lineage edges, and vector indices into Delta Lake datasets
         under the standardized tenant storage directory layout:
         - <base_dir>/graph/nodes (Delta Lake table)

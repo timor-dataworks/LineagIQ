@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from core import DatasetNode, GraphPayload, ArtifactWriter
+
 from control_plane.src.routers.lineage import router
+from core import ArtifactWriter, DatasetNode, GraphPayload
 
 
 def get_test_client():

@@ -1,9 +1,10 @@
 import json
-from typing import Dict, Any, List, Optional
-from core.embedder import LocalEmbedder, get_default_embedder
+from typing import Any
+
 from control_plane.src.query_engine.base import BaseGraphStore, BaseVectorStore
 from control_plane.src.query_engine.duckdb_store import DuckDBGraphStore, get_available_timestamps
 from control_plane.src.query_engine.duckdb_vector_store import DuckDBVectorStore
+from core.embedder import LocalEmbedder, get_default_embedder
 
 
 class DuckDBQueryEngine:
@@ -24,9 +25,9 @@ class DuckDBQueryEngine:
     def __init__(
         self,
         data_base_path: str,
-        graph_store: Optional[BaseGraphStore] = None,
-        vector_store: Optional[BaseVectorStore] = None,
-        embedder: Optional[LocalEmbedder] = None,
+        graph_store: BaseGraphStore | None = None,
+        vector_store: BaseVectorStore | None = None,
+        embedder: LocalEmbedder | None = None,
     ):
         self.base_path = data_base_path
         self.graph_store = graph_store or DuckDBGraphStore(data_base_path)
@@ -34,8 +35,8 @@ class DuckDBQueryEngine:
         self.embedder = embedder or get_default_embedder()
 
     def get_downstream_blast_radius(
-        self, start_node_id: str, max_depth: int = 5, as_of: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, start_node_id: str, max_depth: int = 5, as_of: str | None = None
+    ) -> dict[str, Any]:
         """Calculates downstream blast radius starting from a target asset node.
 
         Args:
@@ -49,8 +50,8 @@ class DuckDBQueryEngine:
         return self.graph_store.get_downstream_blast_radius(start_node_id, max_depth, as_of=as_of)
 
     def get_upstream_root_cause(
-        self, start_node_id: str, max_depth: int = 5, as_of: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, start_node_id: str, max_depth: int = 5, as_of: str | None = None
+    ) -> dict[str, Any]:
         """Calculates upstream root cause lineage starting from a target asset node.
 
         Args:
@@ -63,7 +64,7 @@ class DuckDBQueryEngine:
         """
         return self.graph_store.get_upstream_root_cause(start_node_id, max_depth, as_of=as_of)
 
-    def get_full_graph(self, as_of: Optional[str] = None) -> Dict[str, Any]:
+    def get_full_graph(self, as_of: str | None = None) -> dict[str, Any]:
         """Retrieves all nodes and edges in the lineage knowledge graph as of timestamp.
 
         Args:
@@ -74,7 +75,7 @@ class DuckDBQueryEngine:
         """
         return self.graph_store.get_full_graph(as_of=as_of)
 
-    def get_available_timestamps(self) -> List[Dict[str, Any]]:
+    def get_available_timestamps(self) -> list[dict[str, Any]]:
         """Retrieves commit history timestamps from tenant Delta Lake table logs.
 
         Returns:
@@ -84,7 +85,7 @@ class DuckDBQueryEngine:
 
     def get_schema_time_travel_diff(
         self, start_node_id: str, timestamp_t1: str, timestamp_t2: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Computes schema and lineage graph diff between two historical ISO 8601 timestamps.
 
         Args:
@@ -98,8 +99,8 @@ class DuckDBQueryEngine:
         return self.graph_store.get_schema_time_travel_diff(start_node_id, timestamp_t1, timestamp_t2)
 
     def search_semantic_assets(
-        self, query_text: str, top_k: int = 5, as_of: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        self, query_text: str, top_k: int = 5, as_of: str | None = None
+    ) -> list[dict[str, Any]]:
         """Executes hybrid search combining term match search via `graph_store`
         and vector similarity search via `vector_store`.
 
@@ -117,7 +118,7 @@ class DuckDBQueryEngine:
         query_vec = self.embedder.embed_text(query_text)
         vector_node_ids = self.vector_store.search_vectors(query_vec, top_k=top_k, as_of=as_of)
 
-        matched_nodes: List[Dict[str, Any]] = []
+        matched_nodes: list[dict[str, Any]] = []
         seen_ids = set()
 
         if vector_node_ids:

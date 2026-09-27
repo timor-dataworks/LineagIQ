@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Optional
+from typing import Any
 
 
 class PromptSynthesizer:
@@ -10,9 +10,9 @@ class PromptSynthesizer:
 
     def synthesize_blast_radius_prompt(
         self,
-        start_node: Optional[Dict[str, Any]],
-        impacted_nodes: List[Dict[str, Any]],
-        edges: List[Dict[str, Any]],
+        start_node: dict[str, Any] | None,
+        impacted_nodes: list[dict[str, Any]],
+        edges: list[dict[str, Any]],
     ) -> str:
         """Synthesizes a structured GraphRAG Prompt for downstream blast-radius analysis.
 
@@ -30,7 +30,7 @@ class PromptSynthesizer:
         target_id = start_node["id"] if start_node else "Unknown"
 
         # Categorize impacted nodes by type
-        by_type: Dict[str, List[str]] = {}
+        by_type: dict[str, list[str]] = {}
         for n in impacted_nodes:
             ntype = n.get("type", "Unknown")
             by_type.setdefault(ntype, []).append(f"{n.get('name', 'N/A')} (ID: {n.get('id', 'N/A')})")
@@ -78,7 +78,7 @@ class PromptSynthesizer:
     def synthesize_discovery_prompt(
         self,
         query_text: str,
-        matched_nodes: List[Dict[str, Any]],
+        matched_nodes: list[dict[str, Any]],
     ) -> str:
         """Synthesizes a structured GraphRAG Prompt for semantic asset discovery.
 
@@ -123,9 +123,9 @@ class PromptSynthesizer:
 
     def synthesize_root_cause_prompt(
         self,
-        target_node: Optional[Dict[str, Any]],
-        upstream_nodes: List[Dict[str, Any]],
-        edges: List[Dict[str, Any]],
+        target_node: dict[str, Any] | None,
+        upstream_nodes: list[dict[str, Any]],
+        edges: list[dict[str, Any]],
     ) -> str:
         """Synthesizes a structured GraphRAG Prompt for upstream root cause analysis.
 
@@ -143,7 +143,7 @@ class PromptSynthesizer:
         target_id = target_node["id"] if target_node else "Unknown"
 
         # Categorize upstream nodes by type
-        by_type: Dict[str, List[str]] = {}
+        by_type: dict[str, list[str]] = {}
         for n in upstream_nodes:
             ntype = n.get("type", "Unknown")
             by_type.setdefault(ntype, []).append(f"{n.get('name', 'N/A')} (ID: {n.get('id', 'N/A')})")
@@ -193,7 +193,7 @@ class PromptSynthesizer:
         node_id: str,
         timestamp_t1: str,
         timestamp_t2: str,
-        diff_result: Dict[str, Any],
+        diff_result: dict[str, Any],
     ) -> str:
         """Synthesizes a structured GraphRAG Prompt for historical schema drift & lineage diff analysis.
 

@@ -4,18 +4,18 @@ Normalizes raw metadata extractor outputs into validated Pydantic `Node` and `Ed
 maintaining deduplicated collections, synthesizing missing endpoint nodes, and resolving entity aliases.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Any
+
 from core.models import (
+    ColumnNode,
+    DatasetNode,
+    Edge,
+    EdgeType,
+    GraphPayload,
     Node,
     NodeType,
-    EdgeType,
-    DatasetNode,
-    ColumnNode,
     PipelineNode,
     UserTeamNode,
-    BusinessTermNode,
-    Edge,
-    GraphPayload,
 )
 
 
@@ -26,9 +26,9 @@ class GraphBuilder:
 
     def __init__(self):
         """Initializes empty graph collections and alias mapping dictionary."""
-        self._nodes: Dict[str, Node] = {}
-        self._edges: Dict[str, Edge] = {}
-        self._alias_map: Dict[str, str] = {}
+        self._nodes: dict[str, Node] = {}
+        self._edges: dict[str, Edge] = {}
+        self._alias_map: dict[str, str] = {}
 
     def register_alias(self, alias: str, canonical_id: str) -> None:
         """Registers an entity alias mapping (case-insensitive) to a canonical node ID.
@@ -107,7 +107,7 @@ class GraphBuilder:
                     if ds.schema_name and ds.name:
                         self.register_alias(f"{ds.schema_name}.{ds.name}.{node.name}", node.id)
 
-    def add_nodes(self, nodes: List[Node]) -> None:
+    def add_nodes(self, nodes: list[Node]) -> None:
         """Batch registers a list of nodes."""
         for n in nodes:
             self.add_node(n)
@@ -163,16 +163,16 @@ class GraphBuilder:
         else:
             self._edges[edge_key].properties.update(edge.properties)
 
-    def add_edges(self, edges: List[Edge]) -> None:
+    def add_edges(self, edges: list[Edge]) -> None:
         """Batch registers a list of edges."""
         for e in edges:
             self.add_edge(e)
 
     def ingesting_dbt(
         self,
-        manifest_nodes: List[Dict[str, Any]],
-        catalog_nodes: Optional[List[Dict[str, Any]]] = None,
-        lineage_edges: Optional[List[Dict[str, Any]]] = None,
+        manifest_nodes: list[dict[str, Any]],
+        catalog_nodes: list[dict[str, Any]] | None = None,
+        lineage_edges: list[dict[str, Any]] | None = None,
     ) -> None:
         """Normalizes and ingests dbt extractor output nodes, catalog metadata, and lineage edges.
 
@@ -240,9 +240,9 @@ class GraphBuilder:
 
     def ingesting_sql_catalog(
         self,
-        tables: List[Dict[str, Any]],
-        columns: List[Dict[str, Any]],
-        foreign_keys: Optional[List[Dict[str, Any]]] = None,
+        tables: list[dict[str, Any]],
+        columns: list[dict[str, Any]],
+        foreign_keys: list[dict[str, Any]] | None = None,
     ) -> None:
         """Normalizes and ingests SQL INFORMATION_SCHEMA extractor tables, columns, and foreign keys.
 
@@ -297,8 +297,8 @@ class GraphBuilder:
 
     def ingesting_query_logs(
         self,
-        access_edges: List[Dict[str, Any]],
-        join_edges: Optional[List[Dict[str, Any]]] = None,
+        access_edges: list[dict[str, Any]],
+        join_edges: list[dict[str, Any]] | None = None,
     ) -> None:
         """Normalizes and ingests query access logs, creating User nodes and CONSUMED_BY / JOINS_WITH edges.
 
@@ -335,7 +335,7 @@ class GraphBuilder:
                 )
                 self.add_edge(edge)
 
-    def ingesting_openlineage(self, event_data: Dict[str, Any]) -> None:
+    def ingesting_openlineage(self, event_data: dict[str, Any]) -> None:
         """Normalizes and ingests parsed OpenLineage run events.
 
         Args:

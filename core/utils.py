@@ -3,9 +3,8 @@
 Shared timestamp parsing, text normalization, and search term extraction utilities.
 """
 
-import re
 import datetime
-from typing import List, Optional
+import re
 
 STOP_WORDS = {
     "find", "show", "search", "get", "list", "where", "is", "are", "the",
@@ -14,7 +13,7 @@ STOP_WORDS = {
 }
 
 
-def parse_iso_to_epoch_ms(iso_str: Optional[str]) -> Optional[int]:
+def parse_iso_to_epoch_ms(iso_str: str | None) -> int | None:
     """Parses ISO 8601 timestamp string into Epoch milliseconds.
 
     Args:
@@ -36,7 +35,7 @@ def parse_iso_to_epoch_ms(iso_str: Optional[str]) -> Optional[int]:
         return None
 
 
-def extract_search_terms(query_text: str) -> List[str]:
+def extract_search_terms(query_text: str) -> list[str]:
     """Extracts and filters normalized search term phrases from a natural language query string.
 
     Args:

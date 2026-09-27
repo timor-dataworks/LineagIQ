@@ -1,14 +1,16 @@
 import os
-from typing import Dict, Any
+from typing import Any
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse
+
 from control_plane.src.config import STATIC_INDEX_FILE, resolve_data_path
 
 router = APIRouter(tags=["Visualizer & Health"])
 
 
 @router.get("/healthz")
-def health_check() -> Dict[str, str]:
+def health_check() -> dict[str, str]:
     """Service health check endpoint.
 
     Returns:
@@ -18,7 +20,7 @@ def health_check() -> Dict[str, str]:
 
 
 @router.get("/api/v1/config")
-def get_app_config() -> Dict[str, Any]:
+def get_app_config() -> dict[str, Any]:
     """Returns application environment configuration for the web UI.
 
     Ensures the web GUI operates on server-enforced data path settings.

@@ -1,6 +1,5 @@
 from control_plane.src.services.latex_sanitizer import clean_latex_to_unicode
-from control_plane.src.services.http_client import post_json
-from control_plane.src.services.llm_service import call_llm, call_openai_llm, call_gemini_llm
+from control_plane.src.services.llm_service import call_llm, call_openai_llm
 
 
 def test_clean_latex_to_unicode_arrows():

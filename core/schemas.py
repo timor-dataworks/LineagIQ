@@ -5,6 +5,7 @@ ensuring identical serialization/deserialization contracts across the platform.
 """
 
 import pyarrow as pa
+
 from core.constants import DEFAULT_EMBEDDING_DIM
 
 # PyArrow schema definition for Graph Nodes Parquet/Delta dataset

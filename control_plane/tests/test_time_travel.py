@@ -1,19 +1,19 @@
-import os
 import time
+
 import pytest
 from fastapi.testclient import TestClient
 
+from control_plane.src.main import app
+from control_plane.src.query_engine import DuckDBQueryEngine
 from core import (
-    GraphPayload,
-    DatasetNode,
+    ArtifactWriter,
     ColumnNode,
+    DatasetNode,
     Edge,
     EdgeType,
-    ArtifactWriter,
+    GraphPayload,
     LocalEmbedder,
 )
-from control_plane.src.query_engine import DuckDBQueryEngine
-from control_plane.src.main import app, resolve_data_path
 
 
 @pytest.fixture

@@ -3,27 +3,26 @@
 import os
 import shutil
 import time
-from typing import List, Any, Optional
+from typing import Any
 
+from core.embedder import LocalEmbedder
 from core.models import (
-    DatasetNode,
+    BusinessTermNode,
     ColumnNode,
+    DatasetNode,
+    Edge,
+    EdgeType,
+    GraphPayload,
     PipelineNode,
     UserTeamNode,
-    BusinessTermNode,
-    Edge,
-    GraphPayload,
-    NodeType,
-    EdgeType,
 )
-from core.embedder import LocalEmbedder
 from core.writer import ArtifactWriter
 
 
 def build_version_0() -> GraphPayload:
     """Version 0: Initial Core E-Commerce Platform."""
-    nodes: List[Any] = []
-    edges: List[Any] = []
+    nodes: list[Any] = []
+    edges: list[Any] = []
 
     # Teams
     team_ae = UserTeamNode(id="team.analytics_engineering", name="Analytics Engineering", email="analytics-eng@acme.corp")
@@ -273,7 +272,7 @@ def build_version_2() -> GraphPayload:
     return GraphPayload(nodes=nodes, edges=edges)
 
 
-def run_multiversion_generation(target_dir: Optional[str] = None) -> None:
+def run_multiversion_generation(target_dir: str | None = None) -> None:
     """Generates and writes 3 progressive versions of lineage and schema metadata."""
     effective_dir = target_dir or os.environ.get("DATA_PATH")
     if not effective_dir:

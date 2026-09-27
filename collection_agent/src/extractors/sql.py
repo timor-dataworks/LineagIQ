@@ -1,4 +1,4 @@
-from typing import Dict, Any, List
+from typing import Any
 
 
 class SqlCatalogExtractor:
@@ -6,7 +6,7 @@ class SqlCatalogExtractor:
     Extractor for SQL `INFORMATION_SCHEMA` metadata, including tables, views, columns, and foreign key constraints.
     """
 
-    def parse_tables(self, table_rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def parse_tables(self, table_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Parses `INFORMATION_SCHEMA.TABLES` records into normalized dataset model dicts.
 
@@ -29,7 +29,7 @@ class SqlCatalogExtractor:
             })
         return tables
 
-    def parse_columns(self, column_rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def parse_columns(self, column_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Parses `INFORMATION_SCHEMA.COLUMNS` records into normalized column model dicts.
 
@@ -54,7 +54,7 @@ class SqlCatalogExtractor:
             })
         return columns
 
-    def parse_foreign_keys(self, constraint_rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def parse_foreign_keys(self, constraint_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Parses foreign key constraint records into column join relationship edges (`JOINS_WITH`).
 

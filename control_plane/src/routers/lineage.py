@@ -1,13 +1,14 @@
-from typing import Optional, Dict, Any
+from typing import Any
+
 from fastapi import APIRouter, HTTPException, Query
 
 from control_plane.src.config import resolve_data_path
-from control_plane.src.query_engine import DuckDBQueryEngine
 from control_plane.src.prompt_synthesizer import PromptSynthesizer
+from control_plane.src.query_engine import DuckDBQueryEngine
 from control_plane.src.schemas import (
     BlastRadiusRequest,
-    RootCauseRequest,
     DiscoveryRequest,
+    RootCauseRequest,
     TimeTravelDiffRequest,
 )
 
@@ -16,8 +17,8 @@ router = APIRouter(prefix="/api/v1", tags=["Lineage & Graph"])
 
 @router.get("/graph")
 def get_graph(
-    as_of: Optional[str] = Query(default=None, description="Optional ISO 8601 timestamp for historical time travel"),
-) -> Dict[str, Any]:
+    as_of: str | None = Query(default=None, description="Optional ISO 8601 timestamp for historical time travel"),
+) -> dict[str, Any]:
     """Returns all nodes and edges for graph visualization.
 
     Args:
@@ -31,7 +32,7 @@ def get_graph(
 
 
 @router.get("/timeline")
-def get_timeline() -> Dict[str, Any]:
+def get_timeline() -> dict[str, Any]:
     """Returns available commit timestamps from Delta Lake logs for UI timeline scrubbing.
 
     Returns:
@@ -44,8 +45,8 @@ def get_timeline() -> Dict[str, Any]:
 
 @router.post("/blast-radius")
 def calculate_blast_radius(
-    request: Optional[BlastRadiusRequest] = None,
-) -> Dict[str, Any]:
+    request: BlastRadiusRequest | None = None,
+) -> dict[str, Any]:
     """Calculates downstream operational blast radius for a target asset node.
 
     Args:
@@ -83,8 +84,8 @@ def calculate_blast_radius(
 
 @router.post("/root-cause")
 def calculate_root_cause(
-    request: Optional[RootCauseRequest] = None,
-) -> Dict[str, Any]:
+    request: RootCauseRequest | None = None,
+) -> dict[str, Any]:
     """Calculates upstream root cause lineage starting from a target asset node.
 
     Args:
@@ -122,8 +123,8 @@ def calculate_root_cause(
 
 @router.post("/discovery")
 def discover_semantic_assets(
-    request: Optional[DiscoveryRequest] = None,
-) -> Dict[str, Any]:
+    request: DiscoveryRequest | None = None,
+) -> dict[str, Any]:
     """Executes semantic search over lineage assets and synthesizes a discovery prompt.
 
     Args:
@@ -158,8 +159,8 @@ def discover_semantic_assets(
 
 @router.post("/time-travel/diff")
 def calculate_time_travel_diff(
-    request: Optional[TimeTravelDiffRequest] = None,
-) -> Dict[str, Any]:
+    request: TimeTravelDiffRequest | None = None,
+) -> dict[str, Any]:
     """Calculates schema drift and lineage diff between two historical ISO 8601 timestamps.
 
     Args:
