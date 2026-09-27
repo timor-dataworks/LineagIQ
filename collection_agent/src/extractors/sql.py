@@ -63,12 +63,15 @@ class SqlCatalogExtractor:
         """
         edges = []
         for row in constraint_rows:
-            source_col = f"{row.get('fk_catalog')}.{row.get('fk_schema')}.{row.get('fk_table')}.{row.get('fk_column')}"
-            target_col = f"{row.get('pk_catalog')}.{row.get('pk_schema')}.{row.get('pk_table')}.{row.get('pk_column')}"
-            edges.append({
-                "source": source_col,
-                "target": target_col,
-                "type": "JOINS_WITH",
-                "constraint_name": row.get("constraint_name"),
-            })
+            fk_parts = [row.get(k) for k in ("fk_catalog", "fk_schema", "fk_table", "fk_column")]
+            pk_parts = [row.get(k) for k in ("pk_catalog", "pk_schema", "pk_table", "pk_column")]
+            source_col = ".".join(str(p) for p in fk_parts if p)
+            target_col = ".".join(str(p) for p in pk_parts if p)
+            if source_col and target_col:
+                edges.append({
+                    "source": source_col,
+                    "target": target_col,
+                    "type": "JOINS_WITH",
+                    "constraint_name": row.get("constraint_name"),
+                })
         return edges

@@ -82,20 +82,27 @@ def configure_duckdb_s3(con: duckdb.DuckDBPyConnection, storage_options: dict[st
                 clean_endpoint = clean_endpoint[8:]
 
             use_ssl_val = "false" if allow_http else "true"
+            escaped_ak = (ak or "mock").replace("'", "''")
+            escaped_sk = (sk or "mock").replace("'", "''")
+            escaped_region = (region or "us-east-1").replace("'", "''")
+            escaped_endpoint = clean_endpoint.replace("'", "''") if clean_endpoint else ""
+
             con.execute("LOAD httpfs;")
+            endpoint_clause = f", ENDPOINT '{escaped_endpoint}'" if escaped_endpoint else ""
             secret_sql = f"""
             CREATE OR REPLACE SECRET lineagiq_s3 (
                 TYPE S3,
-                KEY_ID '{ak or "mock"}',
-                SECRET '{sk or "mock"}',
-                REGION '{region}',
+                KEY_ID '{escaped_ak}',
+                SECRET '{escaped_sk}',
+                REGION '{escaped_region}',
                 USE_SSL {use_ssl_val},
                 URL_STYLE 'path'
-                {f", ENDPOINT '{clean_endpoint}'" if clean_endpoint else ""}
+                {endpoint_clause}
             );
             """
             con.execute(secret_sql)
             _S3_CONFIGURED.add(cfg_key)
+
         except Exception as e:
             logger.debug(f"Could not configure DuckDB S3 secret: {e}")
 
@@ -143,6 +150,7 @@ def resolve_delta_table(
 
         # Determine historical version if as_of is provided
         target_ver = None
+        is_before_history = False
         if as_of is not None:
             if isinstance(as_of, int) or (isinstance(as_of, str) and as_of.isdigit()):
                 target_ver = int(as_of)
@@ -155,9 +163,12 @@ def resolve_delta_table(
                             base_tenant_dir = table_dir[: -len(sub)]
                             break
                     ts_list = get_available_timestamps(base_tenant_dir, storage_options=storage_options)
-                    for commit in ts_list:
-                        if commit.get("timestamp_ms", 0) <= target_ms + 100:
-                            target_ver = commit.get("version", 0)
+                    if ts_list and target_ms + 100 < ts_list[0].get("timestamp_ms", 0):
+                        is_before_history = True
+                    else:
+                        for commit in ts_list:
+                            if commit.get("timestamp_ms", 0) <= target_ms + 100:
+                                target_ver = commit.get("version", 0)
 
         attach_alias = f"delta_{view_name}"
         escaped_path = (target_path if is_s3 else os.path.abspath(table_dir)).replace("'", "''")
@@ -172,10 +183,13 @@ def resolve_delta_table(
             if view_cache is not None:
                 attached_map[attach_alias] = escaped_path
 
-        if target_ver is not None:
+        if is_before_history:
+            con.execute(f"CREATE OR REPLACE VIEW {view_name} AS SELECT * FROM {attach_alias} WHERE 1=0;")
+        elif target_ver is not None:
             con.execute(f"CREATE OR REPLACE VIEW {view_name} AS SELECT * FROM {attach_alias} AT (VERSION => {target_ver});")
         else:
             con.execute(f"CREATE OR REPLACE VIEW {view_name} AS SELECT * FROM {attach_alias};")
+
 
         if view_cache is not None:
             view_cache[view_name] = (target_path, as_of)
@@ -409,6 +423,7 @@ class DuckDBGraphStore(BaseGraphStore):
         ):
             return {"impacted_nodes": [], "edges": [], "root_node": None, "depth_reached": 0}
 
+        safe_depth = max(1, min(int(max_depth), 10))
         query = f"""
         WITH RECURSIVE downstream_traverse(source_id, target_id, type, depth) AS (
             SELECT source_id, target_id, type, 1 AS depth
@@ -420,7 +435,7 @@ class DuckDBGraphStore(BaseGraphStore):
             SELECT e.source_id, e.target_id, e.type, d.depth + 1
             FROM edges_view e
             JOIN downstream_traverse d ON e.source_id = d.target_id
-            WHERE d.depth < {max_depth} AND e.type != 'BELONGS_TO'
+            WHERE d.depth < {safe_depth} AND e.type != 'BELONGS_TO'
         )
         SELECT DISTINCT source_id, target_id, type, depth
         FROM downstream_traverse;
@@ -476,6 +491,7 @@ class DuckDBGraphStore(BaseGraphStore):
         ):
             return {"upstream_nodes": [], "edges": [], "target_node": None, "depth_reached": 0}
 
+        safe_depth = max(1, min(int(max_depth), 10))
         query = f"""
         WITH RECURSIVE upstream_traverse(source_id, target_id, type, depth) AS (
             SELECT source_id, target_id, type, 1 AS depth
@@ -487,7 +503,7 @@ class DuckDBGraphStore(BaseGraphStore):
             SELECT e.source_id, e.target_id, e.type, u.depth + 1
             FROM edges_view e
             JOIN upstream_traverse u ON e.target_id = u.source_id
-            WHERE u.depth < {max_depth} AND e.type != 'BELONGS_TO'
+            WHERE u.depth < {safe_depth} AND e.type != 'BELONGS_TO'
         )
         SELECT DISTINCT source_id, target_id, type, depth
         FROM upstream_traverse;
@@ -588,12 +604,13 @@ class DuckDBGraphStore(BaseGraphStore):
             ])
             params.extend([param] * 5)
 
+        safe_top_k = max(1, int(top_k))
         where_stmt = " OR ".join(where_clauses)
         query = f"""
         SELECT id, type, name, description, properties
         FROM nodes_view
         WHERE {where_stmt}
-        LIMIT {top_k * 2};
+        LIMIT {safe_top_k * 2};
         """
         rel = con.execute(query, params)
         return _fetchall_dicts(rel)
@@ -608,15 +625,20 @@ class DuckDBGraphStore(BaseGraphStore):
         if not clean_start or clean_start in ["all", "enterprise", "global", "none"]:
             return {n["id"] for n in nodes}
 
-        matched_target_ids = set()
-        for n in nodes:
-            nid = n.get("id", "").lower()
-            name = n.get("name", "").lower()
-            if clean_start == nid or clean_start == name or clean_start in nid or clean_start in name:
-                matched_target_ids.add(n["id"])
+        matched_target_ids = {
+            n["id"] for n in nodes
+            if clean_start == n.get("id", "").lower() or clean_start == n.get("name", "").lower()
+        }
+        if not matched_target_ids:
+            for n in nodes:
+                nid = n.get("id", "").lower()
+                name = n.get("name", "").lower()
+                if clean_start in nid or clean_start in name:
+                    matched_target_ids.add(n["id"])
 
         if not matched_target_ids:
             return set()
+
 
         scoped_ids = set(matched_target_ids)
         for target_id in matched_target_ids:
@@ -672,7 +694,12 @@ class DuckDBGraphStore(BaseGraphStore):
         for nid, n2 in nodes_t2.items():
             if nid in nodes_t1:
                 n1 = nodes_t1[nid]
-                if n1.get("properties") != n2.get("properties") or n1.get("description") != n2.get("description"):
+                if (
+                    n1.get("name") != n2.get("name")
+                    or n1.get("type") != n2.get("type")
+                    or n1.get("properties") != n2.get("properties")
+                    or n1.get("description") != n2.get("description")
+                ):
                     modified_nodes.append({"id": nid, "before": n1, "after": n2})
 
         edges_t1 = {

@@ -25,9 +25,9 @@ class PromptSynthesizer:
             Formatted text string prompt containing system headers, asset summary,
             traversal details, and AI task instructions.
         """
-        target_name = start_node["name"] if start_node else "Target Asset"
-        target_type = start_node["type"] if start_node else "Unknown"
-        target_id = start_node["id"] if start_node else "Unknown"
+        target_name = start_node.get("name", "Target Asset") if start_node else "Target Asset"
+        target_type = start_node.get("type", "Unknown") if start_node else "Unknown"
+        target_id = start_node.get("id", "Unknown") if start_node else "Unknown"
 
         # Categorize impacted nodes by type
         by_type: dict[str, list[str]] = {}
@@ -138,9 +138,9 @@ class PromptSynthesizer:
             Formatted text string prompt containing system headers, asset summary,
             upstream dependencies, traversal edges, and AI troubleshooting instructions.
         """
-        target_name = target_node["name"] if target_node else "Target Asset"
-        target_type = target_node["type"] if target_node else "Unknown"
-        target_id = target_node["id"] if target_node else "Unknown"
+        target_name = target_node.get("name", "Target Asset") if target_node else "Target Asset"
+        target_type = target_node.get("type", "Unknown") if target_node else "Unknown"
+        target_id = target_node.get("id", "Unknown") if target_node else "Unknown"
 
         # Categorize upstream nodes by type
         by_type: dict[str, list[str]] = {}
@@ -226,12 +226,12 @@ class PromptSynthesizer:
         if diff_result.get("added_nodes"):
             prompt_lines.append("\n#### Added Data Assets & Columns:")
             for n in diff_result["added_nodes"]:
-                prompt_lines.append(f"  + {n['name']} [{n['type']}] (ID: {n['id']})")
+                prompt_lines.append(f"  + {n.get('name', n.get('id', 'Asset'))} [{n.get('type', 'Asset')}] (ID: {n.get('id', 'N/A')})")
 
         if diff_result.get("removed_nodes"):
             prompt_lines.append("\n#### Removed Data Assets & Columns:")
             for n in diff_result["removed_nodes"]:
-                prompt_lines.append(f"  - {n['name']} [{n['type']}] (ID: {n['id']})")
+                prompt_lines.append(f"  - {n.get('name', n.get('id', 'Asset'))} [{n.get('type', 'Asset')}] (ID: {n.get('id', 'N/A')})")
 
         if diff_result.get("modified_nodes"):
             prompt_lines.append("\n#### Modified Data Assets / Schema Attributes:")

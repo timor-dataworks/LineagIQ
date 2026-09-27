@@ -115,6 +115,11 @@ def test_time_travel_api_endpoints(client, tmp_path, monkeypatch):
     graph_json = res_graph.json()
     assert len(graph_json["nodes"]) == 1
 
+    # Graph endpoint with as_of before data existed returns empty graph
+    res_graph_past = client.get("/api/v1/graph?as_of=2020-01-01T00:00:00.000Z")
+    assert res_graph_past.status_code == 200
+    assert len(res_graph_past.json()["nodes"]) == 0
+
     # Time Travel Diff REST API test
     res_diff = client.post(
         "/api/v1/time-travel/diff",
@@ -124,3 +129,4 @@ def test_time_travel_api_endpoints(client, tmp_path, monkeypatch):
     diff_json = res_diff.json()
     assert "diff" in diff_json
     assert "synthesized_prompt" in diff_json
+

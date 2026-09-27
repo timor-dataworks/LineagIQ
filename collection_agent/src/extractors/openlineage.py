@@ -24,30 +24,37 @@ class OpenLineageExtractor:
         outputs = event_data.get("outputs", [])
 
         input_datasets = [
-            f"{inp.get('namespace', '')}.{inp.get('name', '')}".strip(".")
-            for inp in inputs
+            ds for ds in (
+                f"{inp.get('namespace', '')}.{inp.get('name', '')}".strip(".")
+                for inp in inputs
+            ) if ds
         ]
         output_datasets = [
-            f"{out.get('namespace', '')}.{out.get('name', '')}".strip(".")
-            for out in outputs
+            ds for ds in (
+                f"{out.get('namespace', '')}.{out.get('name', '')}".strip(".")
+                for out in outputs
+            ) if ds
         ]
 
         edges = []
         # Inputs -> Pipeline (CONSUMED_BY)
         for inp_ds in input_datasets:
-            edges.append({
-                "source": inp_ds,
-                "target": job_name,
-                "type": "CONSUMED_BY",
-            })
+            if inp_ds and job_name:
+                edges.append({
+                    "source": inp_ds,
+                    "target": job_name,
+                    "type": "CONSUMED_BY",
+                })
 
         # Pipeline -> Outputs (PRODUCED_BY)
         for out_ds in output_datasets:
-            edges.append({
-                "source": job_name,
-                "target": out_ds,
-                "type": "PRODUCED_BY",
-            })
+            if out_ds and job_name:
+                edges.append({
+                    "source": job_name,
+                    "target": out_ds,
+                    "type": "PRODUCED_BY",
+                })
+
 
         return {
             "pipeline_id": job_name,

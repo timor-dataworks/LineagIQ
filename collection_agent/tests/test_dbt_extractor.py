@@ -25,6 +25,28 @@ def test_dbt_parse_manifest():
     assert len(prod_node["columns"]) == 6
 
 
+def test_dbt_parse_manifest_sources():
+    manifest_data = {
+        "nodes": {},
+        "sources": {
+            "source.jaffle_shop.raw_orders": {
+                "name": "raw_orders",
+                "schema": "raw",
+                "database": "postgres",
+                "description": "Raw orders source table",
+                "columns": {"id": {}, "amount": {}},
+            }
+        },
+    }
+    extractor = DbtExtractor()
+    nodes = extractor.parse_manifest(manifest_data)
+    assert len(nodes) == 1
+    assert nodes[0]["id"] == "source.jaffle_shop.raw_orders"
+    assert nodes[0]["name"] == "raw_orders"
+    assert "amount" in nodes[0]["columns"]
+
+
+
 def test_dbt_parse_catalog():
     with open(FIXTURES_DIR / "dbt_catalog.json") as f:
         catalog_data = json.load(f)

@@ -34,6 +34,22 @@ class DbtExtractor:
                     "depends_on": node_info.get("depends_on", {}).get("nodes", []),
                 }
                 nodes.append(extracted_node)
+
+        raw_sources = manifest_data.get("sources", {})
+        for source_id, source_info in raw_sources.items():
+            extracted_source = {
+                "id": source_id,
+                "type": "Dataset",
+                "name": source_info.get("name"),
+                "schema": source_info.get("schema"),
+                "database": source_info.get("database"),
+                "description": source_info.get("description", ""),
+                "meta": source_info.get("meta", {}),
+                "columns": list(source_info.get("columns", {}).keys()),
+                "depends_on": [],
+            }
+            nodes.append(extracted_source)
+
         return nodes
 
     def parse_catalog(self, catalog_data: dict[str, Any]) -> list[dict[str, Any]]:

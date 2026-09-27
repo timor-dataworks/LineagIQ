@@ -40,6 +40,8 @@ def call_openai_llm(
 
     if not endpoint:
         endpoint = default_base_url
+    elif "11434" in endpoint and not endpoint.endswith("/v1"):
+        endpoint = f"{endpoint}/v1"
 
     url = f"{endpoint}/chat/completions"
     model_name = model or os.getenv("OPENAI_MODEL") or default_model
