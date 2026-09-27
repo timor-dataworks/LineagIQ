@@ -4,7 +4,7 @@ LineagIQ models an enterprise data landscape into a contextual knowledge graph. 
 
 1. **LineagIQ Core (`core`)**: Centralized ontology domain models (`Node`, `Edge`, `GraphPayload`), local quantized INT8 vector embedder with singleton caching, Delta Lake PyArrow schemas, storage table/path constants, and `ArtifactWriter`.
 2. **Stateless Ingestion Agent (`collection_agent`)**: An ephemeral edge metadata collector that extracts (dbt, SQL catalog, query logs, OpenLineage) and syncs metadata inside the customer environment.
-3. **Serverless S3 Control Plane (`control_plane`)**: A multi-tenant query engine powered by DuckDB and Delta Lake exposing FastAPI endpoints, interactive web visualization with time travel timeline scrubbing, and the dynamic LineagIQ AI Assistant (supporting OpenAI, Gemini, and local Ollama).
+3. **Serverless Control Plane (`control_plane`)**: A query engine powered by DuckDB and Delta Lake exposing FastAPI endpoints, interactive web visualization with time travel timeline scrubbing, and the dynamic LineagIQ AI Assistant (supporting OpenAI, Gemini, and local Ollama). Unified by a single `DATA_PATH` environment variable.
 
 ---
 
@@ -72,19 +72,17 @@ from control_plane.src.agent_tools import (
 )
 
 # 1. Retrieve Graph Context & Synthesized Prompt from LineagIQ Control Plane
+# (Uses DATA_PATH environment variable for storage location)
 blast_radius_prompt = get_dataset_blast_radius(
-    tenant_id="demo_tenant",
     dataset_id="model.jaffle_shop.stg_customers",
-    data_path="/tmp/tenants/demo_tenant"
+    max_depth=5
 )
 
 # 2. Retrieve Historical Schema Drift Diff Prompt (Time Travel)
 time_travel_prompt = get_lineage_time_travel_diff(
-    tenant_id="demo_tenant",
     node_id="model.jaffle_shop.stg_customers",
     timestamp_t1="2026-09-08T08:00:00Z",
-    timestamp_t2="2026-09-08T10:00:00Z",
-    data_path="/tmp/tenants/demo_tenant"
+    timestamp_t2="2026-09-08T10:00:00Z"
 )
 
 # 3. Dispatch Context to LLM Provider
@@ -121,26 +119,33 @@ pip install -r requirements.txt
 
 ---
 
-### 2. Run the Collection Agent (Generate Tenant Graph Metadata)
-Execute the Collection Agent CLI to ingest sample metadata fixtures (dbt models, SQL schemas, query logs, OpenLineage events) and output compressed Parquet & Delta Lake table datasets to `/tmp/tenants/demo_tenant`:
+### 2. Run the Collection Agent (Generate Graph Metadata)
+Set the unified `DATA_PATH` environment variable and run the Collection Agent CLI to ingest sample metadata fixtures (dbt models, SQL schemas, query logs, OpenLineage events) and output compressed Parquet & Delta Lake table datasets:
 
 ```bash
-python3 -m collection_agent.src.cli --output-dir /tmp/tenants/demo_tenant
+export DATA_PATH=/tmp/lineagiq_data
+python3 -m collection_agent.src.cli
+```
+
+Or generate a realistic 3-version historical lineage evolution dataset for time travel:
+```bash
+python3 -m collection_agent.src.cli --multiversion-demo
 ```
 
 **Output:**
 ```text
 Collection Agent Pipeline Completed Successfully:
-Nodes: 16, Edges: 9
-Artifacts Path: /tmp/tenants/demo_tenant
+Nodes: 37, Edges: 46
+Artifacts Path: /tmp/lineagiq_data
 ```
 
 ---
 
 ### 3. Launch the Control Plane FastAPI Web Server
-Start the serverless query runtime on port `8000`:
+Start the serverless query runtime on port `8000` (reads from `DATA_PATH`):
 
 ```bash
+export DATA_PATH=/tmp/lineagiq_data
 python3 -m uvicorn control_plane.src.main:app --reload --port 8000
 ```
 
@@ -148,32 +153,32 @@ python3 -m uvicorn control_plane.src.main:app --reload --port 8000
 
 ### 4. Test GraphRAG Endpoints Manually
 
-#### A. Health Check
+#### A. Health & Config Check
 ```bash
 curl http://localhost:8000/healthz
+curl http://localhost:8000/api/v1/config
 ```
 
-#### B. Fetch Tenant Timeline History (Delta Lake Commit Logs)
+#### B. Fetch Timeline History (Delta Lake Commit Logs)
 ```bash
-curl http://localhost:8000/api/v1/tenants/demo_tenant/timeline
+curl http://localhost:8000/api/v1/timeline
 ```
 
 #### C. Historical Time Travel Graph Query
 Fetch knowledge graph as of a historical timestamp:
 ```bash
-curl "http://localhost:8000/api/v1/tenants/demo_tenant/graph?as_of=2026-09-08T08:00:00Z"
+curl "http://localhost:8000/api/v1/graph?as_of=2026-09-08T08:00:00Z"
 ```
 
 #### D. Downstream Blast Radius Query
 Compute downstream operational blast radius for target dataset `model.jaffle_shop.stg_customers`:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/tenants/demo_tenant/blast-radius \
+curl -X POST http://localhost:8000/api/v1/blast-radius \
   -H "Content-Type: application/json" \
   -d '{
     "node_id": "model.jaffle_shop.stg_customers",
-    "max_depth": 5,
-    "data_path": "/tmp/tenants/demo_tenant"
+    "max_depth": 5
   }'
 ```
 
@@ -181,13 +186,12 @@ curl -X POST http://localhost:8000/api/v1/tenants/demo_tenant/blast-radius \
 Compute schema additions, removals, and lineage edge changes between $T_1$ and $T_2$:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/tenants/demo_tenant/time-travel/diff \
+curl -X POST http://localhost:8000/api/v1/time-travel/diff \
   -H "Content-Type: application/json" \
   -d '{
     "node_id": "model.jaffle_shop.stg_customers",
     "timestamp_t1": "2026-09-08T08:00:00Z",
-    "timestamp_t2": "2026-09-08T10:00:00Z",
-    "data_path": "/tmp/tenants/demo_tenant"
+    "timestamp_t2": "2026-09-08T10:00:00Z"
   }'
 ```
 
@@ -195,12 +199,11 @@ curl -X POST http://localhost:8000/api/v1/tenants/demo_tenant/time-travel/diff \
 Find data assets related to `"customer"`:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/tenants/demo_tenant/discovery \
+curl -X POST http://localhost:8000/api/v1/discovery \
   -H "Content-Type: application/json" \
   -d '{
     "query": "customer",
-    "top_k": 5,
-    "data_path": "/tmp/tenants/demo_tenant"
+    "top_k": 5
   }'
 ```
 

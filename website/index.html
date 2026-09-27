@@ -385,6 +385,10 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"></path></svg>
           AI Agent Retriever Tools
         </button>
+        <button class="arch-tab-btn" data-tab="tab-docker">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"></rect><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"></path><path d="M12 6v8"></path><path d="m8 10 4 4 4-4"></path></svg>
+          Docker & Deployment
+        </button>
       </div>
 
       <!-- Tab 1: Three Tier System Design -->
@@ -408,12 +412,13 @@
             <!-- Tier 2 -->
             <div class="diagram-tier">
               <div class="tier-number">Tier 02 // Storage Layer</div>
-              <h4 class="tier-title">Multi-Tenant Delta Lake</h4>
-              <p class="tier-desc">Standard Amazon S3 / GCS bucket prefixes storing nodes, edges, and dense vector embeddings with immutable ACID transaction logs.</p>
+              <h4 class="tier-title">Delta Lake Storage Layer</h4>
+              <p class="tier-desc">Standard Amazon S3 / GCS bucket prefixes or local directory (configured via unified <code>DATA_PATH</code>) storing nodes, edges, and dense vector embeddings with immutable ACID transaction logs.</p>
               <div class="tier-chips">
-                <span class="tier-chip">s3://.../graph/nodes/</span>
-                <span class="tier-chip">s3://.../graph/edges/</span>
-                <span class="tier-chip">s3://.../vectors/</span>
+                <span class="tier-chip">DATA_PATH=/data</span>
+                <span class="tier-chip">graph/nodes/</span>
+                <span class="tier-chip">graph/edges/</span>
+                <span class="tier-chip">vectors/</span>
                 <span class="tier-chip">_delta_log/</span>
                 <span class="tier-chip">Snappy Parquet</span>
               </div>
@@ -490,11 +495,9 @@ from control_plane.src.agent_tools import (
     get_lineage_time_travel_diff
 )
 
-# 1. Retrieve Graph Context & Synthesized GraphRAG Prompt
+# 1. Retrieve Graph Context & Synthesized GraphRAG Prompt (configured via DATA_PATH)
 blast_radius_prompt = get_dataset_blast_radius(
-    tenant_id="demo_tenant",
-    dataset_id="postgres.raw.raw_customers",
-    data_path="/tmp/tenants/demo_tenant",
+    node_id="postgres.raw.raw_customers",
     max_depth=5
 )
 
@@ -513,8 +516,41 @@ print(response.choices[0].message.content)</code></pre>
         </div>
       </div>
 
+      <!-- Tab 4: Docker & Deployment -->
+      <div class="arch-tab-panel" id="tab-docker">
+        <div class="diagram-card">
+          <h4 class="tier-title">Containerized Deployment with Unified DATA_PATH</h4>
+          <p class="tier-desc">
+            LineagIQ services run as lightweight, standalone Docker containers sharing a mounted volume or remote object store via a single <code>DATA_PATH</code> environment variable:
+          </p>
+
+          <div class="code-container">
+            <div class="code-header">
+              <span class="code-title">docker-commands.sh — Production Docker Quickstart</span>
+              <button class="copy-btn" data-code="snippet-docker">Copy Commands</button>
+            </div>
+            <pre><code id="snippet-docker"># 1. Generate 3-Version Time-Travel Demo Dataset in Docker
+docker run --rm \
+  -v $(pwd)/data:/data \
+  lineagiq-collection-agent:latest \
+  --multiversion-demo
+
+# 2. Launch Serverless Control Plane & Web Visualizer (Port 8000)
+docker run -d --name lineagiq-control-plane \
+  -p 8000:8000 \
+  -e DATA_PATH=/data \
+  -v $(pwd)/data:/data \
+  lineagiq-control-plane:latest
+
+# Or launch entire stack via Docker Compose:
+docker compose up -d control_plane</code></pre>
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
+
 
   <!-- Lightbox Modal for Screenshots -->
   <div class="lightbox-modal" id="lightbox-modal">
