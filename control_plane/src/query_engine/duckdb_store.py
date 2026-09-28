@@ -423,7 +423,7 @@ class DuckDBGraphStore(BaseGraphStore):
         ):
             return {"impacted_nodes": [], "edges": [], "root_node": None, "depth_reached": 0}
 
-        safe_depth = max(1, min(int(max_depth), 10))
+        safe_depth = max(1, min(max_depth, 10))
         query = f"""
         WITH RECURSIVE downstream_traverse(source_id, target_id, type, depth) AS (
             SELECT source_id, target_id, type, 1 AS depth
@@ -491,7 +491,7 @@ class DuckDBGraphStore(BaseGraphStore):
         ):
             return {"upstream_nodes": [], "edges": [], "target_node": None, "depth_reached": 0}
 
-        safe_depth = max(1, min(int(max_depth), 10))
+        safe_depth = max(1, min(max_depth, 10))
         query = f"""
         WITH RECURSIVE upstream_traverse(source_id, target_id, type, depth) AS (
             SELECT source_id, target_id, type, 1 AS depth
@@ -604,7 +604,7 @@ class DuckDBGraphStore(BaseGraphStore):
             ])
             params.extend([param] * 5)
 
-        safe_top_k = max(1, int(top_k))
+        safe_top_k = max(1, top_k)
         where_stmt = " OR ".join(where_clauses)
         query = f"""
         SELECT id, type, name, description, properties
