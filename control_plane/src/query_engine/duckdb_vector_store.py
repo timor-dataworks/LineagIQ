@@ -6,6 +6,8 @@ from control_plane.src.query_engine.base import BaseVectorStore
 from control_plane.src.query_engine.duckdb_store import (
     configure_duckdb_s3,
     ensure_duckdb_extensions,
+    get_shared_duckdb_connection,
+    get_shared_view_cache,
     resolve_delta_or_parquet_table,
 )
 from core.constants import get_vectors_table_path
@@ -21,9 +23,15 @@ class DuckDBVectorStore(BaseVectorStore):
     Args:
         data_base_path: Base directory or file path or s3:// URI where vector parquet/delta files are located.
         storage_options: Optional remote storage backend options (e.g. S3 credentials / endpoint).
+        con: Optional existing DuckDB connection instance. If omitted, uses shared connection.
     """
 
-    def __init__(self, data_base_path: str, storage_options: dict | None = None):
+    def __init__(
+        self,
+        data_base_path: str,
+        storage_options: dict | None = None,
+        con: duckdb.DuckDBPyConnection | None = None,
+    ):
         self.data_base_path = data_base_path
         self.storage_options = storage_options
         self.is_s3 = data_base_path.startswith("s3://")
@@ -33,8 +41,12 @@ class DuckDBVectorStore(BaseVectorStore):
             self.vectors_dir = get_vectors_table_path(data_base_path)
 
         # Persistent DuckDB connection with pre-loaded extensions and S3 secrets
-        self.con = duckdb.connect(database=":memory:")
-        self._registered_views = {}
+        if con is not None:
+            self.con = con
+        else:
+            self.con = get_shared_duckdb_connection(data_base_path, storage_options)
+        self._registered_views = get_shared_view_cache(data_base_path)
+
         ensure_duckdb_extensions(self.con)
         try:
             self.con.execute("INSTALL vss; LOAD vss;")

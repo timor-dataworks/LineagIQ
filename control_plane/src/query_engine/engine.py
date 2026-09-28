@@ -2,7 +2,11 @@ import json
 from typing import Any
 
 from control_plane.src.query_engine.base import BaseGraphStore, BaseVectorStore
-from control_plane.src.query_engine.duckdb_store import DuckDBGraphStore, get_available_timestamps
+from control_plane.src.query_engine.duckdb_store import (
+    DuckDBGraphStore,
+    get_available_timestamps,
+    get_shared_duckdb_connection,
+)
 from control_plane.src.query_engine.duckdb_vector_store import DuckDBVectorStore
 from core.embedder import LocalEmbedder, get_default_embedder
 
@@ -20,6 +24,7 @@ class DuckDBQueryEngine:
         graph_store: Optional custom `BaseGraphStore` instance. Defaults to `DuckDBGraphStore`.
         vector_store: Optional custom `BaseVectorStore` instance. Defaults to `DuckDBVectorStore`.
         embedder: Optional custom `LocalEmbedder` instance. Defaults to `LocalEmbedder`.
+        con: Optional custom DuckDB connection. If omitted, uses shared connection.
     """
 
     def __init__(
@@ -28,10 +33,12 @@ class DuckDBQueryEngine:
         graph_store: BaseGraphStore | None = None,
         vector_store: BaseVectorStore | None = None,
         embedder: LocalEmbedder | None = None,
+        con: Any | None = None,
     ):
         self.base_path = data_base_path
-        self.graph_store = graph_store or DuckDBGraphStore(data_base_path)
-        self.vector_store = vector_store or DuckDBVectorStore(data_base_path)
+        shared_con = con or get_shared_duckdb_connection(data_base_path)
+        self.graph_store = graph_store or DuckDBGraphStore(data_base_path, con=shared_con)
+        self.vector_store = vector_store or DuckDBVectorStore(data_base_path, con=shared_con)
         self.embedder = embedder or get_default_embedder()
 
     def get_downstream_blast_radius(

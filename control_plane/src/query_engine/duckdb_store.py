@@ -1,7 +1,9 @@
 import datetime
+import hashlib
 import json
 import logging
 import os
+import threading
 import time
 from typing import Any
 
@@ -27,6 +29,51 @@ _CREDENTIALS_CACHE: dict[str, Any] = {
     "expires_at": 0.0,
 }
 _CREDENTIAL_TTL_SECONDS = 2700.0  # 45 minutes cache for IAM task/instance profile credentials
+
+_SHARED_CONNECTIONS: dict[str, duckdb.DuckDBPyConnection] = {}
+_SHARED_VIEW_CACHES: dict[str, dict[str, Any]] = {}
+_CONNECTION_LOCK = threading.Lock()
+_TIMESTAMPS_CACHE: dict[str, tuple[float, list[dict[str, Any]]]] = {}
+_TIMESTAMPS_CACHE_TTL = 15.0  # 15 seconds commit logs cache
+
+
+def get_shared_duckdb_connection(
+    data_base_path: str, storage_options: dict[str, Any] | None = None
+) -> duckdb.DuckDBPyConnection:
+    """Returns a thread-safe shared in-memory DuckDB connection for data_base_path."""
+    clean_path = data_base_path.rstrip("/")
+    with _CONNECTION_LOCK:
+        if clean_path not in _SHARED_CONNECTIONS:
+            con = duckdb.connect(database=":memory:")
+            ensure_duckdb_extensions(con)
+            if clean_path.startswith("s3://") or storage_options:
+                configure_duckdb_s3(con, storage_options)
+            _SHARED_CONNECTIONS[clean_path] = con
+            _SHARED_VIEW_CACHES[clean_path] = {}
+        return _SHARED_CONNECTIONS[clean_path]
+
+
+def get_shared_view_cache(data_base_path: str) -> dict[str, Any]:
+    """Returns the view cache associated with the shared connection for data_base_path."""
+    clean_path = data_base_path.rstrip("/")
+    with _CONNECTION_LOCK:
+        if clean_path not in _SHARED_VIEW_CACHES:
+            _SHARED_VIEW_CACHES[clean_path] = {}
+        return _SHARED_VIEW_CACHES[clean_path]
+
+
+def clear_duckdb_caches(data_base_path: str | None = None) -> None:
+    """Clears in-memory connection and view caches."""
+    with _CONNECTION_LOCK:
+        if data_base_path:
+            clean_path = data_base_path.rstrip("/")
+            _SHARED_CONNECTIONS.pop(clean_path, None)
+            _SHARED_VIEW_CACHES.pop(clean_path, None)
+            _TIMESTAMPS_CACHE.pop(clean_path, None)
+        else:
+            _SHARED_CONNECTIONS.clear()
+            _SHARED_VIEW_CACHES.clear()
+            _TIMESTAMPS_CACHE.clear()
 
 
 def _resolve_iam_credentials(region: str) -> tuple[str | None, str | None, str | None]:
@@ -258,6 +305,16 @@ def resolve_delta_table(
                         for commit in ts_list:
                             if commit.get("timestamp_ms", 0) <= target_ms + 100:
                                 target_ver = commit.get("version", 0)
+        else:
+            # Current snapshot: find latest version for in-memory snapshot caching
+            base_tenant_dir = table_dir
+            for sub in ["/graph/nodes", "/graph/edges", "/vectors"]:
+                if table_dir.endswith(sub):
+                    base_tenant_dir = table_dir[: -len(sub)]
+                    break
+            ts_list = get_available_timestamps(base_tenant_dir, storage_options=storage_options)
+            if ts_list:
+                target_ver = ts_list[-1].get("version", 0)
 
         attach_alias = f"delta_{view_name}"
         escaped_path = (target_path if is_s3 else os.path.abspath(table_dir)).replace("'", "''")
@@ -274,11 +331,31 @@ def resolve_delta_table(
 
         if is_before_history:
             con.execute(f"CREATE OR REPLACE VIEW {view_name} AS SELECT * FROM {attach_alias} WHERE 1=0;")
-        elif target_ver is not None:
-            con.execute(f"CREATE OR REPLACE VIEW {view_name} AS SELECT * FROM {attach_alias} AT (VERSION => {target_ver});")
         else:
-            con.execute(f"CREATE OR REPLACE VIEW {view_name} AS SELECT * FROM {attach_alias};")
+            # Snapshot In-Memory Caching:
+            # Materialize the selected Delta version snapshot into an in-memory DuckDB table
+            # so that all graph traversals, joins, and vector distance calculations run 100% in RAM!
+            path_hash = hashlib.md5(escaped_path.encode()).hexdigest()[:8]
+            ver_label = f"v{target_ver}" if target_ver is not None else "latest"
+            mem_table = f"_snapshot_{view_name}_{path_hash}_{ver_label}"
 
+            cached_tables = view_cache.setdefault("_cached_snapshot_tables", set()) if view_cache is not None else set()
+            if mem_table not in cached_tables:
+                try:
+                    exists = con.execute(
+                        f"SELECT 1 FROM information_schema.tables WHERE table_name = '{mem_table}' AND table_schema = 'main';"
+                    ).fetchone()
+                except Exception:
+                    exists = None
+
+                if not exists:
+                    if target_ver is not None:
+                        con.execute(f"CREATE OR REPLACE TABLE {mem_table} AS SELECT * FROM {attach_alias} AT (VERSION => {target_ver});")
+                    else:
+                        con.execute(f"CREATE OR REPLACE TABLE {mem_table} AS SELECT * FROM {attach_alias};")
+                cached_tables.add(mem_table)
+
+            con.execute(f"CREATE OR REPLACE VIEW {view_name} AS SELECT * FROM {mem_table};")
 
         if view_cache is not None:
             view_cache[view_name] = (target_path, as_of)
@@ -308,6 +385,11 @@ def get_available_timestamps(
     nodes_dir = f"{data_base_path.rstrip('/')}/graph/nodes" if is_s3 else get_nodes_table_path(data_base_path)
 
     if is_s3:
+        now = time.time()
+        clean_path = data_base_path.rstrip("/")
+        cache_entry = _TIMESTAMPS_CACHE.get(clean_path)
+        if cache_entry and (now - cache_entry[0]) < _TIMESTAMPS_CACHE_TTL:
+            return cache_entry[1]
         try:
             import boto3
             s3_path = nodes_dir[5:]
@@ -375,6 +457,7 @@ def get_available_timestamps(
                     "timestamp_ms": commit_ms,
                     "operation": commit_info.get("operation", "WRITE"),
                 })
+            _TIMESTAMPS_CACHE[clean_path] = (now, results)
             return results
         except Exception as e:
             logger.warning(f"Error fetching S3 Delta timestamps via boto3: {e}")
@@ -413,9 +496,15 @@ class DuckDBGraphStore(BaseGraphStore):
     Args:
         data_base_path: Root directory path or s3:// URI containing graph and vector Parquet/Delta data.
         storage_options: Optional remote storage backend options (e.g. S3 credentials / endpoint).
+        con: Optional existing DuckDB connection instance. If omitted, uses shared connection.
     """
 
-    def __init__(self, data_base_path: str, storage_options: dict[str, Any] | None = None):
+    def __init__(
+        self,
+        data_base_path: str,
+        storage_options: dict[str, Any] | None = None,
+        con: duckdb.DuckDBPyConnection | None = None,
+    ):
         self.base_path = data_base_path
         self.storage_options = storage_options
         self.is_s3 = data_base_path.startswith("s3://")
@@ -432,8 +521,12 @@ class DuckDBGraphStore(BaseGraphStore):
             self.edges_file = os.path.join(self.edges_dir, FILE_DATA_PARQUET)
 
         # Persistent DuckDB connection with pre-loaded extensions and S3 secrets
-        self.con = duckdb.connect(database=":memory:")
-        self._registered_views: dict[str, tuple[str, str | None]] = {}
+        if con is not None:
+            self.con = con
+        else:
+            self.con = get_shared_duckdb_connection(data_base_path, storage_options)
+        self._registered_views = get_shared_view_cache(data_base_path)
+
         ensure_duckdb_extensions(self.con)
         if self.is_s3 or self.storage_options:
             configure_duckdb_s3(self.con, self.storage_options)
