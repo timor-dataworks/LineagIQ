@@ -67,6 +67,7 @@ def configure_duckdb_s3(con: duckdb.DuckDBPyConnection, storage_options: dict[st
     )
     ak = opts.get("AWS_ACCESS_KEY_ID") or opts.get("access_key_id") or os.getenv("AWS_ACCESS_KEY_ID")
     sk = opts.get("AWS_SECRET_ACCESS_KEY") or opts.get("secret_access_key") or os.getenv("AWS_SECRET_ACCESS_KEY")
+    token = opts.get("AWS_SESSION_TOKEN") or opts.get("session_token") or os.getenv("AWS_SESSION_TOKEN")
     region = (
         opts.get("AWS_REGION")
         or opts.get("region")
@@ -74,6 +75,20 @@ def configure_duckdb_s3(con: duckdb.DuckDBPyConnection, storage_options: dict[st
         or os.getenv("AWS_DEFAULT_REGION")
         or "eu-central-1"
     )
+
+    if not (ak and sk):
+        try:
+            import boto3
+            session = boto3.Session(region_name=region)
+            creds = session.get_credentials()
+            if creds:
+                frozen = creds.get_frozen_credentials()
+                ak = ak or frozen.access_key
+                sk = sk or frozen.secret_key
+                token = token or getattr(frozen, "token", None)
+        except Exception as e:
+            logger.debug(f"Could not resolve AWS credentials from boto3: {e}")
+
     allow_http = (
         str(opts.get("AWS_ALLOW_HTTP", "")).lower() == "true"
         or "http://" in str(endpoint)
@@ -93,17 +108,24 @@ def configure_duckdb_s3(con: duckdb.DuckDBPyConnection, storage_options: dict[st
             escaped_sk = (sk or "mock").replace("'", "''")
             escaped_region = region.replace("'", "''")
             escaped_endpoint = clean_endpoint.replace("'", "''") if clean_endpoint else ""
+            escaped_token = (token or "").replace("'", "''")
 
-            endpoint_clause = f", ENDPOINT '{escaped_endpoint}'" if escaped_endpoint else ""
+            extra_clauses = []
+            if escaped_endpoint:
+                extra_clauses.append(f", ENDPOINT '{escaped_endpoint}'")
+                extra_clauses.append(f", USE_SSL {use_ssl_val}")
+                extra_clauses.append(", URL_STYLE 'path'")
+            if escaped_token:
+                extra_clauses.append(f", SESSION_TOKEN '{escaped_token}'")
+
+            extra_sql = "".join(extra_clauses)
             secret_sql = f"""
             CREATE OR REPLACE SECRET lineagiq_s3 (
                 TYPE S3,
                 KEY_ID '{escaped_ak}',
                 SECRET '{escaped_sk}',
-                REGION '{escaped_region}',
-                USE_SSL {use_ssl_val},
-                URL_STYLE 'path'
-                {endpoint_clause}
+                REGION '{escaped_region}'
+                {extra_sql}
             );
             """
             con.execute(secret_sql)
@@ -245,7 +267,7 @@ def get_available_timestamps(
             opts = storage_options or {}
             endpoint = opts.get("AWS_ENDPOINT_URL") or opts.get("endpoint_url") or opts.get("s3_endpoint") or os.getenv("AWS_ENDPOINT_URL")
             ak = opts.get("AWS_ACCESS_KEY_ID") or opts.get("access_key_id") or os.getenv("AWS_ACCESS_KEY_ID")
-            sk = opts.get("AWS_SECRET_ACCESS_KEY") or opts.get("secret_access_key") or os.getenv("AWS_SECRET_ACCESS_KEY")
+            token = opts.get("AWS_SESSION_TOKEN") or opts.get("session_token") or os.getenv("AWS_SESSION_TOKEN")
             region = opts.get("AWS_REGION") or opts.get("region") or os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "eu-central-1"
 
             client_kwargs = {"region_name": region}
@@ -254,6 +276,8 @@ def get_available_timestamps(
             if ak and sk:
                 client_kwargs["aws_access_key_id"] = ak
                 client_kwargs["aws_secret_access_key"] = sk
+                if token:
+                    client_kwargs["aws_session_token"] = token
 
             s3 = boto3.client("s3", **client_kwargs)
             paginator = s3.get_paginator("list_objects_v2")
