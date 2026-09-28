@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import os
+import time
 from typing import Any
 
 import duckdb
@@ -317,8 +318,15 @@ def get_available_timestamps(
             opts = storage_options or {}
             endpoint = opts.get("AWS_ENDPOINT_URL") or opts.get("endpoint_url") or opts.get("s3_endpoint") or os.getenv("AWS_ENDPOINT_URL")
             ak = opts.get("AWS_ACCESS_KEY_ID") or opts.get("access_key_id") or os.getenv("AWS_ACCESS_KEY_ID")
+            sk = opts.get("AWS_SECRET_ACCESS_KEY") or opts.get("secret_access_key") or os.getenv("AWS_SECRET_ACCESS_KEY")
             token = opts.get("AWS_SESSION_TOKEN") or opts.get("session_token") or os.getenv("AWS_SESSION_TOKEN")
             region = opts.get("AWS_REGION") or opts.get("region") or os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "eu-central-1"
+
+            if not (ak and sk):
+                iam_ak, iam_sk, iam_token = _resolve_iam_credentials(region)
+                ak = ak or iam_ak
+                sk = sk or iam_sk
+                token = token or iam_token
 
             client_kwargs = {"region_name": region}
             if endpoint:
