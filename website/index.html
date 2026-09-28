@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LineagIQ | Enterprise Semantic Knowledge Graph & Real-Time Lineage Intelligence</title>
-  <meta name="description" content="LineagIQ models enterprise data landscapes into an intelligent, queryable semantic knowledge graph. Serverless Delta Lake & DuckDB architecture with sub-second time-travel lineage diffing and automated blast-radius intelligence.">
+  <meta name="description" content="LineagIQ models enterprise data landscapes into an intelligent, queryable semantic knowledge graph. Serverless Delta Lake architecture with in-memory vectorized compute, sub-second time-travel lineage diffing and automated blast-radius intelligence.">
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -103,7 +103,7 @@
         <div class="metric-card">
           <div class="metric-value">92%</div>
           <div class="metric-label">Reduction in TCO</div>
-          <div class="metric-desc">Replaces 6-figure Neo4j and Neptune clusters with serverless Delta Lake and in-process DuckDB.</div>
+          <div class="metric-desc">Replaces 6-figure Neo4j and Neptune clusters with serverless Delta Lake and embedded in-memory graph compute.</div>
         </div>
 
         <div class="metric-card">
@@ -445,7 +445,7 @@
           <div class="tco-header">
             <div>
               <span class="badge badge-emerald">LineagIQ Slim Stack</span>
-              <h3 class="tco-title" style="margin-top: 10px;">Serverless S3 Delta + In-Process DuckDB</h3>
+              <h3 class="tco-title" style="margin-top: 10px;">Serverless S3 Delta + Embedded In-Memory Engine</h3>
             </div>
             <div class="tco-price">&lt; $5k <span style="font-size: 0.85rem; font-weight: normal; color: var(--text-muted);">/ year</span></div>
           </div>
@@ -465,22 +465,22 @@
             </li>
             <li class="tco-item">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-              <span><strong>Vectorized C++ Query Engine:</strong> In-process DuckDB evaluates multi-hop recursive graph traversals using standard SQL CTEs in milliseconds directly over columnar Parquet files.</span>
+              <span><strong>Vectorized C++ Query Engine:</strong> LineagIQ's embedded engine evaluates multi-hop recursive graph traversals using standard SQL CTEs in milliseconds directly over columnar Parquet files.</span>
             </li>
           </ul>
         </div>
       </div>
 
-      <!-- Hardware Sizing & Graph Scale Estimation (with DuckDB In-Memory Caching) -->
+      <!-- Hardware Sizing & Graph Scale Estimation (with In-Memory Caching) -->
       <div class="hardware-scale-card">
         <div class="scale-card-header">
           <div class="scale-header-badge">
             <span class="badge badge-emerald">⚡ In-Memory Vectorized Benchmarks</span>
-            <span class="scale-tag">DuckDB Snapshot Materialization</span>
+            <span class="scale-tag">In-Memory Snapshot Materialization</span>
           </div>
           <h3 class="scale-card-title">Hardware Sizing vs. Graph Scale (Nodes & Edges)</h3>
           <p class="scale-card-desc">
-            Thanks to LineagIQ's versioned snapshot materialization, historical graph partitions are dynamically cached in DuckDB's in-memory columnar engine. Bit-packed, dictionary-encoded relations achieve <strong>sub-10ms recursive CTE query execution</strong> on ultra-compact hardware—eliminating expensive multi-node graph database clusters entirely.
+            Thanks to LineagIQ's versioned snapshot materialization, historical graph partitions are dynamically cached in LineagIQ's in-memory columnar engine. Bit-packed, dictionary-encoded relations achieve <strong>sub-10ms recursive CTE query execution</strong> on ultra-compact hardware—eliminating expensive multi-node graph database clusters entirely.
           </p>
         </div>
 
@@ -574,17 +574,9 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
           Three-Tier System Design
         </button>
-        <button class="arch-tab-btn" data-tab="tab-query">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-          DuckDB Recursive Traversal
-        </button>
         <button class="arch-tab-btn" data-tab="tab-code">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"></path></svg>
           AI Agent Retriever Tools
-        </button>
-        <button class="arch-tab-btn" data-tab="tab-docker">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"></rect><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"></path><path d="M12 6v8"></path><path d="m8 10 4 4 4-4"></path></svg>
-          Docker & Deployment
         </button>
       </div>
 
@@ -602,7 +594,7 @@
                 <span class="tier-chip">INFORMATION_SCHEMA</span>
                 <span class="tier-chip">QUERY_HISTORY</span>
                 <span class="tier-chip">OpenLineage JSON</span>
-                <span class="tier-chip">bge-small INT8 ONNX</span>
+                <span class="tier-chip">Vector Embeddings</span>
               </div>
             </div>
 
@@ -610,14 +602,13 @@
             <div class="diagram-tier">
               <div class="tier-number">Tier 02 // Lakehouse Storage</div>
               <h4 class="tier-title">Delta Lake Storage Layer</h4>
-              <p class="tier-desc">Standard cloud object store (S3/GCS) or persistent directory defined by <code>DATA_PATH</code>. Stores nodes, edges, schema definitions, and vector embeddings backed by Delta Lake transaction logs.</p>
+              <p class="tier-desc">Standard cloud object storage (S3/GCS) or enterprise storage layer. Stores lineage nodes, dependency edges, schema definitions, and vector embeddings backed by Delta Lake transaction logs.</p>
               <div class="tier-chips">
-                <span class="tier-chip">DATA_PATH=/data</span>
-                <span class="tier-chip">graph/nodes/</span>
-                <span class="tier-chip">graph/edges/</span>
-                <span class="tier-chip">vectors/</span>
-                <span class="tier-chip">_delta_log/</span>
-                <span class="tier-chip">Snappy Parquet</span>
+                <span class="tier-chip">ACID Transactions</span>
+                <span class="tier-chip">Delta Lake Tables</span>
+                <span class="tier-chip">Columnar Parquet</span>
+                <span class="tier-chip">Time-Travel Snapshots</span>
+                <span class="tier-chip">Cloud Object Storage</span>
               </div>
             </div>
 
@@ -625,9 +616,9 @@
             <div class="diagram-tier">
               <div class="tier-number">Tier 03 // Query & GraphRAG</div>
               <h4 class="tier-title">Serverless Control Plane</h4>
-              <p class="tier-desc">FastAPI query runtime running in-process DuckDB to execute recursive SQL CTE traversals directly against Delta tables. Exposes sub-second REST endpoints, interactive graph visualizations, and GraphRAG tools.</p>
+              <p class="tier-desc">FastAPI query runtime running an embedded vectorized engine to execute multi-hop lineage traversals directly against Delta tables. Exposes sub-second REST endpoints, interactive graph visualizations, and GraphRAG tools.</p>
               <div class="tier-chips">
-                <span class="tier-chip">DuckDB C++ Engine</span>
+                <span class="tier-chip">Vectorized Query Core</span>
                 <span class="tier-chip">FastAPI REST</span>
                 <span class="tier-chip">Vector Similarity</span>
                 <span class="tier-chip">Timeline Scrubbing</span>
@@ -638,42 +629,7 @@
         </div>
       </div>
 
-      <!-- Tab 2: DuckDB Recursive Traversal -->
-      <div class="arch-tab-panel" id="tab-query">
-        <div class="diagram-card">
-          <h4 class="tier-title">Ultra-Fast Recursive Graph Traversal in SQL</h4>
-          <p class="tier-desc">
-            Rather than mandating niche graph query dialects, LineagIQ executes multi-hop graph traversals using standard recursive SQL Common Table Expressions (CTEs) evaluated directly against Delta Lake snapshots via DuckDB:
-          </p>
-
-          <div class="code-container">
-            <div class="code-header">
-              <span class="code-title">duckdb_store.py — Recursive Downstream Blast Radius Query</span>
-              <button class="copy-btn" data-code="snippet-sql">Copy SQL</button>
-            </div>
-            <pre><code id="snippet-sql">-- LineagIQ Recursive Downstream Lineage Traversal
-WITH RECURSIVE downstream_traverse AS (
-    -- Anchor: Immediate downstream dependencies of target node
-    SELECT source_id, target_id, type, 1 as depth
-    FROM delta_edges_view
-    WHERE source_id = 'postgres.raw.raw_customers'
-      AND type != 'BELONGS_TO'
-
-    UNION ALL
-
-    -- Recursive Step: Multi-hop graph expansion up to max_depth
-    SELECT e.source_id, e.target_id, e.type, d.depth + 1
-    FROM delta_edges_view e
-    JOIN downstream_traverse d ON e.source_id = d.target_id
-    WHERE d.depth &lt; 5 AND e.type != 'BELONGS_TO'
-)
-SELECT DISTINCT source_id, target_id, type, depth
-FROM downstream_traverse;</code></pre>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tab 3: AI Agent Code Integration -->
+      <!-- Tab 2: AI Agent Code Integration -->
       <div class="arch-tab-panel" id="tab-code">
         <div class="diagram-card">
           <h4 class="tier-title">Programmatic GraphRAG Integration for AI Agents</h4>
@@ -692,7 +648,7 @@ from control_plane.src.agent_tools import (
     get_lineage_time_travel_diff
 )
 
-# 1. Retrieve Graph Context & Synthesized GraphRAG Prompt (configured via DATA_PATH)
+# 1. Retrieve Graph Context & Synthesized GraphRAG Prompt
 blast_radius_prompt = get_dataset_blast_radius(
     node_id="postgres.raw.raw_customers",
     max_depth=5
@@ -709,38 +665,6 @@ response = client.chat.completions.create(
 )
 
 print(response.choices[0].message.content)</code></pre>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tab 4: Docker & Deployment -->
-      <div class="arch-tab-panel" id="tab-docker">
-        <div class="diagram-card">
-          <h4 class="tier-title">Containerized Deployment with Unified DATA_PATH</h4>
-          <p class="tier-desc">
-            Deploy LineagIQ effortlessly with Docker and Docker Compose. All components share a mounted directory or cloud bucket prefix orchestrated through the unified <code>DATA_PATH</code> environment variable:
-          </p>
-
-          <div class="code-container">
-            <div class="code-header">
-              <span class="code-title">docker-commands.sh — Production Docker Quickstart</span>
-              <button class="copy-btn" data-code="snippet-docker">Copy Commands</button>
-            </div>
-            <pre><code id="snippet-docker"># 1. Generate 3-Version Time-Travel Demo Dataset with Public Image
-docker run --rm \
-  -v $(pwd)/data:/data \
-  ghcr.io/timor-dataworks/lineagiq-collection-agent:latest \
-  --multiversion-demo
-
-# 2. Launch Serverless Control Plane & Web Visualizer (Port 8000)
-docker run -d --name lineagiq-control-plane \
-  -p 8000:8000 \
-  -e DATA_PATH=/data \
-  -v $(pwd)/data:/data \
-  ghcr.io/timor-dataworks/lineagiq-control-plane:latest
-
-# Or launch entire stack via Docker Compose:
-docker compose up -d control_plane</code></pre>
           </div>
         </div>
       </div>
@@ -774,7 +698,7 @@ docker compose up -d control_plane</code></pre>
             <div class="registry-tags">
               <span class="reg-tag">linux/amd64</span>
               <span class="reg-tag">FastAPI REST</span>
-              <span class="reg-tag">DuckDB 1.1+</span>
+              <span class="reg-tag">In-Memory Engine</span>
               <span class="reg-tag">Port 8000</span>
             </div>
           </div>
@@ -830,7 +754,7 @@ docker compose up -d control_plane</code></pre>
             <h3 class="step-title">Launch Serverless Control Plane</h3>
           </div>
           <p class="step-desc">
-            Start the query runtime. DuckDB mounts your Delta Lake directory and immediately serves the interactive visualizer and REST APIs.
+            Start the query runtime. LineagIQ mounts your Delta Lake directory and immediately serves the interactive visualizer and REST APIs.
           </p>
           <div class="code-container">
             <div class="code-header">
@@ -953,7 +877,7 @@ docker compose up -d control_plane</code></pre>
           <ul>
             <li><a href="#slim-stack">Slim Stack & TCO</a></li>
             <li><a href="#architecture">Delta Lake Commit Log</a></li>
-            <li><a href="#architecture">DuckDB C++ Traversal</a></li>
+            <li><a href="#architecture">Vectorized Traversal</a></li>
             <li><a href="#architecture">Stateless Collectors</a></li>
           </ul>
         </div>
@@ -971,7 +895,7 @@ docker compose up -d control_plane</code></pre>
 
       <div class="footer-bottom">
         <div>&copy; 2026 LineagIQ. Enterprise Semantic Knowledge Graph Platform. All rights reserved.</div>
-        <div>Built with Delta Lake, DuckDB & PyArrow.</div>
+        <div>Built with Delta Lake, PyArrow & LineagIQ Core.</div>
       </div>
     </div>
   </footer>
