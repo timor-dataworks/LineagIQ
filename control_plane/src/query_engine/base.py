@@ -87,7 +87,7 @@ class BaseGraphStore(ABC):
 
     @abstractmethod
     def get_schema_time_travel_diff(
-        self, start_node_id: str, timestamp_t1: str, timestamp_t2: str
+        self, start_node_id: str | None, timestamp_t1: str, timestamp_t2: str
     ) -> dict[str, Any]:
         """Computes schema and lineage graph diff between two historical ISO 8601 timestamps.
 

@@ -108,3 +108,25 @@ def test_time_travel_diff_endpoint(tmp_path, monkeypatch):
     data = response.json()
     assert "diff" in data
     assert "synthesized_prompt" in data
+
+
+def test_time_travel_diff_endpoint_without_node_id(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATA_PATH", str(tmp_path))
+    client = get_test_client()
+    ds = DatasetNode(id="analytics.orders", name="orders")
+    writer = ArtifactWriter()
+    writer.write_all(GraphPayload(nodes=[ds], edges=[]), str(tmp_path))
+
+    # Omitted node_id should default to None (global diff) and return 200
+    response = client.post(
+        "/api/v1/time-travel/diff",
+        json={
+            "timestamp_t1": "2026-09-08T10:00:00Z",
+            "timestamp_t2": "2026-09-08T11:00:00Z",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "diff" in data
+    assert "synthesized_prompt" in data
+    assert "Global (All Enterprise Lineage Assets)" in data["synthesized_prompt"]

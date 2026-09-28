@@ -190,7 +190,7 @@ class PromptSynthesizer:
 
     def synthesize_time_travel_diff_prompt(
         self,
-        node_id: str,
+        node_id: str | None,
         timestamp_t1: str,
         timestamp_t2: str,
         diff_result: dict[str, Any],
@@ -198,7 +198,7 @@ class PromptSynthesizer:
         """Synthesizes a structured GraphRAG Prompt for historical schema drift & lineage diff analysis.
 
         Args:
-            node_id: Target node ID under historical assessment.
+            node_id: Optional target node ID under historical assessment (None for enterprise global diff).
             timestamp_t1: Baseline ISO 8601 timestamp string.
             timestamp_t2: Compare ISO 8601 timestamp string.
             diff_result: Dictionary containing added_nodes, removed_nodes, modified_nodes, edge_changes.
@@ -206,12 +206,13 @@ class PromptSynthesizer:
         Returns:
             Formatted text string prompt for LLM historical analysis.
         """
+        target_display = node_id.strip() if (node_id and node_id.strip()) else "Global (All Enterprise Lineage Assets)"
         prompt_lines = [
             "================================================================================",
             "LINEAGIQ GRAPHRAG PROMPT: TIME TRAVEL & HISTORICAL SCHEMA DRIFT ANALYSIS",
             "================================================================================",
             "",
-            f"### TARGET ASSET: {node_id}",
+            f"### TARGET ASSET: {target_display}",
             f"### BASELINE TIMESTAMP (T1): {timestamp_t1}",
             f"### COMPARE TIMESTAMP (T2):  {timestamp_t2}",
             "",

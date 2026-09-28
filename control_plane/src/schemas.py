@@ -34,6 +34,6 @@ class ChatRequest(BaseModel):
 
 class TimeTravelDiffRequest(BaseModel):
     """Payload schema for historical schema drift and lineage diff request."""
-    node_id: str = Field(..., description="Target node ID for time travel diff analysis")
+    node_id: str | None = Field(default=None, description="Optional target node ID for time travel diff analysis. If None or omitted, diffs entire graph.")
     timestamp_t1: str = Field(..., description="Initial ISO 8601 timestamp string (T1)")
     timestamp_t2: str = Field(..., description="Subsequent ISO 8601 timestamp string (T2)")

@@ -75,16 +75,28 @@ export async function sendChat(message, llmConfig = {}) {
 }
 
 export async function fetchTimeDiff(nodeId, timestampT1, timestampT2) {
+  const payload = {
+    timestamp_t1: timestampT1,
+    timestamp_t2: timestampT2
+  };
+  if (nodeId && nodeId.trim()) {
+    payload.node_id = nodeId.trim();
+  }
   const response = await fetch(`/api/v1/time-travel/diff`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      node_id: nodeId || undefined,
-      timestamp_t1: timestampT1,
-      timestamp_t2: timestampT2
-    })
+    body: JSON.stringify(payload)
   });
-  if (!response.ok) throw new Error("Time Travel Diff request failed");
+  if (!response.ok) {
+    let errMsg = "Time Travel Diff request failed";
+    try {
+      const errData = await response.json();
+      if (errData && errData.detail) {
+        errMsg = typeof errData.detail === 'string' ? errData.detail : JSON.stringify(errData.detail);
+      }
+    } catch (_) {}
+    throw new Error(errMsg);
+  }
   return await response.json();
 }
 
