@@ -278,17 +278,18 @@ def run_multiversion_generation(target_dir: str | None = None) -> None:
     if not effective_dir:
         raise ValueError("DATA_PATH environment variable must be set.")
 
-    if os.path.exists(effective_dir):
-        for item in os.listdir(effective_dir):
-            item_path = os.path.join(effective_dir, item)
-            if os.path.isdir(item_path):
-                shutil.rmtree(item_path, ignore_errors=True)
-            else:
-                try:
-                    os.remove(item_path)
-                except OSError:
-                    pass
-    os.makedirs(effective_dir, exist_ok=True)
+    if not effective_dir.startswith("s3://"):
+        if os.path.exists(effective_dir):
+            for item in os.listdir(effective_dir):
+                item_path = os.path.join(effective_dir, item)
+                if os.path.isdir(item_path):
+                    shutil.rmtree(item_path, ignore_errors=True)
+                else:
+                    try:
+                        os.remove(item_path)
+                    except OSError:
+                        pass
+        os.makedirs(effective_dir, exist_ok=True)
 
 
     embedder = LocalEmbedder()

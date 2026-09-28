@@ -53,28 +53,35 @@ def ensure_duckdb_extensions(con: duckdb.DuckDBPyConnection) -> None:
 
 def configure_duckdb_s3(con: duckdb.DuckDBPyConnection, storage_options: dict[str, Any] | None = None) -> None:
     """Configures DuckDB S3 credentials/endpoint for direct S3 delta_scan access."""
-    if not storage_options:
-        return
-
-    cfg_key = (id(con), str(sorted(storage_options.items())))
+    con_id = id(con)
+    cfg_key = (con_id, str(sorted((storage_options or {}).items())))
     if cfg_key in _S3_CONFIGURED:
         return
 
+    opts = storage_options or {}
     endpoint = (
-        storage_options.get("AWS_ENDPOINT_URL")
-        or storage_options.get("endpoint_url")
-        or storage_options.get("s3_endpoint")
+        opts.get("AWS_ENDPOINT_URL")
+        or opts.get("endpoint_url")
+        or opts.get("s3_endpoint")
+        or os.getenv("AWS_ENDPOINT_URL")
     )
-    ak = storage_options.get("AWS_ACCESS_KEY_ID") or storage_options.get("access_key_id")
-    sk = storage_options.get("AWS_SECRET_ACCESS_KEY") or storage_options.get("secret_access_key")
-    region = storage_options.get("AWS_REGION") or storage_options.get("region") or "us-east-1"
+    ak = opts.get("AWS_ACCESS_KEY_ID") or opts.get("access_key_id") or os.getenv("AWS_ACCESS_KEY_ID")
+    sk = opts.get("AWS_SECRET_ACCESS_KEY") or opts.get("secret_access_key") or os.getenv("AWS_SECRET_ACCESS_KEY")
+    region = (
+        opts.get("AWS_REGION")
+        or opts.get("region")
+        or os.getenv("AWS_REGION")
+        or os.getenv("AWS_DEFAULT_REGION")
+        or "eu-central-1"
+    )
     allow_http = (
-        str(storage_options.get("AWS_ALLOW_HTTP", "")).lower() == "true"
+        str(opts.get("AWS_ALLOW_HTTP", "")).lower() == "true"
         or "http://" in str(endpoint)
     )
 
-    if endpoint or (ak and sk):
-        try:
+    try:
+        con.execute("LOAD httpfs;")
+        if endpoint or (ak and sk):
             clean_endpoint = endpoint
             if clean_endpoint and clean_endpoint.startswith("http://"):
                 clean_endpoint = clean_endpoint[7:]
@@ -84,10 +91,9 @@ def configure_duckdb_s3(con: duckdb.DuckDBPyConnection, storage_options: dict[st
             use_ssl_val = "false" if allow_http else "true"
             escaped_ak = (ak or "mock").replace("'", "''")
             escaped_sk = (sk or "mock").replace("'", "''")
-            escaped_region = (region or "us-east-1").replace("'", "''")
+            escaped_region = region.replace("'", "''")
             escaped_endpoint = clean_endpoint.replace("'", "''") if clean_endpoint else ""
 
-            con.execute("LOAD httpfs;")
             endpoint_clause = f", ENDPOINT '{escaped_endpoint}'" if escaped_endpoint else ""
             secret_sql = f"""
             CREATE OR REPLACE SECRET lineagiq_s3 (
@@ -101,10 +107,20 @@ def configure_duckdb_s3(con: duckdb.DuckDBPyConnection, storage_options: dict[st
             );
             """
             con.execute(secret_sql)
-            _S3_CONFIGURED.add(cfg_key)
+        else:
+            escaped_region = region.replace("'", "''")
+            secret_sql = f"""
+            CREATE OR REPLACE SECRET lineagiq_s3 (
+                TYPE S3,
+                PROVIDER CREDENTIAL_CHAIN,
+                REGION '{escaped_region}'
+            );
+            """
+            con.execute(secret_sql)
+        _S3_CONFIGURED.add(cfg_key)
 
-        except Exception as e:
-            logger.debug(f"Could not configure DuckDB S3 secret: {e}")
+    except Exception as e:
+        logger.debug(f"Could not configure DuckDB S3 secret: {e}")
 
 
 def resolve_delta_table(
@@ -145,7 +161,7 @@ def resolve_delta_table(
 
     try:
         ensure_duckdb_extensions(con)
-        if is_s3 and storage_options:
+        if is_s3:
             configure_duckdb_s3(con, storage_options)
 
         # Determine historical version if as_of is provided
@@ -226,15 +242,11 @@ def get_available_timestamps(
             prefix = s3_path[len(bucket) + 1 :].strip("/")
             log_prefix = f"{prefix}/_delta_log/"
 
-            endpoint = None
-            ak = None
-            sk = None
-            region = "us-east-1"
-            if storage_options:
-                endpoint = storage_options.get("AWS_ENDPOINT_URL") or storage_options.get("endpoint_url")
-                ak = storage_options.get("AWS_ACCESS_KEY_ID") or storage_options.get("access_key_id")
-                sk = storage_options.get("AWS_SECRET_ACCESS_KEY") or storage_options.get("secret_access_key")
-                region = storage_options.get("AWS_REGION") or storage_options.get("region") or region
+            opts = storage_options or {}
+            endpoint = opts.get("AWS_ENDPOINT_URL") or opts.get("endpoint_url") or opts.get("s3_endpoint") or os.getenv("AWS_ENDPOINT_URL")
+            ak = opts.get("AWS_ACCESS_KEY_ID") or opts.get("access_key_id") or os.getenv("AWS_ACCESS_KEY_ID")
+            sk = opts.get("AWS_SECRET_ACCESS_KEY") or opts.get("secret_access_key") or os.getenv("AWS_SECRET_ACCESS_KEY")
+            region = opts.get("AWS_REGION") or opts.get("region") or os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "eu-central-1"
 
             client_kwargs = {"region_name": region}
             if endpoint:
@@ -324,7 +336,8 @@ class DuckDBGraphStore(BaseGraphStore):
     def __init__(self, data_base_path: str, storage_options: dict[str, Any] | None = None):
         self.base_path = data_base_path
         self.storage_options = storage_options
-        if data_base_path.startswith("s3://"):
+        self.is_s3 = data_base_path.startswith("s3://")
+        if self.is_s3:
             base_clean = data_base_path.rstrip("/")
             self.nodes_dir = f"{base_clean}/graph/nodes"
             self.edges_dir = f"{base_clean}/graph/edges"
@@ -340,7 +353,7 @@ class DuckDBGraphStore(BaseGraphStore):
         self.con = duckdb.connect(database=":memory:")
         self._registered_views: dict[str, tuple[str, str | None]] = {}
         ensure_duckdb_extensions(self.con)
-        if self.storage_options:
+        if self.is_s3 or self.storage_options:
             configure_duckdb_s3(self.con, self.storage_options)
 
     def _synthesize_missing_nodes(self, nodes: list[dict[str, Any]], target_ids: set) -> list[dict[str, Any]]:
