@@ -19,7 +19,38 @@ logger = logging.getLogger(__name__)
 
 
 _EXTENSIONS_LOADED = set()
-_S3_CONFIGURED = set()
+_S3_CONFIGURED_CONNS: dict[tuple[int, str], float] = {}
+_BOTO_SESSION: Any = None
+_CREDENTIALS_CACHE: dict[str, Any] = {
+    "creds": None,
+    "expires_at": 0.0,
+}
+_CREDENTIAL_TTL_SECONDS = 2700.0  # 45 minutes cache for IAM task/instance profile credentials
+
+
+def _resolve_iam_credentials(region: str) -> tuple[str | None, str | None, str | None]:
+    """Resolves and caches temporary AWS credentials from Fargate/ECS instance/task profiles."""
+    global _BOTO_SESSION
+    now = time.time()
+    if _CREDENTIALS_CACHE["creds"] is not None and now < _CREDENTIALS_CACHE["expires_at"]:
+        return _CREDENTIALS_CACHE["creds"]
+
+    try:
+        import boto3
+
+        if _BOTO_SESSION is None:
+            _BOTO_SESSION = boto3.Session(region_name=region)
+        creds = _BOTO_SESSION.get_credentials()
+        if creds:
+            frozen = creds.get_frozen_credentials()
+            result = (frozen.access_key, frozen.secret_key, getattr(frozen, "token", None))
+            _CREDENTIALS_CACHE["creds"] = result
+            _CREDENTIALS_CACHE["expires_at"] = now + _CREDENTIAL_TTL_SECONDS
+            return result
+    except Exception as e:
+        logger.debug(f"Could not resolve AWS IAM profile credentials via boto3: {e}")
+
+    return None, None, None
 
 
 def _fetchall_dicts(rel: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
@@ -52,13 +83,16 @@ def ensure_duckdb_extensions(con: duckdb.DuckDBPyConnection) -> None:
 
 
 def configure_duckdb_s3(con: duckdb.DuckDBPyConnection, storage_options: dict[str, Any] | None = None) -> None:
-    """Configures DuckDB S3 credentials/endpoint for direct S3 delta_scan access."""
+    """Configures DuckDB S3 credentials, endpoint, and performance settings for Fargate / AWS environments."""
     con_id = id(con)
-    cfg_key = (con_id, str(sorted((storage_options or {}).items())))
-    if cfg_key in _S3_CONFIGURED:
+    opts = storage_options or {}
+    cfg_key = (con_id, str(sorted(opts.items())))
+    now = time.time()
+
+    # Fast return if connection already configured within credential TTL
+    if cfg_key in _S3_CONFIGURED_CONNS and (now - _S3_CONFIGURED_CONNS[cfg_key]) < _CREDENTIAL_TTL_SECONDS:
         return
 
-    opts = storage_options or {}
     endpoint = (
         opts.get("AWS_ENDPOINT_URL")
         or opts.get("endpoint_url")
@@ -76,56 +110,66 @@ def configure_duckdb_s3(con: duckdb.DuckDBPyConnection, storage_options: dict[st
         or "eu-central-1"
     )
 
+    # If running on Fargate / ECS / App Runner with IAM instance profile (no static keys in env/opts)
     if not (ak and sk):
-        try:
-            import boto3
-            session = boto3.Session(region_name=region)
-            creds = session.get_credentials()
-            if creds:
-                frozen = creds.get_frozen_credentials()
-                ak = ak or frozen.access_key
-                sk = sk or frozen.secret_key
-                token = token or getattr(frozen, "token", None)
-        except Exception as e:
-            logger.debug(f"Could not resolve AWS credentials from boto3: {e}")
+        iam_ak, iam_sk, iam_token = _resolve_iam_credentials(region)
+        ak = ak or iam_ak
+        sk = sk or iam_sk
+        token = token or iam_token
 
     allow_http = (
         str(opts.get("AWS_ALLOW_HTTP", "")).lower() == "true"
-        or "http://" in str(endpoint)
+        or (endpoint is not None and "http://" in str(endpoint))
     )
 
     try:
         con.execute("LOAD httpfs;")
-        if endpoint or (ak and sk):
+
+        if endpoint:
             clean_endpoint = endpoint
-            if clean_endpoint and clean_endpoint.startswith("http://"):
+            if clean_endpoint.startswith("http://"):
                 clean_endpoint = clean_endpoint[7:]
-            elif clean_endpoint and clean_endpoint.startswith("https://"):
+            elif clean_endpoint.startswith("https://"):
                 clean_endpoint = clean_endpoint[8:]
 
             use_ssl_val = "false" if allow_http else "true"
             escaped_ak = (ak or "mock").replace("'", "''")
             escaped_sk = (sk or "mock").replace("'", "''")
             escaped_region = region.replace("'", "''")
-            escaped_endpoint = clean_endpoint.replace("'", "''") if clean_endpoint else ""
+            escaped_endpoint = clean_endpoint.replace("'", "''")
             escaped_token = (token or "").replace("'", "''")
 
-            extra_clauses = []
-            if escaped_endpoint:
-                extra_clauses.append(f", ENDPOINT '{escaped_endpoint}'")
-                extra_clauses.append(f", USE_SSL {use_ssl_val}")
-                extra_clauses.append(", URL_STYLE 'path'")
-            if escaped_token:
-                extra_clauses.append(f", SESSION_TOKEN '{escaped_token}'")
-
-            extra_sql = "".join(extra_clauses)
+            token_clause = f", SESSION_TOKEN '{escaped_token}'" if escaped_token else ""
             secret_sql = f"""
             CREATE OR REPLACE SECRET lineagiq_s3 (
                 TYPE S3,
                 KEY_ID '{escaped_ak}',
                 SECRET '{escaped_sk}',
-                REGION '{escaped_region}'
-                {extra_sql}
+                REGION '{escaped_region}',
+                ENDPOINT '{escaped_endpoint}',
+                USE_SSL {use_ssl_val},
+                URL_STYLE 'path'
+                {token_clause}
+            );
+            """
+            con.execute(secret_sql)
+
+        elif ak and sk:
+            # Native AWS S3 with IAM instance profile / STS session token on Fargate
+            escaped_ak = ak.replace("'", "''")
+            escaped_sk = sk.replace("'", "''")
+            escaped_region = region.replace("'", "''")
+            escaped_token = (token or "").replace("'", "''")
+
+            token_clause = f", SESSION_TOKEN '{escaped_token}'" if escaped_token else ""
+            secret_sql = f"""
+            CREATE OR REPLACE SECRET lineagiq_s3 (
+                TYPE S3,
+                KEY_ID '{escaped_ak}',
+                SECRET '{escaped_sk}',
+                REGION '{escaped_region}',
+                URL_STYLE 'vhost'
+                {token_clause}
             );
             """
             con.execute(secret_sql)
@@ -139,7 +183,13 @@ def configure_duckdb_s3(con: duckdb.DuckDBPyConnection, storage_options: dict[st
             );
             """
             con.execute(secret_sql)
-        _S3_CONFIGURED.add(cfg_key)
+
+        # Fargate / S3 scan performance optimizations:
+        # Cache parquet metadata/footers across queries to avoid redundant S3 GETs
+        con.execute("SET enable_object_cache = true;")
+        con.execute("SET preserve_insertion_order = false;")
+
+        _S3_CONFIGURED_CONNS[cfg_key] = now
 
     except Exception as e:
         logger.debug(f"Could not configure DuckDB S3 secret: {e}")

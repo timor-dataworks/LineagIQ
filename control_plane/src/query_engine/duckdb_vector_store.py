@@ -26,7 +26,8 @@ class DuckDBVectorStore(BaseVectorStore):
     def __init__(self, data_base_path: str, storage_options: dict | None = None):
         self.data_base_path = data_base_path
         self.storage_options = storage_options
-        if data_base_path.startswith("s3://"):
+        self.is_s3 = data_base_path.startswith("s3://")
+        if self.is_s3:
             self.vectors_dir = f"{data_base_path.rstrip('/')}/vectors"
         else:
             self.vectors_dir = get_vectors_table_path(data_base_path)
@@ -39,7 +40,7 @@ class DuckDBVectorStore(BaseVectorStore):
             self.con.execute("INSTALL vss; LOAD vss;")
         except Exception as e:
             logger.debug(f"DuckDB VSS extension load notice: {e}")
-        if self.storage_options:
+        if self.is_s3 or self.storage_options:
             configure_duckdb_s3(self.con, self.storage_options)
 
     def search_vectors(
