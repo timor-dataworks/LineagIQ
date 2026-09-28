@@ -20,3 +20,8 @@ htmlcov/
 website/
 /tmp/
 data/
+.env
+.env.*
+!.env.example
+*.pem
+*.key

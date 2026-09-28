@@ -8,6 +8,17 @@ LineagIQ models an enterprise data landscape into a contextual knowledge graph. 
 
 ---
 
+## 🌐 Live Production Endpoints
+
+| Resource | URL | Description |
+| :--- | :--- | :--- |
+| **Marketing & Platform Website** | [https://lineagiq.com](https://lineagiq.com) & [https://www.lineagiq.com](https://www.lineagiq.com) | Product architecture, TCO comparison & feature showcase |
+| **LineagIQ Control Plane UI** | [https://plane.lineagiq.com/](https://plane.lineagiq.com/) | Live interactive lineage graph, timeline scrubbing & AI Assistant |
+| **Interactive OpenAPI Docs** | [https://plane.lineagiq.com/docs](https://plane.lineagiq.com/docs) | Live Swagger UI API explorer |
+| **ReDoc API Specifications** | [https://plane.lineagiq.com/redoc](https://plane.lineagiq.com/redoc) | Detailed endpoint schema & payload documentation |
+
+---
+
 ## Repository Architecture
 
 ```text
@@ -39,6 +50,21 @@ LineagIQ/
 │   │   ├── prompt_synthesizer.py # GraphRAG prompt generators
 │   │   └── main.py             # FastAPI endpoints & route handlers
 │   └── tests/                  # Pytest unit & integration test suite (test_time_travel.py, test_api.py, etc.)
+│
+├── website/                    # Static Product & Architecture Showcase Website
+│   ├── index.html              # Landing page, feature demos, quick start
+│   ├── style.css               # Design system & responsive styles
+│   ├── script.js               # Visualizer demo interactions, mobile nav drawer
+│   └── assets/                 # High-resolution UI screenshots & diagrams
+│
+├── deploy/                     # Server Deployment & Automation (Ubuntu / Docker / Caddy)
+│   ├── README.md               # Comprehensive operations & DNS configuration guide
+│   ├── deploy.sh               # One-click remote deployment script
+│   ├── setup_server.sh         # Server initialization (Docker, Swap, UFW Firewall)
+│   ├── docker-compose.yml      # Caddy, Control Plane, and Collection Agent services
+│   ├── Caddyfile               # Automatic HTTPS reverse proxy & static asset delivery
+│   ├── seed_demo_data.sh       # Multi-version Delta Lake graph seeder
+│   └── run_collection.sh       # CLI runner for metadata ingestion
 │
 ├── documentation/              # High-level developer & architectural specs
 │   └── project overview.md
@@ -100,7 +126,7 @@ print(completion.choices[0].message.content)
 
 ### Interactive Web AI Assistant (Dynamic Right Docking & Ollama Support)
 
-The web visualizer UI (`http://localhost:8000/`) includes an interactive **LineagIQ AI Assistant** drawer:
+The web visualizer UI ([https://plane.lineagiq.com/](https://plane.lineagiq.com/) or local `http://localhost:8000/`) includes an interactive **LineagIQ AI Assistant** drawer:
 * **Dynamic Right Docking**: Automatically docks to the right screen edge (`right: 16px`). When a node is selected in the graph, the drawer dynamically shifts left to accommodate the node inspector sidebar without overlapping, and glides back smoothly when the inspector closes.
 * **Local LLM Support (Ollama)**: Seamlessly connect to local Ollama instances (`ollama serve` on `http://localhost:11434/v1`) with zero API key required, as well as cloud providers (OpenAI `gpt-4o`, Google Gemini `gemini-3.6-flash`).
 * **One-Click Diff Analysis**: In the Time Travel Diff View, click **"🤖 Send to AI Assistant"** to automatically pipe schema drift diffs into the assistant for automated impact explanations.
@@ -226,9 +252,11 @@ curl -X POST http://localhost:8000/api/v1/discovery \
 
 ### 5. Interactive Web Visualizer & API Documentation
 Open your web browser to test interactive endpoints:
-* **Interactive Visualizer & Timeline Scrubbing UI**: [http://localhost:8000/visualizer](http://localhost:8000/visualizer)
-* **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
-* **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+* **Production Visualizer & Timeline Scrubbing**: [https://plane.lineagiq.com/](https://plane.lineagiq.com/)
+* **Production OpenAPI Swagger UI**: [https://plane.lineagiq.com/docs](https://plane.lineagiq.com/docs)
+* **Production ReDoc Documentation**: [https://plane.lineagiq.com/redoc](https://plane.lineagiq.com/redoc)
+* **Local Development UI**: [http://localhost:8000/](http://localhost:8000/) (Swagger: [http://localhost:8000/docs](http://localhost:8000/docs))
 
 ---
 

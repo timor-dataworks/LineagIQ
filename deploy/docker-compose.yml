@@ -1,0 +1,68 @@
+services:
+  # ----------------------------------------------------------------------------
+  # Caddy: Automatic HTTPS Edge Reverse Proxy & Static Website Server
+  # ----------------------------------------------------------------------------
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: lineagiq-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3 QUIC support
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./website:/var/www/html:ro
+      - ./caddy/data:/data
+      - ./caddy/config:/config
+      - ./logs/caddy:/var/log/caddy
+    depends_on:
+      - control-plane
+    networks:
+      - lineagiq-net
+
+  # ----------------------------------------------------------------------------
+  # Control Plane: FastAPI + DuckDB Query Engine + Web Visualizer
+  # ----------------------------------------------------------------------------
+  control-plane:
+    image: ghcr.io/timor-dataworks/lineagiq-control-plane:latest
+    container_name: lineagiq-control-plane
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - DATA_PATH=/data/tenants/default/
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      - ./data:/data:rw
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - lineagiq-net
+
+  # ----------------------------------------------------------------------------
+  # Collection Agent: Ephemeral Ingestion CLI
+  # Run manually or via cron: docker compose run --rm collection-agent ...
+  # ----------------------------------------------------------------------------
+  collection-agent:
+    image: ghcr.io/timor-dataworks/lineagiq-collection-agent:latest
+    container_name: lineagiq-collection-agent
+    profiles: ["tools"]
+    environment:
+      - DATA_PATH=/data/tenants/default/
+    volumes:
+      - ./data:/data:rw
+      - ./sources:/sources:ro
+    networks:
+      - lineagiq-net
+
+networks:
+  lineagiq-net:
+    driver: bridge

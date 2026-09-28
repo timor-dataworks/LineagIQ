@@ -36,31 +36,37 @@
       </a>
 
       <nav>
-        <ul class="nav-links">
-          <li><a href="#executive" class="nav-link active">Executive Summary</a></li>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="#executive" class="nav-link active">Overview</a></li>
           <li><a href="#time-travel" class="nav-link">Time Travel</a></li>
           <li><a href="#blast-radius" class="nav-link">Blast Radius</a></li>
           <li><a href="#integrations" class="nav-link">Integrations</a></li>
-          <li><a href="#slim-stack" class="nav-link">Slim Stack & TCO</a></li>
-          <li><a href="#architecture" class="nav-link">Developer & Arch</a></li>
+          <li><a href="#slim-stack" class="nav-link">TCO Savings</a></li>
+          <li><a href="#architecture" class="nav-link">Architecture</a></li>
+          <li><a href="#quickstart" class="nav-link">Quick Start</a></li>
         </ul>
       </nav>
 
       <div class="header-actions">
-        <a href="http://localhost:8000/" target="_blank" class="btn btn-primary" id="btn-live-demo">
-          <span>Launch Live Visualizer</span>
+        <a href="https://plane.lineagiq.com/" target="_blank" class="btn btn-primary" id="btn-live-demo">
+          <span>Launch Visualizer</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
             <polyline points="15 3 21 3 21 9"></polyline>
             <line x1="10" y1="14" x2="21" y2="3"></line>
           </svg>
         </a>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
       </div>
     </div>
   </header>
 
   <!-- Hero Section -->
-  <section class="hero-section">
+  <section class="hero-section" id="executive">
     <div class="container hero-content">
       <div class="hero-badge-wrap">
         <span class="badge badge-indigo">
@@ -80,7 +86,7 @@
       </p>
 
       <div class="hero-cta-group">
-        <a href="http://localhost:8000/" target="_blank" class="btn btn-primary btn-lg">
+        <a href="https://plane.lineagiq.com/" target="_blank" class="btn btn-primary btn-lg">
           <span>Explore Interactive UI</span>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </a>
@@ -170,7 +176,7 @@
               </div>
             </li>
           </ul>
-          <a href="http://localhost:8000/" target="_blank" class="btn btn-outline">Test Time Travel in Live Demo →</a>
+          <a href="https://plane.lineagiq.com/" target="_blank" class="btn btn-outline">Test Time Travel in Live Demo →</a>
         </div>
 
         <div class="feature-media">
@@ -221,7 +227,7 @@
               </div>
             </li>
           </ul>
-          <a href="http://localhost:8000/" target="_blank" class="btn btn-outline">Explore Blast Radius in Live Demo →</a>
+          <a href="https://plane.lineagiq.com/" target="_blank" class="btn btn-outline">Explore Blast Radius in Live Demo →</a>
         </div>
 
         <div class="feature-media">
@@ -636,10 +642,10 @@ print(response.choices[0].message.content)</code></pre>
               <span class="code-title">docker-commands.sh — Production Docker Quickstart</span>
               <button class="copy-btn" data-code="snippet-docker">Copy Commands</button>
             </div>
-            <pre><code id="snippet-docker"># 1. Generate 3-Version Time-Travel Demo Dataset in Docker
+            <pre><code id="snippet-docker"># 1. Generate 3-Version Time-Travel Demo Dataset with Public Image
 docker run --rm \
   -v $(pwd)/data:/data \
-  lineagiq-collection-agent:latest \
+  ghcr.io/timor-dataworks/lineagiq-collection-agent:latest \
   --multiversion-demo
 
 # 2. Launch Serverless Control Plane & Web Visualizer (Port 8000)
@@ -647,11 +653,171 @@ docker run -d --name lineagiq-control-plane \
   -p 8000:8000 \
   -e DATA_PATH=/data \
   -v $(pwd)/data:/data \
-  lineagiq-control-plane:latest
+  ghcr.io/timor-dataworks/lineagiq-control-plane:latest
 
 # Or launch entire stack via Docker Compose:
 docker compose up -d control_plane</code></pre>
           </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Quick Start with Public Docker Images -->
+  <section class="quickstart-section" id="quickstart">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag quickstart-tag">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          Public Docker Images (GHCR)
+        </span>
+        <h2 class="section-title">Quick Start: Run LineagIQ in 60 Seconds</h2>
+        <p class="section-subtitle">
+          Pull pre-built, production-ready multi-architecture containers directly from GitHub Container Registry. No local Python build or cloud setup required.
+        </p>
+      </div>
+
+      <!-- Quick Registry Highlights -->
+      <div class="registry-badges-grid">
+        <div class="registry-card">
+          <div class="registry-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          </div>
+          <div class="registry-details">
+            <div class="registry-name">Control Plane &amp; Visualizer</div>
+            <code class="registry-image">ghcr.io/timor-dataworks/lineagiq-control-plane:latest</code>
+            <div class="registry-tags">
+              <span class="reg-tag">linux/amd64</span>
+              <span class="reg-tag">FastAPI REST</span>
+              <span class="reg-tag">DuckDB 1.1+</span>
+              <span class="reg-tag">Port 8000</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="registry-card">
+          <div class="registry-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          </div>
+          <div class="registry-details">
+            <div class="registry-name">Stateless Collection Agent</div>
+            <code class="registry-image">ghcr.io/timor-dataworks/lineagiq-collection-agent:latest</code>
+            <div class="registry-tags">
+              <span class="reg-tag">linux/amd64</span>
+              <span class="reg-tag">Delta Lake Writer</span>
+              <span class="reg-tag">PyArrow</span>
+              <span class="reg-tag">Ephemeral CLI</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step by Step Grid -->
+      <div class="quickstart-steps-grid">
+        <!-- Step 1 -->
+        <div class="step-card">
+          <div class="step-header">
+            <span class="step-num">Step 01</span>
+            <h3 class="step-title">Generate or Ingest Metadata</h3>
+          </div>
+          <p class="step-desc">
+            Run the ephemeral agent to generate a 3-version historical lineage evolution dataset (or point to your own dbt manifests / SQL catalogs).
+          </p>
+          <div class="code-container">
+            <div class="code-header">
+              <span class="code-title">Terminal</span>
+              <button class="copy-btn" data-code="qs-step1">Copy</button>
+            </div>
+            <pre><code id="qs-step1">docker run --rm \
+  -v $(pwd)/data:/data \
+  ghcr.io/timor-dataworks/lineagiq-collection-agent:latest \
+  --multiversion-demo</code></pre>
+          </div>
+          <div class="step-note">
+            <span class="note-bullet">✓</span> Output written to <code>./data</code> (Delta Lake tables: nodes, edges, vectors, commit logs).
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-card">
+          <div class="step-header">
+            <span class="step-num">Step 02</span>
+            <h3 class="step-title">Launch Serverless Control Plane</h3>
+          </div>
+          <p class="step-desc">
+            Start the query runtime. DuckDB mounts your Delta Lake directory and immediately serves the interactive visualizer and REST APIs.
+          </p>
+          <div class="code-container">
+            <div class="code-header">
+              <span class="code-title">Terminal</span>
+              <button class="copy-btn" data-code="qs-step2">Copy</button>
+            </div>
+            <pre><code id="qs-step2">docker run -d --name lineagiq-control-plane \
+  -p 8000:8000 \
+  -e DATA_PATH=/data \
+  -v $(pwd)/data:/data \
+  ghcr.io/timor-dataworks/lineagiq-control-plane:latest</code></pre>
+          </div>
+          <div class="step-note">
+            <span class="note-bullet">✓</span> Service runs on <code>http://localhost:8000</code> with sub-second response times.
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: All-in-One Compose & Endpoints -->
+      <div class="quickstart-callout">
+        <div class="callout-content">
+          <div class="callout-header">
+            <span class="badge badge-indigo">⚡ All-in-One Alternative</span>
+            <h4 class="callout-title">Launch with Docker Compose</h4>
+          </div>
+          <p class="callout-desc">
+            Spin up the complete pipeline (demo dataset generation + serverless control plane) with a single command:
+          </p>
+          <div class="code-container" style="margin-top: 14px;">
+            <div class="code-header">
+              <span class="code-title">One-Liner Quickstart</span>
+              <button class="copy-btn" data-code="qs-compose">Copy</button>
+            </div>
+            <pre><code id="qs-compose"># Download docker-compose.yml and start stack
+curl -sSL https://raw.githubusercontent.com/timor-dataworks/LineagIQ/main/docker-compose.yml -o docker-compose.yml
+docker compose run --rm demo_generator
+docker compose up -d control_plane</code></pre>
+          </div>
+        </div>
+
+        <div class="callout-sidebar">
+          <h5 class="sidebar-title">Explore Running Endpoints</h5>
+          <ul class="endpoint-list">
+            <li>
+              <a href="http://localhost:8000/" target="_blank" class="endpoint-link">
+                <span class="status-dot"></span>
+                <div>
+                  <strong>Visualizer UI</strong>
+                  <span class="endpoint-sub">http://localhost:8000/</span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a href="http://localhost:8000/docs" target="_blank" class="endpoint-link">
+                <span class="status-dot"></span>
+                <div>
+                  <strong>Swagger API Specs</strong>
+                  <span class="endpoint-sub">http://localhost:8000/docs</span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a href="https://plane.lineagiq.com/" target="_blank" class="endpoint-link cloud">
+                <span class="status-dot cloud-dot"></span>
+                <div>
+                  <strong>Live Cloud Demo ⚡</strong>
+                  <span class="endpoint-sub">plane.lineagiq.com</span>
+                </div>
+              </a>
+            </li>
+          </ul>
         </div>
       </div>
 
@@ -711,9 +877,10 @@ docker compose up -d control_plane</code></pre>
         <div class="footer-col">
           <h4>Product Access</h4>
           <ul>
-            <li><a href="http://localhost:8000/" target="_blank">Visualizer UI (Port 8000)</a></li>
-            <li><a href="http://localhost:8000/docs" target="_blank">Swagger API Specs</a></li>
-            <li><a href="http://localhost:8000/redoc" target="_blank">ReDoc Documentation</a></li>
+            <li><a href="#quickstart">Docker Quick Start</a></li>
+            <li><a href="https://plane.lineagiq.com/" target="_blank">Visualizer UI (plane.lineagiq.com)</a></li>
+            <li><a href="https://plane.lineagiq.com/docs" target="_blank">Swagger API Specs</a></li>
+            <li><a href="https://plane.lineagiq.com/redoc" target="_blank">ReDoc Documentation</a></li>
           </ul>
         </div>
       </div>

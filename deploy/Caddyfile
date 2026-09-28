@@ -1,0 +1,70 @@
+# ==============================================================================
+# LineagIQ Caddy Web Server & Reverse Proxy Configuration
+# Automatic HTTPS via Let's Encrypt / ZeroSSL with zero manual cert management
+# ==============================================================================
+
+{
+    email admin@lineagiq.com
+}
+
+# ------------------------------------------------------------------------------
+# 1. Control Plane Service (plane.lineagiq.com)
+# ------------------------------------------------------------------------------
+plane.lineagiq.com {
+    reverse_proxy control-plane:8000
+    encode gzip zstd
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+    }
+
+    log {
+        output file /var/log/caddy/plane.access.log {
+            roll_size 20mb
+            roll_keep 5
+        }
+    }
+}
+
+# ------------------------------------------------------------------------------
+# 2. Marketing Website (lineagiq.com & www.lineagiq.com)
+# ------------------------------------------------------------------------------
+lineagiq.com, www.lineagiq.com {
+    root * /var/www/html
+    file_server
+    encode gzip zstd
+
+    # Cache static assets (images, css, js)
+    @static {
+        path *.css *.js *.png *.jpg *.jpeg *.svg *.woff2 *.ico
+    }
+    header @static Cache-Control "public, max-age=604800, immutable"
+
+    # Clean SPA / route fallback
+    try_files {path} {path}/ /index.html
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+    }
+
+    log {
+        output file /var/log/caddy/website.access.log {
+            roll_size 20mb
+            roll_keep 5
+        }
+    }
+}
+
+# ------------------------------------------------------------------------------
+# 3. Direct Host IP Fallback (Access before DNS is updated)
+# ------------------------------------------------------------------------------
+:80 {
+    root * /var/www/html
+    file_server
+    encode gzip zstd
+    try_files {path} {path}/ /index.html
+}

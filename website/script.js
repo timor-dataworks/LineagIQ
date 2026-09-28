@@ -7,7 +7,47 @@ document.addEventListener('DOMContentLoaded', () => {
   initArchTabs();
   initCopyButtons();
   initNavScroll();
+  initMobileNav();
 });
+
+// Mobile Hamburger Navigation Drawer
+function initMobileNav() {
+  const toggleBtn = document.getElementById('nav-toggle');
+  const navLinks = document.getElementById('nav-links');
+
+  if (!toggleBtn || !navLinks) return;
+
+  toggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleBtn.classList.toggle('open');
+    navLinks.classList.toggle('open');
+  });
+
+  // Close mobile drawer when clicking any nav link
+  const links = navLinks.querySelectorAll('.nav-link');
+  links.forEach(link => {
+    link.addEventListener('click', () => {
+      toggleBtn.classList.remove('open');
+      navLinks.classList.remove('open');
+    });
+  });
+
+  // Close drawer if user clicks outside
+  document.addEventListener('click', (e) => {
+    if (!toggleBtn.contains(e.target) && !navLinks.contains(e.target) && navLinks.classList.contains('open')) {
+      toggleBtn.classList.remove('open');
+      navLinks.classList.remove('open');
+    }
+  });
+
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && navLinks.classList.contains('open')) {
+      toggleBtn.classList.remove('open');
+      navLinks.classList.remove('open');
+    }
+  });
+}
 
 // Lightbox Modal for Full-Resolution Product Screenshots
 function initLightbox() {
@@ -100,23 +140,41 @@ function initNavScroll() {
   const sections = document.querySelectorAll('section[id]');
   const navLinks = document.querySelectorAll('.nav-link');
 
-  window.addEventListener('scroll', () => {
+  const onScroll = () => {
     let current = '';
     const scrollY = window.pageYOffset;
+    const windowHeight = window.innerHeight;
+    const bodyHeight = document.documentElement.scrollHeight;
 
-    sections.forEach(section => {
-      const sectionHeight = section.offsetHeight;
-      const sectionTop = section.offsetTop - 100;
-      if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
-        current = section.getAttribute('id');
+    // If near the bottom of the page, highlight the last section (quickstart)
+    if (scrollY + windowHeight >= bodyHeight - 120) {
+      const lastSection = sections[sections.length - 1];
+      if (lastSection) {
+        current = lastSection.getAttribute('id');
       }
-    });
+    } else {
+      sections.forEach(section => {
+        const sectionHeight = section.offsetHeight;
+        const sectionTop = section.offsetTop - 120;
+        if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+          current = section.getAttribute('id');
+        }
+      });
+    }
+
+    if (!current && sections.length > 0) {
+      current = sections[0].getAttribute('id');
+    }
 
     navLinks.forEach(link => {
-      link.classList.remove('active');
       if (link.getAttribute('href') === `#${current}`) {
         link.classList.add('active');
+      } else {
+        link.classList.remove('active');
       }
     });
-  });
+  };
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
 }
