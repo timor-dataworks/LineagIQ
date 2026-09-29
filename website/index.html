@@ -1147,7 +1147,8 @@ print(response.choices[0].message.content)</code></pre>
               <button class="copy-btn" data-code="qs-compose">Copy</button>
             </div>
             <pre><code id="qs-compose"># Download docker-compose.yml and start stack
-curl -sSL https://raw.githubusercontent.com/timor-dataworks/LineagIQ/main/docker-compose.yml -o docker-compose.yml
+curl -sSL https://raw.githubusercontent.com/timor-dataworks/LineagIQ/main/docker-compose.yml \
+  -o docker-compose.yml
 docker compose run --rm demo_generator
 docker compose up -d control_plane</code></pre>
           </div>
