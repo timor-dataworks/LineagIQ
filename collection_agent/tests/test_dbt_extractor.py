@@ -46,7 +46,6 @@ def test_dbt_parse_manifest_sources():
     assert "amount" in nodes[0]["columns"]
 
 
-
 def test_dbt_parse_catalog():
     with open(FIXTURES_DIR / "dbt_catalog.json") as f:
         catalog_data = json.load(f)

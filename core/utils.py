@@ -7,9 +7,34 @@ import datetime
 import re
 
 STOP_WORDS = {
-    "find", "show", "search", "get", "list", "where", "is", "are", "the",
-    "a", "an", "for", "with", "in", "me", "dataset", "datasets", "table",
-    "tables", "column", "columns", "all", "what", "which", "who", "how", "tell", "about"
+    "find",
+    "show",
+    "search",
+    "get",
+    "list",
+    "where",
+    "is",
+    "are",
+    "the",
+    "a",
+    "an",
+    "for",
+    "with",
+    "in",
+    "me",
+    "dataset",
+    "datasets",
+    "table",
+    "tables",
+    "column",
+    "columns",
+    "all",
+    "what",
+    "which",
+    "who",
+    "how",
+    "tell",
+    "about",
 }
 
 
@@ -45,7 +70,7 @@ def extract_search_terms(query_text: str) -> list[str]:
         List of clean search term strings (minimum length 2).
     """
     raw_clean = query_text.lower().strip()
-    words = [w for w in re.split(r'\s+', raw_clean) if w]
+    words = [w for w in re.split(r"\s+", raw_clean) if w]
     filtered_words = [w for w in words if w not in STOP_WORDS]
 
     terms = []

@@ -42,4 +42,3 @@ def test_standalone_retriever_tools(tmp_path, monkeypatch):
 
     prompt_disc = search_enterprise_data_catalog("orders")
     assert "orders" in prompt_disc
-

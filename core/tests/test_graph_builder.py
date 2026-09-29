@@ -100,7 +100,9 @@ def test_column_alias_resolution_for_unqualified_names():
     builder.add_node(col)
 
     # Edge referencing short alias USERS.ID
-    builder.add_edge(Edge(source_id="USERS.ID", target_id="PROD_DB.PUBLIC.TRANSACTIONS.USER_ID", type=EdgeType.JOINS_WITH))
+    builder.add_edge(
+        Edge(source_id="USERS.ID", target_id="PROD_DB.PUBLIC.TRANSACTIONS.USER_ID", type=EdgeType.JOINS_WITH)
+    )
 
     payload = builder.to_payload()
     edge_sources = [e.source_id for e in payload.edges]

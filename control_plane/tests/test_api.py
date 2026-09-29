@@ -159,7 +159,9 @@ def test_clean_latex_to_unicode():
     assert clean_latex_to_unicode("raw_customers $\\rightarrow$ stg_customers") == "raw_customers → stg_customers"
     assert clean_latex_to_unicode("source $\\to$ target") == "source → target"
     assert clean_latex_to_unicode("model_a \\rightarrow model_b") == "model_a → model_b"
-    assert clean_latex_to_unicode("$\\text{raw\\_orders} \\rightarrow \\text{stg\\_orders}$") == "raw_orders → stg_orders"
+    assert (
+        clean_latex_to_unicode("$\\text{raw\\_orders} \\rightarrow \\text{stg\\_orders}$") == "raw_orders → stg_orders"
+    )
     assert clean_latex_to_unicode("target $\\leftarrow$ source") == "target ← source"
     assert clean_latex_to_unicode("a $\\Rightarrow$ b") == "a ⇒ b"
     assert clean_latex_to_unicode("x $\\approx$ y") == "x ≈ y"

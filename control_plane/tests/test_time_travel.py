@@ -29,7 +29,9 @@ def test_delta_table_commits_and_time_travel_query(tmp_path):
     # Initial graph payload (Snapshot T1)
     ds1 = DatasetNode(id="model.jaffle_shop.customers", name="customers", description="Customer table v1")
     col1 = ColumnNode(id="model.jaffle_shop.customers.id", name="id", dataset_id="model.jaffle_shop.customers")
-    edge1 = Edge(source_id="model.jaffle_shop.customers.id", target_id="model.jaffle_shop.customers", type=EdgeType.BELONGS_TO)
+    edge1 = Edge(
+        source_id="model.jaffle_shop.customers.id", target_id="model.jaffle_shop.customers", type=EdgeType.BELONGS_TO
+    )
 
     payload1 = GraphPayload(nodes=[ds1, col1], edges=[edge1])
     payload1 = embedder.embed_payload(payload1)
@@ -48,8 +50,12 @@ def test_delta_table_commits_and_time_travel_query(tmp_path):
     # Updated graph payload with added node (Snapshot T2)
     ds2 = DatasetNode(id="model.jaffle_shop.orders", name="orders", description="Orders table v2")
     col2 = ColumnNode(id="model.jaffle_shop.orders.id", name="id", dataset_id="model.jaffle_shop.orders")
-    edge2 = Edge(source_id="model.jaffle_shop.orders.id", target_id="model.jaffle_shop.orders", type=EdgeType.BELONGS_TO)
-    edge3 = Edge(source_id="model.jaffle_shop.customers", target_id="model.jaffle_shop.orders", type=EdgeType.DERIVED_FROM)
+    edge2 = Edge(
+        source_id="model.jaffle_shop.orders.id", target_id="model.jaffle_shop.orders", type=EdgeType.BELONGS_TO
+    )
+    edge3 = Edge(
+        source_id="model.jaffle_shop.customers", target_id="model.jaffle_shop.orders", type=EdgeType.DERIVED_FROM
+    )
 
     payload2 = GraphPayload(nodes=[ds1, col1, ds2, col2], edges=[edge1, edge2, edge3])
     payload2 = embedder.embed_payload(payload2)
@@ -129,4 +135,3 @@ def test_time_travel_api_endpoints(client, tmp_path, monkeypatch):
     diff_json = res_diff.json()
     assert "diff" in diff_json
     assert "synthesized_prompt" in diff_json
-

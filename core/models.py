@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class NodeType(StrEnum):
     """Supported entity node types in the LineagIQ ontology graph."""
+
     DATASET = "Dataset"
     COLUMN = "Column"
     PIPELINE = "Pipeline"
@@ -22,6 +23,7 @@ class NodeType(StrEnum):
 
 class EdgeType(StrEnum):
     """Supported relationship edge types in the LineagIQ ontology graph."""
+
     PRODUCED_BY = "PRODUCED_BY"
     CONSUMED_BY = "CONSUMED_BY"
     OWNED_BY = "OWNED_BY"
@@ -32,9 +34,9 @@ class EdgeType(StrEnum):
     BELONGS_TO = "BELONGS_TO"
 
 
-
 class Node(BaseModel):
     """Base Graph Node model representing an entity in the LineagIQ graph."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     id: str = Field(..., description="Unique node canonical identifier")
@@ -47,6 +49,7 @@ class Node(BaseModel):
 
 class DatasetNode(Node):
     """Data Asset node representing tables, views, topics, or files."""
+
     type: NodeType = NodeType.DATASET
     database: str | None = None
     schema_name: str | None = Field(default=None, alias="schema")
@@ -56,6 +59,7 @@ class DatasetNode(Node):
 
 class ColumnNode(Node):
     """Column Attribute node representing a single schema column in a Dataset."""
+
     type: NodeType = NodeType.COLUMN
     dataset_id: str = Field(..., description="Parent Dataset node ID")
     data_type: str | None = None
@@ -65,6 +69,7 @@ class ColumnNode(Node):
 
 class PipelineNode(Node):
     """Data Pipeline node representing dbt models, Airflow DAGs, or Spark jobs."""
+
     type: NodeType = NodeType.PIPELINE
     resource_type: str | None = "model"
     owner: str | None = None
@@ -72,12 +77,14 @@ class PipelineNode(Node):
 
 class UserTeamNode(Node):
     """User or Team node representing data consumers and owners."""
+
     type: NodeType = NodeType.USER
     email: str | None = None
 
 
 class BusinessTermNode(Node):
     """Business Glossary Term node representing data governance terms."""
+
     type: NodeType = NodeType.BUSINESS_TERM
     definition: str | None = None
     domain: str | None = None
@@ -85,6 +92,7 @@ class BusinessTermNode(Node):
 
 class Edge(BaseModel):
     """Graph Edge model representing directional relationships between nodes."""
+
     source_id: str = Field(..., description="Source node ID")
     target_id: str = Field(..., description="Target node ID")
     type: EdgeType = Field(..., description="Edge relationship type classification")
@@ -93,5 +101,8 @@ class Edge(BaseModel):
 
 class GraphPayload(BaseModel):
     """Container payload holding a collection of graph nodes and lineage edges."""
-    nodes: list[DatasetNode | ColumnNode | PipelineNode | UserTeamNode | BusinessTermNode | Node] = Field(default_factory=list)
+
+    nodes: list[DatasetNode | ColumnNode | PipelineNode | UserTeamNode | BusinessTermNode | Node] = Field(
+        default_factory=list
+    )
     edges: list[Edge] = Field(default_factory=list)

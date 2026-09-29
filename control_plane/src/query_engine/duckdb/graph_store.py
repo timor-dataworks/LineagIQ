@@ -89,13 +89,15 @@ class DuckDBGraphStore(BaseGraphStore):
             if nid not in found_ids:
                 name = nid.split(".")[-1] if "." in nid else nid
                 ntype = "Dataset" if any(k in nid.lower() for k in ["source", "raw", "db.", "table"]) else "Pipeline"
-                nodes.append({
-                    "id": nid,
-                    "type": ntype,
-                    "name": name,
-                    "description": f"External Data Asset / Source ({nid})",
-                    "properties": json.dumps({"source": "lineage_traversal"}),
-                })
+                nodes.append(
+                    {
+                        "id": nid,
+                        "type": ntype,
+                        "name": name,
+                        "description": f"External Data Asset / Source ({nid})",
+                        "properties": json.dumps({"source": "lineage_traversal"}),
+                    }
+                )
                 found_ids.add(nid)
         return nodes
 
@@ -134,9 +136,7 @@ class DuckDBGraphStore(BaseGraphStore):
                 "FIRST(properties) as properties FROM nodes_view GROUP BY id"
             )
         )
-        edges = fetchall_dicts(
-            con.execute("SELECT DISTINCT source_id, target_id, type, properties FROM edges_view")
-        )
+        edges = fetchall_dicts(con.execute("SELECT DISTINCT source_id, target_id, type, properties FROM edges_view"))
 
         # Synthesize missing nodes referenced in edges so the graph is always complete
         referenced_ids = {e["source_id"] for e in edges} | {e["target_id"] for e in edges}
@@ -304,9 +304,7 @@ class DuckDBGraphStore(BaseGraphStore):
             "depth_reached": max(e["depth"] for e in edges) if edges else 0,
         }
 
-    def get_nodes_by_ids(
-        self, node_ids: list[str], as_of: str | None = None
-    ) -> list[dict[str, Any]]:
+    def get_nodes_by_ids(self, node_ids: list[str], as_of: str | None = None) -> list[dict[str, Any]]:
         """Retrieves full node metadata records for a given list of node IDs.
 
         Args:
@@ -340,9 +338,7 @@ class DuckDBGraphStore(BaseGraphStore):
         record_map = {r["id"]: r for r in records}
         return [record_map[vid] for vid in node_ids if vid in record_map]
 
-    def search_nodes_by_terms(
-        self, query_text: str, top_k: int = 5, as_of: str | None = None
-    ) -> list[dict[str, Any]]:
+    def search_nodes_by_terms(self, query_text: str, top_k: int = 5, as_of: str | None = None) -> list[dict[str, Any]]:
         """Searches graph node metadata fields (name, id, description, properties) for matching keywords.
 
         Args:
@@ -375,13 +371,15 @@ class DuckDBGraphStore(BaseGraphStore):
         params = []
         for t in terms:
             param = f"%{t.lower()}%"
-            where_clauses.extend([
-                "LOWER(name) LIKE ?",
-                "LOWER(id) LIKE ?",
-                "LOWER(COALESCE(description, '')) LIKE ?",
-                "LOWER(type) LIKE ?",
-                "LOWER(CAST(properties AS VARCHAR)) LIKE ?",
-            ])
+            where_clauses.extend(
+                [
+                    "LOWER(name) LIKE ?",
+                    "LOWER(id) LIKE ?",
+                    "LOWER(COALESCE(description, '')) LIKE ?",
+                    "LOWER(type) LIKE ?",
+                    "LOWER(CAST(properties AS VARCHAR)) LIKE ?",
+                ]
+            )
             params.extend([param] * 5)
 
         safe_top_k = max(1, top_k)
@@ -406,9 +404,7 @@ class DuckDBGraphStore(BaseGraphStore):
             return {n["id"] for n in nodes}
 
         matched_target_ids = {
-            n["id"]
-            for n in nodes
-            if clean_start == n.get("id", "").lower() or clean_start == n.get("name", "").lower()
+            n["id"] for n in nodes if clean_start == n.get("id", "").lower() or clean_start == n.get("name", "").lower()
         }
         if not matched_target_ids:
             for n in nodes:
@@ -494,14 +490,10 @@ class DuckDBGraphStore(BaseGraphStore):
         }
 
         added_edges = [
-            {"source_id": s, "target_id": t, "type": ty}
-            for (s, t, ty) in edges_t2
-            if (s, t, ty) not in edges_t1
+            {"source_id": s, "target_id": t, "type": ty} for (s, t, ty) in edges_t2 if (s, t, ty) not in edges_t1
         ]
         removed_edges = [
-            {"source_id": s, "target_id": t, "type": ty}
-            for (s, t, ty) in edges_t1
-            if (s, t, ty) not in edges_t2
+            {"source_id": s, "target_id": t, "type": ty} for (s, t, ty) in edges_t1 if (s, t, ty) not in edges_t2
         ]
 
         return {

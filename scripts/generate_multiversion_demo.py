@@ -25,7 +25,9 @@ def build_version_0() -> GraphPayload:
     edges: list[Any] = []
 
     # Teams
-    team_ae = UserTeamNode(id="team.analytics_engineering", name="Analytics Engineering", email="analytics-eng@acme.corp")
+    team_ae = UserTeamNode(
+        id="team.analytics_engineering", name="Analytics Engineering", email="analytics-eng@acme.corp"
+    )
     nodes.append(team_ae)
 
     # 1. Raw Data Sources
@@ -56,32 +58,86 @@ def build_version_0() -> GraphPayload:
     nodes.extend([raw_cust, raw_orders, raw_payments])
 
     # Columns for raw_customers
-    c_id = ColumnNode(id="postgres.raw.raw_customers.id", name="id", dataset_id=raw_cust.id, data_type="INTEGER", is_nullable=False)
-    c_name = ColumnNode(id="postgres.raw.raw_customers.name", name="name", dataset_id=raw_cust.id, data_type="VARCHAR", is_nullable=True)
-    c_email = ColumnNode(id="postgres.raw.raw_customers.email", name="email", dataset_id=raw_cust.id, data_type="VARCHAR", is_nullable=True)
+    c_id = ColumnNode(
+        id="postgres.raw.raw_customers.id", name="id", dataset_id=raw_cust.id, data_type="INTEGER", is_nullable=False
+    )
+    c_name = ColumnNode(
+        id="postgres.raw.raw_customers.name", name="name", dataset_id=raw_cust.id, data_type="VARCHAR", is_nullable=True
+    )
+    c_email = ColumnNode(
+        id="postgres.raw.raw_customers.email",
+        name="email",
+        dataset_id=raw_cust.id,
+        data_type="VARCHAR",
+        is_nullable=True,
+    )
     nodes.extend([c_id, c_name, c_email])
 
     # Columns for raw_orders
-    o_id = ColumnNode(id="postgres.raw.raw_orders.id", name="id", dataset_id=raw_orders.id, data_type="INTEGER", is_nullable=False)
-    o_cust_id = ColumnNode(id="postgres.raw.raw_orders.customer_id", name="customer_id", dataset_id=raw_orders.id, data_type="INTEGER")
-    o_status = ColumnNode(id="postgres.raw.raw_orders.status", name="status", dataset_id=raw_orders.id, data_type="VARCHAR")
+    o_id = ColumnNode(
+        id="postgres.raw.raw_orders.id", name="id", dataset_id=raw_orders.id, data_type="INTEGER", is_nullable=False
+    )
+    o_cust_id = ColumnNode(
+        id="postgres.raw.raw_orders.customer_id", name="customer_id", dataset_id=raw_orders.id, data_type="INTEGER"
+    )
+    o_status = ColumnNode(
+        id="postgres.raw.raw_orders.status", name="status", dataset_id=raw_orders.id, data_type="VARCHAR"
+    )
     nodes.extend([o_id, o_cust_id, o_status])
 
     # Columns for raw_payments
-    p_id = ColumnNode(id="postgres.raw.raw_payments.id", name="id", dataset_id=raw_payments.id, data_type="INTEGER", is_nullable=False)
-    p_order_id = ColumnNode(id="postgres.raw.raw_payments.order_id", name="order_id", dataset_id=raw_payments.id, data_type="INTEGER")
-    p_amount = ColumnNode(id="postgres.raw.raw_payments.amount", name="amount", dataset_id=raw_payments.id, data_type="NUMERIC")
+    p_id = ColumnNode(
+        id="postgres.raw.raw_payments.id", name="id", dataset_id=raw_payments.id, data_type="INTEGER", is_nullable=False
+    )
+    p_order_id = ColumnNode(
+        id="postgres.raw.raw_payments.order_id", name="order_id", dataset_id=raw_payments.id, data_type="INTEGER"
+    )
+    p_amount = ColumnNode(
+        id="postgres.raw.raw_payments.amount", name="amount", dataset_id=raw_payments.id, data_type="NUMERIC"
+    )
     nodes.extend([p_id, p_order_id, p_amount])
 
     # 2. Staging Pipelines (dbt)
-    pipe_stg_cust = PipelineNode(id="dbt.staging.stg_customers", name="stg_customers", description="Standardizes customer records and handles nulls", resource_type="model", owner="team.analytics_engineering")
-    pipe_stg_orders = PipelineNode(id="dbt.staging.stg_orders", name="stg_orders", description="Cleans raw orders and casts dates", resource_type="model", owner="team.analytics_engineering")
-    pipe_stg_payments = PipelineNode(id="dbt.staging.stg_payments", name="stg_payments", description="Normalizes payment transactions into dollars", resource_type="model", owner="team.analytics_engineering")
+    pipe_stg_cust = PipelineNode(
+        id="dbt.staging.stg_customers",
+        name="stg_customers",
+        description="Standardizes customer records and handles nulls",
+        resource_type="model",
+        owner="team.analytics_engineering",
+    )
+    pipe_stg_orders = PipelineNode(
+        id="dbt.staging.stg_orders",
+        name="stg_orders",
+        description="Cleans raw orders and casts dates",
+        resource_type="model",
+        owner="team.analytics_engineering",
+    )
+    pipe_stg_payments = PipelineNode(
+        id="dbt.staging.stg_payments",
+        name="stg_payments",
+        description="Normalizes payment transactions into dollars",
+        resource_type="model",
+        owner="team.analytics_engineering",
+    )
     nodes.extend([pipe_stg_cust, pipe_stg_orders, pipe_stg_payments])
 
     # 3. Data Marts
-    dim_cust = DatasetNode(id="dbt.marts.dim_customers", name="dim_customers", database="snowflake", schema_name="marts", description="Customer dimensional mart with lifetime orders and spend", owner="team.analytics_engineering")
-    fct_orders = DatasetNode(id="dbt.marts.fct_orders", name="fct_orders", database="snowflake", schema_name="marts", description="Fact table of all processed customer transactions", owner="team.analytics_engineering")
+    dim_cust = DatasetNode(
+        id="dbt.marts.dim_customers",
+        name="dim_customers",
+        database="snowflake",
+        schema_name="marts",
+        description="Customer dimensional mart with lifetime orders and spend",
+        owner="team.analytics_engineering",
+    )
+    fct_orders = DatasetNode(
+        id="dbt.marts.fct_orders",
+        name="fct_orders",
+        database="snowflake",
+        schema_name="marts",
+        description="Fact table of all processed customer transactions",
+        owner="team.analytics_engineering",
+    )
     nodes.extend([dim_cust, fct_orders])
 
     # Edges V0
@@ -121,25 +177,65 @@ def build_version_1() -> GraphPayload:
     edges = list(payload.edges)
 
     # 1. New Governance Team & Business Terms
-    team_gov = UserTeamNode(id="team.data_governance", name="Data Governance & Compliance", email="privacy-officer@acme.corp")
-    term_gdpr = BusinessTermNode(id="term.gdpr_right_to_be_forgotten", name="GDPR Right To Be Forgotten", definition="Requires crypto-shredding and irreversible pseudonymization of EU citizen PII", domain="Compliance")
-    term_net_rev = BusinessTermNode(id="term.net_revenue_usd", name="Net Revenue (USD)", definition="Gross order revenue converted to USD minus refunds, payment gateway fees, and localized VAT", domain="Finance")
+    team_gov = UserTeamNode(
+        id="team.data_governance", name="Data Governance & Compliance", email="privacy-officer@acme.corp"
+    )
+    term_gdpr = BusinessTermNode(
+        id="term.gdpr_right_to_be_forgotten",
+        name="GDPR Right To Be Forgotten",
+        definition="Requires crypto-shredding and irreversible pseudonymization of EU citizen PII",
+        domain="Compliance",
+    )
+    term_net_rev = BusinessTermNode(
+        id="term.net_revenue_usd",
+        name="Net Revenue (USD)",
+        definition="Gross order revenue converted to USD minus refunds, payment gateway fees, and localized VAT",
+        domain="Finance",
+    )
     nodes.extend([team_gov, term_gdpr, term_net_rev])
 
     # 2. Breaking Schema Evolution: Remove raw plaintext email, add hashed email and gdpr consent
     nodes = [n for n in nodes if n.id != "postgres.raw.raw_customers.email"]
-    edges = [e for e in edges if e.source_id != "postgres.raw.raw_customers.email" and e.target_id != "postgres.raw.raw_customers.email"]
+    edges = [
+        e
+        for e in edges
+        if e.source_id != "postgres.raw.raw_customers.email" and e.target_id != "postgres.raw.raw_customers.email"
+    ]
 
-    c_email_hash = ColumnNode(id="postgres.raw.raw_customers.email_sha256", name="email_sha256", dataset_id="postgres.raw.raw_customers", data_type="VARCHAR", description="One-way SHA-256 hashed email for identity resolution without PII exposure")
-    c_gdpr_consent = ColumnNode(id="postgres.raw.raw_customers.gdpr_consent_status", name="gdpr_consent_status", dataset_id="postgres.raw.raw_customers", data_type="VARCHAR", description="Explicit consent status (OPT_IN, OPT_OUT, PENDING)")
+    c_email_hash = ColumnNode(
+        id="postgres.raw.raw_customers.email_sha256",
+        name="email_sha256",
+        dataset_id="postgres.raw.raw_customers",
+        data_type="VARCHAR",
+        description="One-way SHA-256 hashed email for identity resolution without PII exposure",
+    )
+    c_gdpr_consent = ColumnNode(
+        id="postgres.raw.raw_customers.gdpr_consent_status",
+        name="gdpr_consent_status",
+        dataset_id="postgres.raw.raw_customers",
+        data_type="VARCHAR",
+        description="Explicit consent status (OPT_IN, OPT_OUT, PENDING)",
+    )
     nodes.extend([c_email_hash, c_gdpr_consent])
     edges.append(Edge(source_id=c_email_hash.id, target_id="postgres.raw.raw_customers", type=EdgeType.BELONGS_TO))
     edges.append(Edge(source_id=c_gdpr_consent.id, target_id="postgres.raw.raw_customers", type=EdgeType.BELONGS_TO))
     edges.append(Edge(source_id=c_email_hash.id, target_id=term_gdpr.id, type=EdgeType.GOVERNED_BY))
 
     # 3. Currency and Gateway columns on raw_payments
-    p_curr = ColumnNode(id="postgres.raw.raw_payments.currency_code", name="currency_code", dataset_id="postgres.raw.raw_payments", data_type="VARCHAR", description="ISO 4217 Currency (USD, EUR, GBP, JPY)")
-    p_fx = ColumnNode(id="postgres.raw.raw_payments.exchange_rate_to_usd", name="exchange_rate_to_usd", dataset_id="postgres.raw.raw_payments", data_type="NUMERIC", description="Historical FX conversion rate to USD at settlement timestamp")
+    p_curr = ColumnNode(
+        id="postgres.raw.raw_payments.currency_code",
+        name="currency_code",
+        dataset_id="postgres.raw.raw_payments",
+        data_type="VARCHAR",
+        description="ISO 4217 Currency (USD, EUR, GBP, JPY)",
+    )
+    p_fx = ColumnNode(
+        id="postgres.raw.raw_payments.exchange_rate_to_usd",
+        name="exchange_rate_to_usd",
+        dataset_id="postgres.raw.raw_payments",
+        data_type="NUMERIC",
+        description="Historical FX conversion rate to USD at settlement timestamp",
+    )
     nodes.extend([p_curr, p_fx])
     edges.append(Edge(source_id=p_curr.id, target_id="postgres.raw.raw_payments", type=EdgeType.BELONGS_TO))
     edges.append(Edge(source_id=p_fx.id, target_id="postgres.raw.raw_payments", type=EdgeType.BELONGS_TO))
@@ -262,8 +358,18 @@ def build_version_2() -> GraphPayload:
     edges.append(Edge(source_id=exec_dashboard.id, target_id=team_c_suite.id, type=EdgeType.OWNED_BY))
 
     # 5. Strategic Business Terms
-    term_churn = BusinessTermNode(id="term.customer_churn_risk_index", name="Customer Churn Risk Index", definition="Composite metric (0.0-1.0) forecasting probability of customer contract non-renewal within 90 days", domain="Revenue Operations")
-    term_ltv = BusinessTermNode(id="term.lifetime_value_forecast", name="Customer Lifetime Value Forecast", definition="Estimated future net margin contribution discounted over projected account lifespan", domain="Finance")
+    term_churn = BusinessTermNode(
+        id="term.customer_churn_risk_index",
+        name="Customer Churn Risk Index",
+        definition="Composite metric (0.0-1.0) forecasting probability of customer contract non-renewal within 90 days",
+        domain="Revenue Operations",
+    )
+    term_ltv = BusinessTermNode(
+        id="term.lifetime_value_forecast",
+        name="Customer Lifetime Value Forecast",
+        definition="Estimated future net margin contribution discounted over projected account lifespan",
+        domain="Finance",
+    )
     nodes.extend([term_churn, term_ltv])
 
     edges.append(Edge(source_id=churn_scores.id, target_id=term_churn.id, type=EdgeType.GOVERNED_BY))
@@ -290,7 +396,6 @@ def run_multiversion_generation(target_dir: str | None = None) -> None:
                     except OSError:
                         pass
         os.makedirs(effective_dir, exist_ok=True)
-
 
     embedder = LocalEmbedder()
     writer = ArtifactWriter()
@@ -325,6 +430,7 @@ def run_multiversion_generation(target_dir: str | None = None) -> None:
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="Generate 3-version historical lineage dataset for LineagIQ demo")
     parser.parse_args()
 

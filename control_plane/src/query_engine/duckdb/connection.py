@@ -149,9 +149,8 @@ def configure_duckdb_s3(con: duckdb.DuckDBPyConnection, storage_options: dict[st
         sk = sk or iam_sk
         token = token or iam_token
 
-    allow_http = (
-        str(opts.get("AWS_ALLOW_HTTP", "")).lower() == "true"
-        or (endpoint is not None and "http://" in str(endpoint))
+    allow_http = str(opts.get("AWS_ALLOW_HTTP", "")).lower() == "true" or (
+        endpoint is not None and "http://" in str(endpoint)
     )
 
     try:

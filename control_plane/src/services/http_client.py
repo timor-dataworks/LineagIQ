@@ -50,7 +50,12 @@ def post_json(
                         msg += f": {err_obj['message']}"
                     else:
                         msg += f": {err_obj}"
-                elif isinstance(parsed, list) and len(parsed) > 0 and isinstance(parsed[0], dict) and "error" in parsed[0]:
+                elif (
+                    isinstance(parsed, list)
+                    and len(parsed) > 0
+                    and isinstance(parsed[0], dict)
+                    and "error" in parsed[0]
+                ):
                     msg += f": {parsed[0]['error'].get('message', parsed[0]['error'])}"
                 else:
                     msg += f": {err_text[:200]}"

@@ -99,16 +99,11 @@ from control_plane.src.agent_tools import (
 
 # 1. Retrieve Graph Context & Synthesized Prompt from LineagIQ Control Plane
 # (Uses DATA_PATH environment variable for storage location)
-blast_radius_prompt = get_dataset_blast_radius(
-    dataset_id="model.jaffle_shop.stg_customers",
-    max_depth=5
-)
+blast_radius_prompt = get_dataset_blast_radius(dataset_id="model.jaffle_shop.stg_customers", max_depth=5)
 
 # 2. Retrieve Historical Schema Drift Diff Prompt (Time Travel)
 time_travel_prompt = get_lineage_time_travel_diff(
-    node_id="model.jaffle_shop.stg_customers",
-    timestamp_t1="2026-09-08T08:00:00Z",
-    timestamp_t2="2026-09-08T10:00:00Z"
+    node_id="model.jaffle_shop.stg_customers", timestamp_t1="2026-09-08T08:00:00Z", timestamp_t2="2026-09-08T10:00:00Z"
 )
 
 # 3. Dispatch Context to LLM Provider
@@ -117,8 +112,8 @@ completion = client.chat.completions.create(
     model="gpt-4o",
     messages=[
         {"role": "system", "content": "You are LineagIQ AI Agent, an expert enterprise data architect."},
-        {"role": "user", "content": time_travel_prompt}
-    ]
+        {"role": "user", "content": time_travel_prompt},
+    ],
 )
 
 print(completion.choices[0].message.content)

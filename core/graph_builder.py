@@ -121,20 +121,15 @@ class GraphBuilder:
         resolved_id = self.resolve_id(node_id)
         if resolved_id not in self._nodes:
             name = resolved_id.split(".")[-1] if "." in resolved_id else resolved_id
-            is_dataset = any(k in resolved_id.lower() for k in ["source", "raw", "db.", "table", "model", "stg", "fct", "dim", "users", "orders", "customers"])
+            is_dataset = any(
+                k in resolved_id.lower()
+                for k in ["source", "raw", "db.", "table", "model", "stg", "fct", "dim", "users", "orders", "customers"]
+            )
             ntype = NodeType.DATASET if is_dataset else NodeType.PIPELINE
             if ntype == NodeType.DATASET:
-                synth_node = DatasetNode(
-                    id=resolved_id,
-                    name=name,
-                    description=f"External Data Asset ({resolved_id})"
-                )
+                synth_node = DatasetNode(id=resolved_id, name=name, description=f"External Data Asset ({resolved_id})")
             else:
-                synth_node = PipelineNode(
-                    id=resolved_id,
-                    name=name,
-                    description=f"External Pipeline ({resolved_id})"
-                )
+                synth_node = PipelineNode(id=resolved_id, name=name, description=f"External Pipeline ({resolved_id})")
             self.add_node(synth_node)
 
     def add_edge(self, edge: Edge) -> None:
@@ -209,11 +204,13 @@ class GraphBuilder:
                         dataset_id=node_id,
                     )
                     self.add_node(col_node)
-                    self.add_edge(Edge(
-                        source_id=col_id,
-                        target_id=node_id,
-                        type=EdgeType.BELONGS_TO,
-                    ))
+                    self.add_edge(
+                        Edge(
+                            source_id=col_id,
+                            target_id=node_id,
+                            type=EdgeType.BELONGS_TO,
+                        )
+                    )
                     columns_list.append({"name": col_name})
                 if columns_list:
                     ds_node.properties["columns"] = columns_list
@@ -271,19 +268,23 @@ class GraphBuilder:
                 ordinal_position=col.get("ordinal_position"),
             )
             self.add_node(col_node)
-            self.add_edge(Edge(
-                source_id=col["id"],
-                target_id=col["dataset_id"],
-                type=EdgeType.BELONGS_TO,
-            ))
+            self.add_edge(
+                Edge(
+                    source_id=col["id"],
+                    target_id=col["dataset_id"],
+                    type=EdgeType.BELONGS_TO,
+                )
+            )
             if col["dataset_id"] in self._nodes:
                 ds = self._nodes[col["dataset_id"]]
                 if "columns" not in ds.properties:
                     ds.properties["columns"] = []
-                ds.properties["columns"].append({
-                    "name": col["column_name"],
-                    "data_type": col.get("data_type"),
-                })
+                ds.properties["columns"].append(
+                    {
+                        "name": col["column_name"],
+                        "data_type": col.get("data_type"),
+                    }
+                )
 
         if foreign_keys:
             for fk in foreign_keys:

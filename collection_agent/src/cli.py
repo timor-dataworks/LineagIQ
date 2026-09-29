@@ -168,7 +168,9 @@ def main():
         help="Path to OpenLineage JSON event or events list file",
     )
     parser.add_argument("--no-demo", action="store_true", help="Do not load sample demo data if no inputs provided")
-    parser.add_argument("--multiversion-demo", action="store_true", help="Generate 3-version historical lineage demo dataset")
+    parser.add_argument(
+        "--multiversion-demo", action="store_true", help="Generate 3-version historical lineage demo dataset"
+    )
 
     args = parser.parse_args()
 
@@ -178,6 +180,7 @@ def main():
 
     if args.multiversion_demo:
         from scripts.generate_multiversion_demo import run_multiversion_generation
+
         run_multiversion_generation()
         print(f"Multi-version demo generation completed successfully in {target_dir}")
         return
@@ -199,4 +202,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

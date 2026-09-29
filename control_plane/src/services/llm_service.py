@@ -34,8 +34,12 @@ def call_openai_llm(
         else:
             return None, None
 
-    is_gemini_key = (key.startswith("AIza") or key.startswith("AQ") or (not key.startswith("sk-") and key != "ollama")) and not (endpoint and "11434" in endpoint)
-    default_base_url = "https://generativelanguage.googleapis.com/v1beta/openai" if is_gemini_key else "https://api.openai.com/v1"
+    is_gemini_key = (
+        key.startswith("AIza") or key.startswith("AQ") or (not key.startswith("sk-") and key != "ollama")
+    ) and not (endpoint and "11434" in endpoint)
+    default_base_url = (
+        "https://generativelanguage.googleapis.com/v1beta/openai" if is_gemini_key else "https://api.openai.com/v1"
+    )
     default_model = "gemini-3.6-flash" if is_gemini_key else ("llama3" if key == "ollama" else "gpt-4o-mini")
 
     if not endpoint:

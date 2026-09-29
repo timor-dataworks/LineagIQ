@@ -74,10 +74,12 @@ from control_plane.src.agent_tools import (
     search_enterprise_data_catalog,
 )
 
+
 @tool
 def blast_radius_tool(dataset_id: str) -> str:
     """Calculates downstream operational blast radius for a data asset before schema modifications or deployments."""
     return get_dataset_blast_radius(dataset_id=dataset_id)
+
 
 @tool
 def time_travel_diff_tool(node_id: str, timestamp_t1: str, timestamp_t2: str) -> str:
@@ -87,6 +89,7 @@ def time_travel_diff_tool(node_id: str, timestamp_t1: str, timestamp_t2: str) ->
         timestamp_t1=timestamp_t1,
         timestamp_t2=timestamp_t2,
     )
+
 
 @tool
 def data_discovery_tool(search_query: str) -> str:
@@ -116,9 +119,9 @@ response = openai_client.chat.completions.create(
     model="gpt-4o",
     messages=[
         {"role": "system", "content": "You are LineagIQ AI Agent, an expert enterprise data architect."},
-        {"role": "user", "content": synthesized_prompt}
+        {"role": "user", "content": synthesized_prompt},
     ],
-    temperature=0.1
+    temperature=0.1,
 )
 
 print("AI AGENT TIME TRAVEL DRIFT ANALYSIS:")

@@ -31,6 +31,7 @@ class S3Uploader:
         if not self.s3_client:
             try:
                 import boto3
+
                 self.s3_client = boto3.client("s3")
             except Exception:
                 self.s3_client = None
@@ -107,6 +108,7 @@ class S3Downloader:
         if not self.s3_client:
             try:
                 import boto3
+
                 self.s3_client = boto3.client("s3")
             except Exception:
                 self.s3_client = None
@@ -148,7 +150,7 @@ class S3Downloader:
         for page in paginator.paginate(Bucket=self.bucket, Prefix=search_prefix):
             for obj in page.get("Contents", []):
                 key = obj["Key"]
-                rel_path = key[len(search_prefix):] if search_prefix else key
+                rel_path = key[len(search_prefix) :] if search_prefix else key
                 dest_path = os.path.join(local_dir, rel_path)
                 os.makedirs(os.path.dirname(dest_path), exist_ok=True)
                 self.s3_client.download_file(self.bucket, key, dest_path)

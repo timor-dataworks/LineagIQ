@@ -59,7 +59,9 @@ def lineage_ai_chat(
         target_node = _find_target_node(full_graph.get("nodes", []), msg_lower)
 
         if target_node:
-            result = engine.get_downstream_blast_radius(start_node_id=target_node["id"], max_depth=5, as_of=request.as_of)
+            result = engine.get_downstream_blast_radius(
+                start_node_id=target_node["id"], max_depth=5, as_of=request.as_of
+            )
             prompt = synthesizer.synthesize_blast_radius_prompt(
                 start_node=result["root_node"],
                 impacted_nodes=result["impacted_nodes"],
@@ -82,7 +84,11 @@ def lineage_ai_chat(
                 reply = f"<p><strong>⚡ Blast Radius Analysis for <code>{target_node['name']}</code></strong>:</p>"
                 reply += f"<p>Downstream impact affects <strong>{impacted_count}</strong> data assets across max traversal depth <strong>{result.get('depth_reached', 0)}</strong>.</p>"
                 if impacted_names:
-                    reply += "<p>Impacted downstream assets:</p><ul>" + "".join(f"<li><code>{name}</code></li>" for name in impacted_names) + "</ul>"
+                    reply += (
+                        "<p>Impacted downstream assets:</p><ul>"
+                        + "".join(f"<li><code>{name}</code></li>" for name in impacted_names)
+                        + "</ul>"
+                    )
                 else:
                     reply += "<p>No downstream assets are impacted.</p>"
                 reply += "<p><em>💡 Tip: Set <code>OPENAI_API_KEY</code> or <code>GEMINI_API_KEY</code> environment variable to enable live LLM responses.</em></p>"
@@ -120,10 +126,16 @@ def lineage_ai_chat(
             else:
                 upstream_names = [n["name"] for n in result["upstream_nodes"] if n["id"] != target_node["id"]]
                 upstream_count = len(result["upstream_nodes"])
-                reply = f"<p><strong>🔍 Upstream Root Cause Analysis for <code>{target_node['name']}</code></strong>:</p>"
+                reply = (
+                    f"<p><strong>🔍 Upstream Root Cause Analysis for <code>{target_node['name']}</code></strong>:</p>"
+                )
                 reply += f"<p>Upstream lineage traces back to <strong>{upstream_count}</strong> data assets across max traversal depth <strong>{result.get('depth_reached', 0)}</strong>.</p>"
                 if upstream_names:
-                    reply += "<p>Upstream source assets & dependencies:</p><ul>" + "".join(f"<li><code>{name}</code></li>" for name in upstream_names) + "</ul>"
+                    reply += (
+                        "<p>Upstream source assets & dependencies:</p><ul>"
+                        + "".join(f"<li><code>{name}</code></li>" for name in upstream_names)
+                        + "</ul>"
+                    )
                 else:
                     reply += "<p>No upstream source dependencies found.</p>"
                 reply += "<p><em>💡 Tip: Set <code>OPENAI_API_KEY</code> or <code>GEMINI_API_KEY</code> environment variable to enable live LLM responses.</em></p>"
@@ -150,7 +162,7 @@ def lineage_ai_chat(
     elif llm_err and _has_api_key_configured(request):
         reply = f"<p>⚠️ <strong>LLM Provider Error</strong>:</p><p><code>{llm_err}</code></p><p>Please check your API key, base URL, and model settings in the ⚙️ settings panel.</p>"
     elif matched_nodes:
-        reply = f"<p>LineagIQ Knowledge Graph matched <strong>{len(matched_nodes)}</strong> relevant data assets for <strong>\"{request.message}\"</strong>:</p><ul>"
+        reply = f'<p>LineagIQ Knowledge Graph matched <strong>{len(matched_nodes)}</strong> relevant data assets for <strong>"{request.message}"</strong>:</p><ul>'
         for n in matched_nodes:
             desc = n.get("description") or "No description specified"
             reply += f"<li><strong><code>{n['name']}</code></strong> ({n['type']}): {desc}</li>"

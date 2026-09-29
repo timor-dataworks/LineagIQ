@@ -13,9 +13,7 @@ def test_s3_uploader_file(tmp_path):
     success = uploader.upload_file(str(dummy_file), "graph/nodes/data.parquet")
 
     assert success is True
-    mock_boto.upload_file.assert_called_once_with(
-        str(dummy_file), "test-bucket", "lake/graph/nodes/data.parquet"
-    )
+    mock_boto.upload_file.assert_called_once_with(str(dummy_file), "test-bucket", "lake/graph/nodes/data.parquet")
 
 
 def test_s3_uploader_directory(tmp_path):
@@ -40,17 +38,13 @@ def test_s3_downloader_file(tmp_path):
 
     success = downloader.download_file("graph/nodes/data.parquet", str(dest_file))
     assert success is True
-    mock_boto.download_file.assert_called_once_with(
-        "test-bucket", "lake/graph/nodes/data.parquet", str(dest_file)
-    )
+    mock_boto.download_file.assert_called_once_with("test-bucket", "lake/graph/nodes/data.parquet", str(dest_file))
 
 
 def test_s3_downloader_directory(tmp_path):
     mock_boto = MagicMock()
     paginator = MagicMock()
-    paginator.paginate.return_value = [
-        {"Contents": [{"Key": "lake/graph/nodes/data.parquet"}]}
-    ]
+    paginator.paginate.return_value = [{"Contents": [{"Key": "lake/graph/nodes/data.parquet"}]}]
     mock_boto.get_paginator.return_value = paginator
 
     downloader = S3Downloader(bucket="test-bucket", prefix="lake", s3_client=mock_boto)

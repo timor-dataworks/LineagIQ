@@ -54,24 +54,28 @@ class PromptSynthesizer:
             for item in items:
                 prompt_lines.append(f"  - {item}")
 
-        prompt_lines.extend([
-            "",
-            "### DOWNSTREAM LINEAGE TRAVERSAL EDGES:",
-        ])
+        prompt_lines.extend(
+            [
+                "",
+                "### DOWNSTREAM LINEAGE TRAVERSAL EDGES:",
+            ]
+        )
 
         for e in edges:
             prompt_lines.append(f"  - {e['source_id']} --[{e['type']}]--> {e['target_id']} (depth={e.get('depth', 1)})")
 
-        prompt_lines.extend([
-            "",
-            "================================================================================",
-            "AI ASSISTANT TASK INSTRUCTIONS:",
-            "1. Analyze the downstream operational blast radius if the target asset schema changes or fails.",
-            "2. Identify high-risk downstream consumers (e.g. BI dashboards, pipelines, key business users).",
-            "3. Recommend remediation steps and notify owners of impacted downstream components.",
-            "4. FORMATTING RULE: Format your response using clean, semantic HTML tags (e.g. <p>, <strong>, <code>, <ul>, <li>, <em>, <br>). Do NOT use Markdown formatting and do NOT use LaTeX math formatting. Use standard Unicode arrows (e.g. '→' for lineage transitions).",
-            "================================================================================",
-        ])
+        prompt_lines.extend(
+            [
+                "",
+                "================================================================================",
+                "AI ASSISTANT TASK INSTRUCTIONS:",
+                "1. Analyze the downstream operational blast radius if the target asset schema changes or fails.",
+                "2. Identify high-risk downstream consumers (e.g. BI dashboards, pipelines, key business users).",
+                "3. Recommend remediation steps and notify owners of impacted downstream components.",
+                "4. FORMATTING RULE: Format your response using clean, semantic HTML tags (e.g. <p>, <strong>, <code>, <ul>, <li>, <em>, <br>). Do NOT use Markdown formatting and do NOT use LaTeX math formatting. Use standard Unicode arrows (e.g. '→' for lineage transitions).",
+                "================================================================================",
+            ]
+        )
 
         return "\n".join(prompt_lines)
 
@@ -108,16 +112,18 @@ class PromptSynthesizer:
             if n.get("properties"):
                 prompt_lines.append(f"  Properties: {n['properties']}")
 
-        prompt_lines.extend([
-            "",
-            "================================================================================",
-            "AI ASSISTANT TASK INSTRUCTIONS:",
-            "1. Explain how the matched data assets address the user's discovery query.",
-            "2. Provide schema guidance, join paths, and dataset ownership details.",
-            "3. Note any data governance terms or usage constraints.",
-            "4. FORMATTING RULE: Format your response using clean, semantic HTML tags (e.g. <p>, <strong>, <code>, <ul>, <li>, <em>, <br>). Do NOT use Markdown formatting and do NOT use LaTeX math formatting. Use standard Unicode arrows (e.g. '→' for lineage transitions).",
-            "================================================================================",
-        ])
+        prompt_lines.extend(
+            [
+                "",
+                "================================================================================",
+                "AI ASSISTANT TASK INSTRUCTIONS:",
+                "1. Explain how the matched data assets address the user's discovery query.",
+                "2. Provide schema guidance, join paths, and dataset ownership details.",
+                "3. Note any data governance terms or usage constraints.",
+                "4. FORMATTING RULE: Format your response using clean, semantic HTML tags (e.g. <p>, <strong>, <code>, <ul>, <li>, <em>, <br>). Do NOT use Markdown formatting and do NOT use LaTeX math formatting. Use standard Unicode arrows (e.g. '→' for lineage transitions).",
+                "================================================================================",
+            ]
+        )
 
         return "\n".join(prompt_lines)
 
@@ -167,24 +173,28 @@ class PromptSynthesizer:
             for item in items:
                 prompt_lines.append(f"  - {item}")
 
-        prompt_lines.extend([
-            "",
-            "### UPSTREAM LINEAGE TRAVERSAL EDGES:",
-        ])
+        prompt_lines.extend(
+            [
+                "",
+                "### UPSTREAM LINEAGE TRAVERSAL EDGES:",
+            ]
+        )
 
         for e in edges:
             prompt_lines.append(f"  - {e['source_id']} --[{e['type']}]--> {e['target_id']} (depth={e.get('depth', 1)})")
 
-        prompt_lines.extend([
-            "",
-            "================================================================================",
-            "AI ASSISTANT TASK INSTRUCTIONS:",
-            "1. Trace the data lineage back to root ingestion sources and upstream transformation models.",
-            "2. Identify potential failure points, schema breaking changes, or upstream pipeline latency causing issues in the target asset.",
-            "3. Provide actionable troubleshooting steps to pinpoint the root cause upstream.",
-            "4. FORMATTING RULE: Format your response using clean, semantic HTML tags (e.g. <p>, <strong>, <code>, <ul>, <li>, <em>, <br>). Do NOT use Markdown formatting and do NOT use LaTeX math formatting. Use standard Unicode arrows (e.g. '→' for lineage transitions).",
-            "================================================================================",
-        ])
+        prompt_lines.extend(
+            [
+                "",
+                "================================================================================",
+                "AI ASSISTANT TASK INSTRUCTIONS:",
+                "1. Trace the data lineage back to root ingestion sources and upstream transformation models.",
+                "2. Identify potential failure points, schema breaking changes, or upstream pipeline latency causing issues in the target asset.",
+                "3. Provide actionable troubleshooting steps to pinpoint the root cause upstream.",
+                "4. FORMATTING RULE: Format your response using clean, semantic HTML tags (e.g. <p>, <strong>, <code>, <ul>, <li>, <em>, <br>). Do NOT use Markdown formatting and do NOT use LaTeX math formatting. Use standard Unicode arrows (e.g. '→' for lineage transitions).",
+                "================================================================================",
+            ]
+        )
 
         return "\n".join(prompt_lines)
 
@@ -227,30 +237,33 @@ class PromptSynthesizer:
         if diff_result.get("added_nodes"):
             prompt_lines.append("\n#### Added Data Assets & Columns:")
             for n in diff_result["added_nodes"]:
-                prompt_lines.append(f"  + {n.get('name', n.get('id', 'Asset'))} [{n.get('type', 'Asset')}] (ID: {n.get('id', 'N/A')})")
+                prompt_lines.append(
+                    f"  + {n.get('name', n.get('id', 'Asset'))} [{n.get('type', 'Asset')}] (ID: {n.get('id', 'N/A')})"
+                )
 
         if diff_result.get("removed_nodes"):
             prompt_lines.append("\n#### Removed Data Assets & Columns:")
             for n in diff_result["removed_nodes"]:
-                prompt_lines.append(f"  - {n.get('name', n.get('id', 'Asset'))} [{n.get('type', 'Asset')}] (ID: {n.get('id', 'N/A')})")
+                prompt_lines.append(
+                    f"  - {n.get('name', n.get('id', 'Asset'))} [{n.get('type', 'Asset')}] (ID: {n.get('id', 'N/A')})"
+                )
 
         if diff_result.get("modified_nodes"):
             prompt_lines.append("\n#### Modified Data Assets / Schema Attributes:")
             for m in diff_result["modified_nodes"]:
                 prompt_lines.append(f"  ~ {m['id']}")
 
-        prompt_lines.extend([
-            "",
-            "================================================================================",
-            "AI ASSISTANT TASK INSTRUCTIONS:",
-            "1. Evaluate the impact of schema additions, deletions, and lineage shifts between T1 and T2.",
-            "2. Identify breaking changes or removed dependencies causing downstream consumer failures.",
-            "3. Provide actionable remediation guidance to restore lineage stability.",
-            "4. FORMATTING RULE: Format your response using clean, semantic HTML tags (e.g. <p>, <strong>, <code>, <ul>, <li>, <em>, <br>). Do NOT use Markdown formatting and do NOT use LaTeX math formatting. Use standard Unicode arrows (e.g. '→' for lineage transitions).",
-            "================================================================================",
-        ])
+        prompt_lines.extend(
+            [
+                "",
+                "================================================================================",
+                "AI ASSISTANT TASK INSTRUCTIONS:",
+                "1. Evaluate the impact of schema additions, deletions, and lineage shifts between T1 and T2.",
+                "2. Identify breaking changes or removed dependencies causing downstream consumer failures.",
+                "3. Provide actionable remediation guidance to restore lineage stability.",
+                "4. FORMATTING RULE: Format your response using clean, semantic HTML tags (e.g. <p>, <strong>, <code>, <ul>, <li>, <em>, <br>). Do NOT use Markdown formatting and do NOT use LaTeX math formatting. Use standard Unicode arrows (e.g. '→' for lineage transitions).",
+                "================================================================================",
+            ]
+        )
 
         return "\n".join(prompt_lines)
-
-
-

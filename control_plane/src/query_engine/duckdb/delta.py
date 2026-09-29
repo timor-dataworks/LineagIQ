@@ -63,9 +63,7 @@ def get_available_timestamps(
             )
             ak = opts.get("AWS_ACCESS_KEY_ID") or opts.get("access_key_id") or os.getenv("AWS_ACCESS_KEY_ID")
             sk = (
-                opts.get("AWS_SECRET_ACCESS_KEY")
-                or opts.get("secret_access_key")
-                or os.getenv("AWS_SECRET_ACCESS_KEY")
+                opts.get("AWS_SECRET_ACCESS_KEY") or opts.get("secret_access_key") or os.getenv("AWS_SECRET_ACCESS_KEY")
             )
             token = opts.get("AWS_SESSION_TOKEN") or opts.get("session_token") or os.getenv("AWS_SESSION_TOKEN")
             region = (
@@ -123,12 +121,14 @@ def get_available_timestamps(
                 else:
                     iso_str = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
-                results.append({
-                    "version": ver,
-                    "timestamp": iso_str,
-                    "timestamp_ms": commit_ms,
-                    "operation": commit_info.get("operation", "WRITE"),
-                })
+                results.append(
+                    {
+                        "version": ver,
+                        "timestamp": iso_str,
+                        "timestamp_ms": commit_ms,
+                        "operation": commit_info.get("operation", "WRITE"),
+                    }
+                )
             _TIMESTAMPS_CACHE[clean_path] = (now, results)
             return results
         except Exception as e:
@@ -145,12 +145,14 @@ def get_available_timestamps(
             commit_ms = commit.get("timestamp", 0)
             dt_obj = datetime.datetime.fromtimestamp(commit_ms / 1000, tz=datetime.UTC)
             iso_str = dt_obj.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
-            results.append({
-                "version": commit.get("version", 0),
-                "timestamp": iso_str,
-                "timestamp_ms": commit_ms,
-                "operation": commit.get("operation", "WRITE"),
-            })
+            results.append(
+                {
+                    "version": commit.get("version", 0),
+                    "timestamp": iso_str,
+                    "timestamp_ms": commit_ms,
+                    "operation": commit.get("operation", "WRITE"),
+                }
+            )
         return results
     except Exception as e:
         logger.warning(f"Error fetching available timestamps: {e}")
@@ -253,9 +255,7 @@ def resolve_delta_table(
             ver_label = f"v{target_ver}" if target_ver is not None else "latest"
             mem_table = f"_snapshot_{view_name}_{path_hash}_{ver_label}"
 
-            cached_tables = (
-                view_cache.setdefault("_cached_snapshot_tables", set()) if view_cache is not None else set()
-            )
+            cached_tables = view_cache.setdefault("_cached_snapshot_tables", set()) if view_cache is not None else set()
             if mem_table not in cached_tables:
                 try:
                     exists = con.execute(

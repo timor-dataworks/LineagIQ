@@ -99,9 +99,11 @@ class DbtExtractor:
         for node_id, node_info in raw_nodes.items():
             depends_on = node_info.get("depends_on", {}).get("nodes", [])
             for dep_id in depends_on:
-                edges.append({
-                    "source": dep_id,
-                    "target": node_id,
-                    "type": "DERIVED_FROM",
-                })
+                edges.append(
+                    {
+                        "source": dep_id,
+                        "target": node_id,
+                        "type": "DERIVED_FROM",
+                    }
+                )
         return edges

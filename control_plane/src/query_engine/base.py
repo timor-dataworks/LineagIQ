@@ -55,9 +55,7 @@ class BaseGraphStore(ABC):
         pass
 
     @abstractmethod
-    def get_nodes_by_ids(
-        self, node_ids: list[str], as_of: str | None = None
-    ) -> list[dict[str, Any]]:
+    def get_nodes_by_ids(self, node_ids: list[str], as_of: str | None = None) -> list[dict[str, Any]]:
         """Retrieves full node metadata records for a given list of node IDs.
 
         Args:
@@ -70,9 +68,7 @@ class BaseGraphStore(ABC):
         pass
 
     @abstractmethod
-    def search_nodes_by_terms(
-        self, query_text: str, top_k: int = 5, as_of: str | None = None
-    ) -> list[dict[str, Any]]:
+    def search_nodes_by_terms(self, query_text: str, top_k: int = 5, as_of: str | None = None) -> list[dict[str, Any]]:
         """Searches graph node metadata fields (name, id, description, properties) for matching keywords.
 
         Args:
@@ -216,9 +212,7 @@ class BaseQueryEngine(ABC):
         pass
 
     @abstractmethod
-    def search_semantic_assets(
-        self, query_text: str, top_k: int = 5, as_of: str | None = None
-    ) -> list[dict[str, Any]]:
+    def search_semantic_assets(self, query_text: str, top_k: int = 5, as_of: str | None = None) -> list[dict[str, Any]]:
         """Executes hybrid search combining term match and vector similarity search.
 
         Args:
@@ -230,5 +224,3 @@ class BaseQueryEngine(ABC):
             List of matching node dictionaries.
         """
         pass
-
-

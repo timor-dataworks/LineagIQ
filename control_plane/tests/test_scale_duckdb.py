@@ -6,7 +6,6 @@ on an enterprise-scale graph consisting of 50,000 nodes and 150,000 edges.
 
 import logging
 import time
-from typing import Any
 
 import pyarrow as pa
 import pytest
@@ -53,9 +52,9 @@ def large_scale_delta_graph(tmp_path_factory) -> str:
         + [f"model.analytics.asset_{i}" for i in range(50_003)]
     )
     targets = (
-        [f"model.analytics.asset_{i+1}" for i in range(49_999)]
-        + [f"model.analytics.asset_{i+2}" for i in range(49_998)]
-        + [f"model.analytics.asset_{i+3}" for i in range(50_003)]
+        [f"model.analytics.asset_{i + 1}" for i in range(49_999)]
+        + [f"model.analytics.asset_{i + 2}" for i in range(49_998)]
+        + [f"model.analytics.asset_{i + 3}" for i in range(50_003)]
     )
 
     edges_table = pa.Table.from_arrays(

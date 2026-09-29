@@ -210,9 +210,6 @@ def test_s3_direct_write_and_read_delta_with_vectors_and_embeddings(moto_s3_serv
     assert set(top_mrr_matches) == {"db.marts.fct_mrr", "bi.dashboard.exec_mrr"}
 
 
-
-
-
 def test_s3_delta_time_travel_versioning(moto_s3_server):
     """Verifies historical time travel queries over Delta Lake commit logs on S3."""
     s3_client = moto_s3_server["s3_client"]
@@ -234,8 +231,16 @@ def test_s3_delta_time_travel_versioning(moto_s3_server):
 
     # Commit Version 1: 2 additional nodes appended
     v1_nodes = [
-        Node(id="payments_v2", name="payments_v2", type=NodeType.DATASET, description="V1 dataset", embedding=[0.2, 0.8]),
-        Node(id="analytics_v2", name="analytics_v2", type=NodeType.DATASET, description="V1 dataset", embedding=[0.3, 0.7]),
+        Node(
+            id="payments_v2", name="payments_v2", type=NodeType.DATASET, description="V1 dataset", embedding=[0.2, 0.8]
+        ),
+        Node(
+            id="analytics_v2",
+            name="analytics_v2",
+            type=NodeType.DATASET,
+            description="V1 dataset",
+            embedding=[0.3, 0.7],
+        ),
     ]
     payload_v1 = GraphPayload(nodes=v1_nodes, edges=[])
     writer.write_all(payload_v1, base_dir=s3_base_uri, mode="append", storage_options=storage_options)
@@ -278,9 +283,7 @@ def test_s3_sync_roundtrip_with_uploader_and_downloader(moto_s3_server):
             Node(id="source_a", name="source_a", type=NodeType.DATASET, description="Source A", embedding=[0.99, 0.01]),
             Node(id="model_b", name="model_b", type=NodeType.DATASET, description="Model B", embedding=[0.95, 0.05]),
         ]
-        edges = [
-            Edge(source_id="source_a", target_id="model_b", type=EdgeType.DERIVED_FROM)
-        ]
+        edges = [Edge(source_id="source_a", target_id="model_b", type=EdgeType.DERIVED_FROM)]
         payload = GraphPayload(nodes=nodes, edges=edges)
 
         # 2. Write locally

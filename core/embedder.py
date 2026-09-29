@@ -51,6 +51,7 @@ class LocalEmbedder:
         if model_path:
             try:
                 import onnxruntime as ort
+
                 self._onnx_session = ort.InferenceSession(model_path)
             except Exception as e:
                 print(f"ONNX session initialization warning: {e}")
@@ -161,9 +162,9 @@ class LocalEmbedder:
         Returns:
             384-dimensional L2-normalized float vector list.
         """
-        raw_tokens = [t.lower() for t in re.split(r'[^a-zA-Z0-9]+', text) if t]
+        raw_tokens = [t.lower() for t in re.split(r"[^a-zA-Z0-9]+", text) if t]
         tokens = list(raw_tokens)
-        for t in re.split(r'\s+', text.lower()):
+        for t in re.split(r"\s+", text.lower()):
             if t and t not in tokens:
                 tokens.append(t)
         if not tokens:

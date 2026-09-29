@@ -141,8 +141,12 @@ def test_upstream_root_cause_filters_belongs_to_and_synthesizes_missing_nodes(tm
     col1 = ColumnNode(id="model.stg_customers.customer_id", name="customer_id", dataset_id="model.stg_customers")
     col2 = ColumnNode(id="model.stg_customers.first_name", name="first_name", dataset_id="model.stg_customers")
 
-    edge_col1 = Edge(source_id="model.stg_customers.customer_id", target_id="model.stg_customers", type=EdgeType.BELONGS_TO)
-    edge_col2 = Edge(source_id="model.stg_customers.first_name", target_id="model.stg_customers", type=EdgeType.BELONGS_TO)
+    edge_col1 = Edge(
+        source_id="model.stg_customers.customer_id", target_id="model.stg_customers", type=EdgeType.BELONGS_TO
+    )
+    edge_col2 = Edge(
+        source_id="model.stg_customers.first_name", target_id="model.stg_customers", type=EdgeType.BELONGS_TO
+    )
     edge_derived = Edge(source_id="source.raw_customers", target_id="model.stg_customers", type=EdgeType.DERIVED_FROM)
 
     # Note: source.raw_customers is intentionally left out of nodes list to test synthesis
@@ -193,10 +197,20 @@ def test_pluggable_stores_architecture(tmp_path):
             return {"nodes": [{"id": "mock.node", "name": "mock_node", "type": "Dataset"}], "edges": []}
 
         def get_downstream_blast_radius(self, start_node_id: str, max_depth: int = 5, as_of: str | None = None):
-            return {"impacted_nodes": [{"id": start_node_id}], "edges": [], "root_node": {"id": start_node_id}, "depth_reached": 1}
+            return {
+                "impacted_nodes": [{"id": start_node_id}],
+                "edges": [],
+                "root_node": {"id": start_node_id},
+                "depth_reached": 1,
+            }
 
         def get_upstream_root_cause(self, start_node_id: str, max_depth: int = 5, as_of: str | None = None):
-            return {"upstream_nodes": [{"id": start_node_id}], "edges": [], "target_node": {"id": start_node_id}, "depth_reached": 1}
+            return {
+                "upstream_nodes": [{"id": start_node_id}],
+                "edges": [],
+                "target_node": {"id": start_node_id},
+                "depth_reached": 1,
+            }
 
         def get_nodes_by_ids(self, node_ids, as_of: str | None = None):
             return [{"id": nid, "name": nid, "type": "Dataset"} for nid in node_ids]
@@ -205,7 +219,13 @@ def test_pluggable_stores_architecture(tmp_path):
             return [{"id": "mock.searched_node", "name": query_text, "type": "Dataset"}]
 
         def get_schema_time_travel_diff(self, start_node_id: str, timestamp_t1: str, timestamp_t2: str):
-            return {"added_nodes": [], "removed_nodes": [], "modified_nodes": [], "added_edges": [], "removed_edges": []}
+            return {
+                "added_nodes": [],
+                "removed_nodes": [],
+                "modified_nodes": [],
+                "added_edges": [],
+                "removed_edges": [],
+            }
 
     class CustomMockVectorStore(BaseVectorStore):
         def search_vectors(self, query_vector, top_k: int = 5, max_distance: float = 0.75, as_of: str | None = None):
@@ -254,15 +274,19 @@ def test_duckdb_vss_vector_store(tmp_path):
 def test_semantic_search_raw_customers_edge_node_ranking(tmp_path):
 
     builder = GraphBuilder()
-    stg_ds = DatasetNode(id="model.jaffle_shop.stg_customers", name="stg_customers", description="Staged customer records")
+    stg_ds = DatasetNode(
+        id="model.jaffle_shop.stg_customers", name="stg_customers", description="Staged customer records"
+    )
     builder.add_node(stg_ds)
 
     # Add lineage edge referencing implicit external source node source.jaffle_shop.raw_customers
-    builder.add_edge(Edge(
-        source_id="source.jaffle_shop.raw_customers",
-        target_id="model.jaffle_shop.stg_customers",
-        type=EdgeType.DERIVED_FROM
-    ))
+    builder.add_edge(
+        Edge(
+            source_id="source.jaffle_shop.raw_customers",
+            target_id="model.jaffle_shop.stg_customers",
+            type=EdgeType.DERIVED_FROM,
+        )
+    )
 
     payload = builder.to_payload()
     embedder = LocalEmbedder()
@@ -308,11 +332,3 @@ def test_refactored_query_engine_interfaces_and_subpackages(tmp_path):
     con = get_shared_duckdb_connection(str(tmp_path))
     assert con is not None
     clear_duckdb_caches(str(tmp_path))
-
-
-
-
-
-
-
-

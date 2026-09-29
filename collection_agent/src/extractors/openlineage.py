@@ -24,37 +24,34 @@ class OpenLineageExtractor:
         outputs = event_data.get("outputs", [])
 
         input_datasets = [
-            ds for ds in (
-                f"{inp.get('namespace', '')}.{inp.get('name', '')}".strip(".")
-                for inp in inputs
-            ) if ds
+            ds for ds in (f"{inp.get('namespace', '')}.{inp.get('name', '')}".strip(".") for inp in inputs) if ds
         ]
         output_datasets = [
-            ds for ds in (
-                f"{out.get('namespace', '')}.{out.get('name', '')}".strip(".")
-                for out in outputs
-            ) if ds
+            ds for ds in (f"{out.get('namespace', '')}.{out.get('name', '')}".strip(".") for out in outputs) if ds
         ]
 
         edges = []
         # Inputs -> Pipeline (CONSUMED_BY)
         for inp_ds in input_datasets:
             if inp_ds and job_name:
-                edges.append({
-                    "source": inp_ds,
-                    "target": job_name,
-                    "type": "CONSUMED_BY",
-                })
+                edges.append(
+                    {
+                        "source": inp_ds,
+                        "target": job_name,
+                        "type": "CONSUMED_BY",
+                    }
+                )
 
         # Pipeline -> Outputs (PRODUCED_BY)
         for out_ds in output_datasets:
             if out_ds and job_name:
-                edges.append({
-                    "source": job_name,
-                    "target": out_ds,
-                    "type": "PRODUCED_BY",
-                })
-
+                edges.append(
+                    {
+                        "source": job_name,
+                        "target": out_ds,
+                        "type": "PRODUCED_BY",
+                    }
+                )
 
         return {
             "pipeline_id": job_name,
@@ -76,4 +73,3 @@ class OpenLineageExtractor:
         if isinstance(events, dict):
             return [self.parse_event(events)]
         return [self.parse_event(e) for e in events if isinstance(e, dict)]
-

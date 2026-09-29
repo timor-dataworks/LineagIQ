@@ -38,11 +38,7 @@ def test_call_openai_llm_with_mocked_post(monkeypatch):
     def mock_post_json(url, payload, headers=None, timeout=45):
         assert "chat/completions" in url
         assert payload["model"] == "test-model"
-        return {
-            "choices": [
-                {"message": {"content": "Lineage analysis: raw $\\rightarrow$ analytics"}}
-            ]
-        }, None
+        return {"choices": [{"message": {"content": "Lineage analysis: raw $\\rightarrow$ analytics"}}]}, None
 
     monkeypatch.setattr("control_plane.src.services.llm_service.post_json", mock_post_json)
 
@@ -60,9 +56,7 @@ def test_call_llm_routing_gemini_key(monkeypatch):
 
     def mock_post_json(url, payload, headers=None, timeout=45):
         called_urls.append(url)
-        return {
-            "choices": [{"message": {"content": "Gemini response"}}]
-        }, None
+        return {"choices": [{"message": {"content": "Gemini response"}}]}, None
 
     monkeypatch.setattr("control_plane.src.services.llm_service.post_json", mock_post_json)
 
