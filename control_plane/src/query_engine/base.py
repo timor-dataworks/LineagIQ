@@ -92,14 +92,23 @@ class BaseGraphStore(ABC):
         """Computes schema and lineage graph diff between two historical ISO 8601 timestamps.
 
         Args:
-            start_node_id: Canonical asset identifier to scope diff assessment.
+            start_node_id: Canonical asset identifier to scope diff assessment (or None for global).
             timestamp_t1: Initial ISO 8601 timestamp string.
             timestamp_t2: Subsequent ISO 8601 timestamp string.
 
         Returns:
-            Dictionary containing added_nodes, removed_nodes, modified_properties, and edge_changes.
+            Dictionary containing added_nodes, removed_nodes, modified_nodes, added_edges,
+            removed_edges, and summary counts.
         """
         pass
+
+    def get_available_timestamps(self) -> list[dict[str, Any]]:
+        """Retrieves available commit timestamps and version metadata for historical time travel.
+
+        Returns:
+            List of dictionaries with 'version', 'timestamp', and 'operation'.
+        """
+        return []
 
 
 class BaseVectorStore(ABC):

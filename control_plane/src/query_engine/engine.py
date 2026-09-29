@@ -88,6 +88,10 @@ class DuckDBQueryEngine:
         Returns:
             List of dictionaries with 'version', 'timestamp', and 'operation'.
         """
+        if hasattr(self.graph_store, "get_available_timestamps"):
+            res = self.graph_store.get_available_timestamps()
+            if res:
+                return res
         return get_available_timestamps(self.base_path)
 
     def get_schema_time_travel_diff(

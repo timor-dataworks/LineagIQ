@@ -593,13 +593,15 @@ class DuckDBGraphStore(BaseGraphStore):
     def get_downstream_blast_radius(
         self, start_node_id: str, max_depth: int = 5, as_of: str | None = None
     ) -> dict[str, Any]:
-        """
-        Executes recursive CTE traversal in DuckDB to compute downstream blast radius starting from `start_node_id`.
+        """Computes the downstream blast radius traversal starting from a target node.
 
-        :param start_node_id: Target node canonical ID.
-        :param max_depth: Maximum recursive lineage traversal depth (1 to 10).
-        :param as_of: Optional ISO 8601 timestamp string for historical time travel.
-        :return: Traversal payload containing 'root_node', 'impacted_nodes', 'edges', and 'depth_reached'.
+        Args:
+            start_node_id: Canonical target node identifier.
+            max_depth: Maximum recursive lineage traversal depth (1 to 10). Defaults to 5.
+            as_of: Optional ISO 8601 timestamp string for historical time travel.
+
+        Returns:
+            Dictionary containing 'root_node', 'impacted_nodes', 'edges', and 'depth_reached'.
         """
         con = self.con
         if not resolve_delta_or_parquet_table(
@@ -661,13 +663,15 @@ class DuckDBGraphStore(BaseGraphStore):
     def get_upstream_root_cause(
         self, start_node_id: str, max_depth: int = 5, as_of: str | None = None
     ) -> dict[str, Any]:
-        """
-        Executes recursive CTE traversal in DuckDB to compute upstream root cause dependencies starting from `start_node_id`.
+        """Computes the upstream root cause traversal starting from a target node.
 
-        :param start_node_id: Target node canonical ID.
-        :param max_depth: Maximum recursive lineage traversal depth (1 to 10).
-        :param as_of: Optional ISO 8601 timestamp string for historical time travel.
-        :return: Traversal payload containing 'target_node', 'upstream_nodes', 'edges', and 'depth_reached'.
+        Args:
+            start_node_id: Canonical target node identifier.
+            max_depth: Maximum recursive lineage traversal depth (1 to 10). Defaults to 5.
+            as_of: Optional ISO 8601 timestamp string for historical time travel.
+
+        Returns:
+            Dictionary containing 'target_node', 'upstream_nodes', 'edges', and 'depth_reached'.
         """
         con = self.con
         if not resolve_delta_or_parquet_table(
@@ -729,12 +733,14 @@ class DuckDBGraphStore(BaseGraphStore):
     def get_nodes_by_ids(
         self, node_ids: list[str], as_of: str | None = None
     ) -> list[dict[str, Any]]:
-        """
-        Retrieves full node metadata records for a given list of node IDs.
+        """Retrieves full node metadata records for a given list of node IDs.
 
-        :param node_ids: List of canonical node identifiers.
-        :param as_of: Optional ISO 8601 timestamp string for historical time travel.
-        :return: List of matching node metadata dictionaries in requested order.
+        Args:
+            node_ids: List of canonical node identifiers.
+            as_of: Optional ISO 8601 timestamp string for historical time travel.
+
+        Returns:
+            List of matching node metadata dictionaries in requested order.
         """
         if not node_ids:
             return []
@@ -758,13 +764,15 @@ class DuckDBGraphStore(BaseGraphStore):
     def search_nodes_by_terms(
         self, query_text: str, top_k: int = 5, as_of: str | None = None
     ) -> list[dict[str, Any]]:
-        """
-        Searches node metadata fields (name, id, description, type, properties) using SQL LIKE clauses.
+        """Searches graph node metadata fields (name, id, description, properties) for matching keywords.
 
-        :param query_text: User search query or keyword phrase.
-        :param top_k: Maximum number of candidate node records to return.
-        :param as_of: Optional ISO 8601 timestamp string for historical time travel.
-        :return: List of matching node metadata dictionaries.
+        Args:
+            query_text: User search query or keyword phrase.
+            top_k: Maximum number of candidate node records to return. Defaults to 5.
+            as_of: Optional ISO 8601 timestamp string for historical time travel.
+
+        Returns:
+            List of matching node metadata dictionaries.
         """
         if not query_text or not query_text.strip():
             return []
@@ -923,3 +931,11 @@ class DuckDBGraphStore(BaseGraphStore):
             "added_edges": added_edges,
             "removed_edges": removed_edges,
         }
+
+    def get_available_timestamps(self) -> list[dict[str, Any]]:
+        """Retrieves available commit history timestamps from tenant Delta Lake table logs.
+
+        Returns:
+            List of dictionaries with 'version', 'timestamp', and 'operation'.
+        """
+        return get_available_timestamps(self.base_path, storage_options=self.storage_options)

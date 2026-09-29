@@ -12,11 +12,13 @@ from control_plane.src.query_engine.duckdb_store import (
 )
 from core.constants import get_vectors_table_path
 
+from typing import Any
+
 logger = logging.getLogger(__name__)
 
 
 class DuckDBVectorStore(BaseVectorStore):
-    """DuckDB VSS (Vector Similarity Search) implementation of BaseVectorStore over Parquet/Delta files.
+    """DuckDB VSS (Vector Similarity Search) implementation of `BaseVectorStore` over Parquet/Delta files.
 
     Performs cosine-distance vector similarity queries on embeddings stored in Parquet/Delta datasets.
 
@@ -29,7 +31,7 @@ class DuckDBVectorStore(BaseVectorStore):
     def __init__(
         self,
         data_base_path: str,
-        storage_options: dict | None = None,
+        storage_options: dict[str, Any] | None = None,
         con: duckdb.DuckDBPyConnection | None = None,
     ):
         self.data_base_path = data_base_path
