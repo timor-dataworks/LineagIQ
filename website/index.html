@@ -3,8 +3,148 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LineagIQ | Enterprise Semantic Knowledge Graph & Real-Time Lineage Intelligence</title>
-  <meta name="description" content="LineagIQ models enterprise data landscapes into an intelligent, queryable semantic knowledge graph. Serverless Delta Lake architecture with in-memory vectorized compute, sub-second time-travel lineage diffing and automated blast-radius intelligence.">
+  <title>LineagIQ – Serverless Data Lineage & Enterprise Knowledge Graph</title>
+  <meta name="description" content="LineagIQ is a serverless data lineage and enterprise knowledge graph engine for Delta Lake. Zero-copy time travel, recursive blast radius, and pure NumPy graph query.">
+  <meta name="keywords" content="data lineage, enterprise knowledge graph, delta lake lineage, serverless data catalog, graphrag, blast radius analysis, openlineage, time travel lineage, dbt lineage, numpy graph engine">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <link rel="canonical" href="https://lineagiq.com/">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LineagIQ">
+  <meta property="og:title" content="LineagIQ – Serverless Data Lineage & Enterprise Knowledge Graph">
+  <meta property="og:description" content="Serverless data lineage and semantic knowledge graph for Delta Lake. Sub-second time-travel diffing, recursive blast-radius intelligence, and GraphRAG.">
+  <meta property="og:url" content="https://lineagiq.com/">
+  <meta property="og:image" content="https://lineagiq.com/assets/lineage_main_graph.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="675">
+  <meta property="og:image:alt" content="LineagIQ Data Lineage Knowledge Graph Visualizer">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LineagIQ – Serverless Data Lineage & Enterprise Knowledge Graph">
+  <meta name="twitter:description" content="Serverless data lineage and semantic knowledge graph for Delta Lake. Zero-copy time travel diffing and microsecond graph queries.">
+  <meta name="twitter:image" content="https://lineagiq.com/assets/lineage_main_graph.png">
+  <meta name="twitter:image:alt" content="LineagIQ Data Lineage Knowledge Graph Visualizer">
+
+  <!-- JSON-LD Structured Data: Organization, SoftwareApplication, WebSite, FAQPage -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://lineagiq.com/#website",
+        "url": "https://lineagiq.com/",
+        "name": "LineagIQ",
+        "description": "Enterprise Semantic Knowledge Graph & Serverless Data Lineage Intelligence",
+        "publisher": {
+          "@id": "https://lineagiq.com/#organization"
+        }
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://lineagiq.com/#organization",
+        "name": "LineagIQ",
+        "url": "https://lineagiq.com/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://lineagiq.com/assets/lineage_main_graph.png"
+        },
+        "sameAs": [
+          "https://github.com/timor-dataworks/LineagIQ"
+        ]
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://lineagiq.com/#software",
+        "name": "LineagIQ",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Linux, macOS, Windows, Docker",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Serverless data lineage and enterprise knowledge graph engine built on Delta Lake and vectorized pure NumPy CSR/CSC array runtime with zero JVM or dedicated graph database clusters.",
+        "softwareVersion": "v0.1.0",
+        "license": "https://github.com/timor-dataworks/LineagIQ/blob/main/LICENSE",
+        "codeRepository": "https://github.com/timor-dataworks/LineagIQ",
+        "featureList": [
+          "Serverless Delta Lake Graph Storage Protocol",
+          "Point-in-Time ACID Time-Travel Lineage Diffing",
+          "Microsecond Traversal with Pure NumPy CSR/CSC Matrices",
+          "Recursive Downstream & Upstream Blast Radius Attribution",
+          "Vectorized BLAS Embeddings & GraphRAG Synthesis for AI Agents",
+          "Turnkey OpenLineage, dbt Core/Cloud, and SQL Parser Ingestion"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://lineagiq.com/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is LineagIQ and how does it provide data lineage without a dedicated graph database?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "LineagIQ is a serverless data lineage and semantic knowledge graph platform. Unlike traditional catalogs like Collibra or Alation that mandate provisioned Neo4j or Amazon Neptune clusters, LineagIQ persists topology datasets directly on open Delta Lake Parquet tables in object storage (Amazon S3, GCS, or local disk). At query time, LineagIQ compiles these tables into vectorized Compressed Sparse Row (CSR) and Column (CSC) matrices in RAM, delivering microsecond traversals without persistent cluster overhead."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How fast are graph traversals with LineagIQ's pure NumPy query engine?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "By eliminating JVM overhead, pointers, and object graph wrapping, LineagIQ's CSR/CSC adjacency matrix engine resolves multi-hop upstream and downstream lineage reachability queries in under 25 microseconds (< 25 µs) while reducing memory footprint by 18.6x compared to traditional in-memory graph models."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What data sources and integrations does LineagIQ support?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "LineagIQ features native ingestion adapters for dbt Core and dbt Cloud manifests, SQL dialect table and column catalogs (Snowflake, BigQuery, Databricks, PostgreSQL, DuckDB), query logs and audit history for runtime lineage inference, and standardized OpenLineage run events from Apache Airflow, Apache Spark, Dagster, and Apache Flink."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does Delta Lake time travel enable historical data lineage diffing?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Delta Lake maintains an append-only JSON commit log (_delta_log) that records transactional snapshots over time. LineagIQ leverages this to perform zero-copy time travel, allowing data engineering teams to compare graph topology at commit T1 against commit T2 to instantly detect silent schema drift, removed columns, or altered transformation logic."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does LineagIQ calculate downstream blast radius?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "LineagIQ performs breadth-first and depth-first vectorized matrix traversals downstream from any modified dataset or column node. It isolates the entire reachability subgraph to identify all affected BI dashboards, downstream data marts, and ML training pipelines before breaking changes are deployed."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does GraphRAG empower AI agents and LLMs with lineage context?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "LineagIQ embeds graph metadata using domain-specific 384-dimensional embeddings stored in Delta Lake vector tables. Through vectorized BLAS dot-product similarity search and graph topology expansion, LineagIQ provides high-fidelity GraphRAG context packets to LLMs for automated root-cause analysis and governance queries."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How is LineagIQ deployed?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "LineagIQ can be deployed in under 60 seconds using official public Docker images from GitHub Container Registry (ghcr.io/timor-dataworks/lineagiq-control-plane and ghcr.io/timor-dataworks/lineagiq-collection-agent), or via a single docker compose up command."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,6 +154,9 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+  <!-- Accessibility Skip Link -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
   <!-- Ambient Glow Effects -->
   <div class="ambient-glow-1"></div>
@@ -35,7 +178,7 @@
         <span class="logo-text">LineagIQ</span>
       </a>
 
-      <nav>
+      <nav aria-label="Main Navigation">
         <ul class="nav-links" id="nav-links">
           <li><a href="#executive" class="nav-link active">Overview</a></li>
           <li><a href="#time-travel" class="nav-link">Time Travel</a></li>
@@ -44,6 +187,7 @@
           <li><a href="#slim-stack" class="nav-link">TCO Savings</a></li>
           <li><a href="#architecture" class="nav-link">Architecture</a></li>
           <li><a href="#quickstart" class="nav-link">Quick Start</a></li>
+          <li><a href="#faq" class="nav-link">FAQ</a></li>
         </ul>
       </nav>
 
@@ -65,79 +209,82 @@
     </div>
   </header>
 
-  <!-- Hero Section -->
-  <section class="hero-section" id="executive">
-    <div class="container hero-content">
-      <div class="hero-badge-wrap">
-        <span class="badge badge-indigo">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"></circle></svg>
-          Enterprise Semantic Lineage & Autonomous Governance
-        </span>
-      </div>
+  <!-- Main Content Landmark for SEO & Accessibility -->
+  <main id="main-content">
 
-      <h1 class="hero-title">
-        The Enterprise Knowledge Graph <br>
-        <span class="gradient-text">Engineered for Zero Operational Drag</span>
-      </h1>
-
-      <p class="hero-subtitle">
-        LineagIQ unifies fragmented, multi-cloud data pipelines into an active, queryable semantic knowledge graph. 
-        Experience <strong>point-in-time schema drift analysis</strong>, <strong>instant recursive blast-radius attribution</strong>, and an <strong>ultra-lean serverless architecture</strong> that completely eliminates expensive, dedicated graph database clusters.
-      </p>
-
-      <div class="hero-cta-group">
-        <a href="https://plane.lineagiq.com/" target="_blank" class="btn btn-primary btn-lg">
-          <span>Explore Interactive UI</span>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </a>
-        <a href="#slim-stack" class="btn btn-outline btn-lg">
-          <span>Why Slim Stack? (TCO Review)</span>
-        </a>
-        <a href="#architecture" class="btn btn-outline btn-lg">
-          <span>Technical Architecture</span>
-        </a>
-      </div>
-
-      <!-- Executive C-Level Value Metrics -->
-      <div class="executive-metrics-grid" id="executive">
-        <div class="metric-card">
-          <div class="metric-value">92%</div>
-          <div class="metric-label">Reduction in TCO</div>
-          <div class="metric-desc">Replaces 6-figure Neo4j and Neptune clusters with serverless Delta Lake and embedded in-memory graph compute.</div>
+    <!-- Hero Section -->
+    <section class="hero-section" id="executive" aria-label="Hero Overview">
+      <div class="container hero-content">
+        <div class="hero-badge-wrap">
+          <span class="badge badge-indigo">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"></circle></svg>
+            Enterprise Semantic Lineage &amp; Autonomous Governance
+          </span>
         </div>
 
-        <div class="metric-card">
-          <div class="metric-value">&lt; 30s</div>
-          <div class="metric-label">Root Cause Attribution</div>
-          <div class="metric-desc">Instantly traverses upstream dependencies to pinpoint silent schema breaks, breaking commits, and pipeline failures.</div>
+        <h1 class="hero-title">
+          Serverless Data Lineage &amp; <br>
+          <span class="gradient-text">Enterprise Knowledge Graph</span>
+        </h1>
+
+        <p class="hero-subtitle">
+          LineagIQ unifies fragmented data pipelines into an active, queryable semantic knowledge graph on Delta Lake. 
+          Detect <strong>point-in-time schema drift</strong>, attribute <strong>recursive blast-radius impact in microseconds</strong>, and power <strong>GraphRAG AI agents</strong>—with zero dedicated graph database infrastructure.
+        </p>
+
+        <div class="hero-cta-group">
+          <a href="https://plane.lineagiq.com/" target="_blank" class="btn btn-primary btn-lg">
+            <span>Explore Interactive UI</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="#slim-stack" class="btn btn-outline btn-lg">
+            <span>Why Slim Stack? (TCO Review)</span>
+          </a>
+          <a href="#architecture" class="btn btn-outline btn-lg">
+            <span>Technical Architecture</span>
+          </a>
         </div>
 
-        <div class="metric-card">
-          <div class="metric-value">100%</div>
-          <div class="metric-label">Point-in-Time Auditability</div>
-          <div class="metric-desc">Immutable ACID transactional commit logs delivering full audit readiness for GDPR, BCBS 239, and HIPAA.</div>
-        </div>
+        <!-- Executive C-Level Value Metrics -->
+        <div class="executive-metrics-grid">
+          <div class="metric-card">
+            <div class="metric-value">92%</div>
+            <div class="metric-label">Reduction in TCO</div>
+            <div class="metric-desc">Replaces 6-figure Neo4j and Neptune clusters with serverless Delta Lake and embedded in-memory graph compute.</div>
+          </div>
 
-        <div class="metric-card">
-          <div class="metric-value">0</div>
-          <div class="metric-label">Heavyweight Daemons</div>
-          <div class="metric-desc">Zero continuous JVM graph servers, zero cluster maintenance overhead, and zero data exfiltration.</div>
-        </div>
-      </div>
+          <div class="metric-card">
+            <div class="metric-value">&lt; 30s</div>
+            <div class="metric-label">Root Cause Attribution</div>
+            <div class="metric-desc">Instantly traverses upstream dependencies to pinpoint silent schema breaks, breaking commits, and pipeline failures.</div>
+          </div>
 
-      <!-- Hero Product Showcase Frame -->
-      <div class="hero-showcase">
-        <div class="showcase-inner" data-caption="LineagIQ Interactive Knowledge Graph - Visualizing multi-source lineage, streaming Kafka feeds, ML pipelines, and executive dashboards with bottom timeline scrubber.">
-          <img src="assets/lineage_main_graph.png" alt="LineagIQ Knowledge Graph Visualizer Overview" loading="eager">
-          <div class="showcase-badge-overlay">
-            <span class="pulse-dot"></span>
-            <span>Live Delta Lake Graph: 37 Entities, 46 Lineage Edges, 3 Historical Time Travel Commits</span>
+          <div class="metric-card">
+            <div class="metric-value">100%</div>
+            <div class="metric-label">Point-in-Time Auditability</div>
+            <div class="metric-desc">Immutable ACID transactional commit logs delivering full audit readiness for GDPR, BCBS 239, and HIPAA.</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-value">0</div>
+            <div class="metric-label">Heavyweight Daemons</div>
+            <div class="metric-desc">Zero continuous JVM graph servers, zero cluster maintenance overhead, and zero data exfiltration.</div>
           </div>
         </div>
-      </div>
 
-    </div>
-  </section>
+        <!-- Hero Product Showcase Frame -->
+        <div class="hero-showcase">
+          <div class="showcase-inner" data-caption="LineagIQ Interactive Knowledge Graph - Visualizing multi-source lineage, streaming Kafka feeds, ML pipelines, and executive dashboards with bottom timeline scrubber.">
+            <img src="assets/lineage_main_graph.png" alt="LineagIQ interactive data lineage knowledge graph visualizer showing dataset nodes, models, and dependencies" width="3024" height="1722" loading="eager">
+            <div class="showcase-badge-overlay">
+              <span class="pulse-dot"></span>
+              <span>Live Delta Lake Graph: 37 Entities, 46 Lineage Edges, 3 Historical Time Travel Commits</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
 
   <!-- Feature 1: Time Travel & Historical Schema Drift -->
   <section class="feature-split-section" id="time-travel">
@@ -181,7 +328,7 @@
 
         <div class="feature-media">
           <div class="screenshot-card" data-caption="LineagIQ Time Travel Lineage Diff Modal - Comparing V0 (Initial Core) vs V2 (AI Churn & Streaming Expansion) identifying 10 added assets, 1 deleted column, and 16 new edges.">
-            <img src="assets/lineage_time_travel_diff.png" alt="LineagIQ Time Travel Diff Modal" loading="lazy">
+            <img src="assets/lineage_time_travel_diff.png" alt="LineagIQ point-in-time time travel diff visualizer comparing snapshot schema versions over Delta Lake commits" width="3024" height="1722" loading="lazy">
             <div class="screenshot-overlay-tag">
               <span>Click to Zoom</span>
             </div>
@@ -192,15 +339,15 @@
   </section>
 
   <!-- Feature 2: Upstream & Downstream Blast Radius -->
-  <section class="feature-split-section" id="blast-radius">
+  <section class="feature-split-section" id="blast-radius" aria-label="Blast Radius and Impact Analysis">
     <div class="container">
       <div class="feature-split reverse">
         <div class="feature-content">
           <span class="feature-pill blast-radius">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-            Impact & Root-Cause Search
+            Impact &amp; Root-Cause Search
           </span>
-          <h2 class="feature-title">Instant Blast Radius & Root-Cause Attribution</h2>
+          <h2 class="feature-title">Instant Blast Radius &amp; Root-Cause Attribution</h2>
           <p class="feature-desc">
             Before deploying schema migrations or refactoring dbt models, LineagIQ computes downstream blast radius in milliseconds—preventing downstream data incidents and broken executive dashboards.
           </p>
@@ -232,7 +379,7 @@
 
         <div class="feature-media">
           <div class="screenshot-card" data-caption="LineagIQ Blast Radius Analysis - Selecting raw customer dataset instantly isolates 11 downstream impacted assets across dbt models, ML predictors, and executive Tableau reports.">
-            <img src="assets/lineage_blast_radius.png" alt="LineagIQ Downstream Blast Radius Highlight" loading="lazy">
+            <img src="assets/lineage_blast_radius.png" alt="LineagIQ automated blast radius attribution tracing downstream impacts of upstream schema changes" width="3024" height="1722" loading="lazy">
             <div class="screenshot-overlay-tag">
               <span>Click to Zoom</span>
             </div>
@@ -243,7 +390,7 @@
   </section>
 
   <!-- Feature 3: AI Assistant & GraphRAG -->
-  <section class="feature-split-section">
+  <section class="feature-split-section" id="ai-governance" aria-label="Autonomous AI Assistant and GraphRAG">
     <div class="container">
       <div class="feature-split">
         <div class="feature-content">
@@ -259,7 +406,7 @@
             <li class="feature-bullet-item">
               <span class="bullet-icon">🤖</span>
               <div>
-                <strong>Private Local & Cloud LLM Flexibility:</strong>
+                <strong>Private Local &amp; Cloud LLM Flexibility:</strong>
                 Run completely offline with local Ollama instances (Llama 3, Mistral, Qwen) for zero network egress, or connect directly to cloud APIs (OpenAI GPT-4o, Google Gemini).
               </div>
             </li>
@@ -282,7 +429,7 @@
 
         <div class="feature-media">
           <div class="screenshot-card" data-caption="LineagIQ Autonomous AI Assistant Drawer - GraphRAG context injection provides real-time natural language root-cause analysis and remediation suggestions.">
-            <img src="assets/lineage_ai_assistant.png" alt="LineagIQ AI Assistant Drawer" loading="lazy">
+            <img src="assets/lineage_ai_assistant.png" alt="LineagIQ AI Assistant providing GraphRAG context synthesis and automated governance recommendations" width="3024" height="1722" loading="lazy">
             <div class="screenshot-overlay-tag">
               <span>Click to Zoom</span>
             </div>
@@ -599,7 +746,7 @@
             <!-- Tier 1 -->
             <div class="diagram-tier">
               <div class="tier-number">Tier 01 // Ephemeral Edge</div>
-              <h4 class="tier-title">Stateless Ingestion Agent</h4>
+              <h3 class="tier-title">Stateless Ingestion Agent</h3>
               <p class="tier-desc">Executes as an ephemeral batch task (Docker, Kubernetes CronJob, or GitHub Action) inside customer boundaries. Ingests metadata from files, schemas, query logs, and orchestrators.</p>
               <div class="tier-chips">
                 <span class="tier-chip">dbt manifest.json</span>
@@ -613,7 +760,7 @@
             <!-- Tier 2 -->
             <div class="diagram-tier">
               <div class="tier-number">Tier 02 // Lakehouse Storage</div>
-              <h4 class="tier-title">Delta Lake Storage Layer</h4>
+              <h3 class="tier-title">Delta Lake Storage Layer</h3>
               <p class="tier-desc">Standard cloud object storage (S3/GCS) or enterprise storage layer. Stores lineage nodes, dependency edges, schema definitions, and vector embeddings backed by Delta Lake transaction logs.</p>
               <div class="tier-chips">
                 <span class="tier-chip">ACID Transactions</span>
@@ -626,8 +773,8 @@
 
             <!-- Tier 3 -->
             <div class="diagram-tier">
-              <div class="tier-number">Tier 03 // Query & GraphRAG</div>
-              <h4 class="tier-title">Serverless Control Plane</h4>
+              <div class="tier-number">Tier 03 // Query &amp; GraphRAG</div>
+              <h3 class="tier-title">Serverless Control Plane</h3>
               <p class="tier-desc">FastAPI query runtime running a high-performance pure NumPy CSR/CSC engine to execute multi-hop lineage traversals in microseconds (&lt; 0.05 ms) directly against Delta Lake snapshots. Exposes sub-millisecond REST endpoints, interactive graph visualizations, and GraphRAG tools.</p>
               <div class="tier-chips">
                 <span class="tier-chip">Pure NumPy CSR/CSC Engine</span>
@@ -644,7 +791,7 @@
       <!-- Tab: CSR/CSC Graph Traversal Engine -->
       <div class="arch-tab-panel" id="tab-traversal">
         <div class="diagram-card">
-          <h4 class="tier-title">Microsecond Multi-Hop Lineage Traversals (Pure NumPy CSR/CSC)</h4>
+          <h3 class="tier-title">Microsecond Multi-Hop Lineage Traversals (Pure NumPy CSR/CSC)</h3>
           <p class="tier-desc">
             LineagIQ transforms historical Delta Lake graph snapshots directly into in-memory Compressed Sparse Row (CSR) and Compressed Sparse Column (CSC) contiguous integer index arrays. This eliminates database query planners, virtual machines, and SQL parsing overhead to achieve <strong>sub-millisecond (&lt; 25 µs) lineage reachability</strong>.
           </p>
@@ -751,7 +898,7 @@ def traverse_blast_radius(start_idx: int, max_depth: int, fwd_all, fwd_lineage):
       <!-- Tab: Custom Embeddings & Vectors -->
       <div class="arch-tab-panel" id="tab-embeddings">
         <div class="diagram-card">
-          <h4 class="tier-title">Domain-Specific Embeddings &amp; Delta Lake Vector Tables</h4>
+          <h3 class="tier-title">Domain-Specific Embeddings &amp; Delta Lake Vector Tables</h3>
           <p class="tier-desc">
             LineagIQ generates high-fidelity semantic representations in-process using an INT8-quantized ONNX embedder (<code>bge-small-en-v1.5</code>). Raw customer data never leaves private network perimeters, and vector artifacts are persisted with full ACID versioning in Delta Lake.
           </p>
@@ -855,7 +1002,7 @@ print(f"Generated {len(embedding_vector)}-dim normalized vector: {embedding_vect
       <!-- Tab: Graph Search & GraphRAG -->
       <div class="arch-tab-panel" id="tab-graphrag">
         <div class="diagram-card">
-          <h4 class="tier-title">Vectorized BLAS Dot-Product &amp; GraphRAG Context Synthesis</h4>
+          <h3 class="tier-title">Vectorized BLAS Dot-Product &amp; GraphRAG Context Synthesis</h3>
           <p class="tier-desc">
             LineagIQ bridges the gap between semantic catalog discovery and structural knowledge graphs. By evaluating dense vector similarities via hardware-accelerated BLAS matrix operations and overlaying multi-hop topological reachability, LineagIQ synthesizes rich GraphRAG prompts for autonomous LLM agents.
           </p>
@@ -956,7 +1103,7 @@ llm_prompt = synthesizer.build_blast_radius_prompt(traversal_result)
       <!-- Tab: AI Agent Retriever Tools -->
       <div class="arch-tab-panel" id="tab-code">
         <div class="diagram-card">
-          <h4 class="tier-title">Programmatic GraphRAG Integration for AI Agents</h4>
+          <h3 class="tier-title">Programmatic GraphRAG Integration for AI Agents</h3>
           <p class="tier-desc">
             Embed LineagIQ's lineage intelligence and blast-radius tools into agentic Python workflows (LangChain, AutoGen, LlamaIndex, or CrewAI) with minimal boilerplate:
           </p>
@@ -1136,7 +1283,7 @@ print(response.choices[0].message.content)</code></pre>
         <div class="callout-content">
           <div class="callout-header">
             <span class="badge badge-indigo">⚡ All-in-One Alternative</span>
-            <h4 class="callout-title">Launch with Docker Compose</h4>
+            <h3 class="callout-title">Launch with Docker Compose</h3>
           </div>
           <p class="callout-desc">
             Spin up the complete pipeline (demo dataset generation + serverless control plane) with a single command:
@@ -1200,6 +1347,107 @@ docker compose up -d control_plane</code></pre>
     </div>
   </section>
 
+  <!-- Frequently Asked Questions (FAQ) -->
+  <section class="faq-section" id="faq" aria-labelledby="faq-title">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag faq-tag">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          Frequently Asked Questions
+        </span>
+        <h2 class="section-title" id="faq-title">Everything You Need to Know About LineagIQ</h2>
+        <p class="section-subtitle">
+          Got questions about our serverless Delta Lake architecture, pure NumPy traversal engine, or GraphRAG AI integration? Find answers below.
+        </p>
+      </div>
+
+      <div class="faq-grid">
+        <details class="faq-item" open>
+          <summary class="faq-question">
+            <span>What is LineagIQ and how does it provide data lineage without a graph database?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            <p>LineagIQ is a serverless data lineage and enterprise semantic knowledge graph platform. Unlike traditional data catalogs (Collibra, Alation) that mandate provisioned Neo4j or Amazon Neptune clusters, LineagIQ persists topology datasets directly on open <strong>Delta Lake Parquet tables</strong> in cloud object storage (Amazon S3, Google Cloud Storage, or local disk).</p>
+            <p>At query runtime, LineagIQ compiles these tables into vectorized <strong>Compressed Sparse Row (CSR)</strong> and <strong>Compressed Sparse Column (CSC)</strong> contiguous index arrays in RAM, delivering microsecond traversals without persistent cluster overhead, JVM tuning, or 6-figure enterprise license fees.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>How fast are graph traversals with LineagIQ's pure NumPy query engine?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            <p>By eliminating JVM pointer chasing, database query planners, and object graph wrapping, LineagIQ's CSR/CSC adjacency engine evaluates multi-hop upstream and downstream lineage reachability queries in <strong>under 25 microseconds (&lt; 25 µs)</strong>.</p>
+            <p>In extensive benchmarks, this architecture delivers an <strong>18.6x reduction in memory footprint</strong> compared to traditional in-memory graph models like NetworkX, allowing 50,000+ entities to be analyzed effortlessly within single-digit megabytes of RAM.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>What data sources and pipeline integrations does LineagIQ support?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            <p>LineagIQ features native, turnkey ingestion adapters for:</p>
+            <p>• <strong>dbt Core &amp; dbt Cloud:</strong> Direct ingestion of compiled <code>manifest.json</code> execution artifacts.<br>
+            • <strong>SQL Dialect Catalogs:</strong> Snowflake, BigQuery, Databricks, PostgreSQL, and DuckDB <code>INFORMATION_SCHEMA</code>.<br>
+            • <strong>Query History &amp; Audit Logs:</strong> AST-based SQL query log parsing for dynamic runtime lineage inference.<br>
+            • <strong>OpenLineage Standard:</strong> Ingestion of JSON run events from Apache Airflow, Apache Spark, Dagster, and Apache Flink.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>How does Delta Lake Time-Travel enable historical lineage diffing?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            <p>Delta Lake maintains an append-only JSON commit log (<code>_delta_log</code>) that records transactional snapshots over time with full ACID guarantees. LineagIQ leverages this protocol for <strong>zero-copy time travel</strong>.</p>
+            <p>Data teams can compare graph topologies at commit T₁ against commit T₂ to instantly detect silent schema drift, removed columns, added dependencies, or altered transformation logic—providing immutable audit trails for BCBS 239, SOX, and GDPR compliance.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>How does LineagIQ calculate downstream blast radius?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            <p>When any dataset or column is selected or flagged for modification, LineagIQ performs a vectorized Breadth-First Search (BFS) or Depth-First Search (DFS) traversal through its contiguous CSR index arrays.</p>
+            <p>It isolates the complete downstream reachability subgraph in real time, revealing every affected dbt mart, downstream ML training set, reverse-ETL connector, and executive BI dashboard before breaking changes reach production.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>How does GraphRAG empower AI agents with lineage context?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            <p>LineagIQ creates 384-dimensional domain embeddings for all schema assets using an in-process INT8 ONNX embedder. Embeddings are stored in Delta Lake vector tables with normalized unit vectors.</p>
+            <p>When an engineer or AI agent poses a question (e.g., <em>"What broke the executive churn dashboard?"</em>), LineagIQ performs high-speed BLAS dot-product similarity matching, expands the structural graph context, and formats clean GraphRAG prompt packets for OpenAI, Gemini, or local Ollama LLMs.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>How is LineagIQ deployed in production or local environments?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            <p>LineagIQ provides pre-built, production-ready multi-architecture container images from GitHub Container Registry (GHCR):</p>
+            <p>• <strong>Control Plane:</strong> <code>ghcr.io/timor-dataworks/lineagiq-control-plane:latest</code><br>
+            • <strong>Collection Agent:</strong> <code>ghcr.io/timor-dataworks/lineagiq-collection-agent:latest</code></p>
+            <p>You can launch the entire stack in under 60 seconds with <code>docker compose up -d</code>, or run the ephemeral agent as a Kubernetes CronJob inside your private VPC.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  </main>
 
   <!-- Lightbox Modal for Screenshots -->
   <div class="lightbox-modal" id="lightbox-modal">
@@ -1227,7 +1475,7 @@ docker compose up -d control_plane</code></pre>
             </div>
             <span class="logo-text">LineagIQ</span>
           </a>
-          <p>Enterprise Semantic Knowledge Graph & Real-Time Lineage Intelligence Platform.</p>
+          <p>Enterprise Semantic Knowledge Graph &amp; Real-Time Lineage Intelligence Platform.</p>
         </div>
 
         <div class="footer-col">
@@ -1237,13 +1485,14 @@ docker compose up -d control_plane</code></pre>
             <li><a href="#blast-radius">Blast Radius Intelligence</a></li>
             <li><a href="#integrations">Universal Integrations</a></li>
             <li><a href="#architecture">GraphRAG AI Assistant</a></li>
+            <li><a href="#faq">Frequently Asked Questions</a></li>
           </ul>
         </div>
 
         <div class="footer-col">
           <h4>Architecture</h4>
           <ul>
-            <li><a href="#slim-stack">Slim Stack & TCO</a></li>
+            <li><a href="#slim-stack">Slim Stack &amp; TCO</a></li>
             <li><a href="#architecture">Delta Lake Commit Log</a></li>
             <li><a href="#architecture">Vectorized Traversal</a></li>
             <li><a href="#architecture">Stateless Collectors</a></li>
@@ -1257,13 +1506,14 @@ docker compose up -d control_plane</code></pre>
             <li><a href="https://plane.lineagiq.com/" target="_blank">Visualizer UI (plane.lineagiq.com)</a></li>
             <li><a href="https://plane.lineagiq.com/docs" target="_blank">Swagger API Specs</a></li>
             <li><a href="https://plane.lineagiq.com/redoc" target="_blank">ReDoc Documentation</a></li>
+            <li><a href="https://github.com/timor-dataworks/LineagIQ" target="_blank">GitHub Repository</a></li>
           </ul>
         </div>
       </div>
 
       <div class="footer-bottom">
         <div>&copy; 2026 LineagIQ. Enterprise Semantic Knowledge Graph Platform. All rights reserved.</div>
-        <div>Built with Delta Lake, PyArrow & LineagIQ Core.</div>
+        <div>Built with Delta Lake, PyArrow &amp; LineagIQ Core.</div>
       </div>
     </div>
   </footer>

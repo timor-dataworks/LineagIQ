@@ -8,7 +8,24 @@ document.addEventListener('DOMContentLoaded', () => {
   initCopyButtons();
   initNavScroll();
   initMobileNav();
+  initFaqAccordion();
 });
+
+// FAQ Accordion (closes other items when one is opened for clean focus)
+function initFaqAccordion() {
+  const faqItems = document.querySelectorAll('.faq-item');
+  faqItems.forEach(item => {
+    item.addEventListener('toggle', () => {
+      if (item.open) {
+        faqItems.forEach(otherItem => {
+          if (otherItem !== item && otherItem.open) {
+            otherItem.open = false;
+          }
+        });
+      }
+    });
+  });
+}
 
 // Mobile Hamburger Navigation Drawer
 function initMobileNav() {

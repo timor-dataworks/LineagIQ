@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://lineagiq.com/</loc>
+    <lastmod>2026-09-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://lineagiq.com/assets/lineage_main_graph.png</image:loc>
+      <image:title>LineagIQ Data Lineage &amp; Enterprise Knowledge Graph Visualizer</image:title>
+      <image:caption>Interactive knowledge graph visualizer demonstrating dataset dependency nodes and lineage mapping</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://lineagiq.com/assets/lineage_time_travel_diff.png</image:loc>
+      <image:title>LineagIQ Point-in-Time Delta Lake Time Travel Lineage Diff</image:title>
+      <image:caption>Comparing snapshot schema versions over Delta Lake commits</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://lineagiq.com/assets/lineage_blast_radius.png</image:loc>
+      <image:title>LineagIQ Automated Downstream Blast Radius Attribution</image:title>
+      <image:caption>Visualizing downstream impacts of upstream schema changes</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://lineagiq.com/assets/lineage_ai_assistant.png</image:loc>
+      <image:title>LineagIQ GraphRAG AI Assistant for Data Governance</image:title>
+      <image:caption>AI Assistant providing semantic graph context synthesis and architectural governance</image:caption>
+    </image:image>
+  </url>
+</urlset>
