@@ -1,3 +1,5 @@
+from typing import Any
+
 from control_plane.src.prompt_synthesizer import PromptSynthesizer
 from control_plane.src.query_engine import (
     BaseGraphStore,
@@ -221,8 +223,13 @@ def test_pluggable_stores_architecture(tmp_path):
         def search_nodes_by_terms(self, query_text: str, top_k: int = 5, as_of: str | None = None):
             return [{"id": "mock.searched_node", "name": query_text, "type": "Dataset"}]
 
-        def get_schema_time_travel_diff(self, start_node_id: str, timestamp_t1: str, timestamp_t2: str):
+        def get_schema_time_travel_diff(
+            self, start_node_id: str | None, timestamp_t1: str, timestamp_t2: str
+        ) -> dict[str, Any]:
             return {
+                "start_node_id": start_node_id,
+                "timestamp_t1": timestamp_t1,
+                "timestamp_t2": timestamp_t2,
                 "added_nodes": [],
                 "removed_nodes": [],
                 "modified_nodes": [],

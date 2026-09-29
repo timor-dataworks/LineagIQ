@@ -106,6 +106,10 @@ class BaseGraphStore(ABC):
         """
         return []
 
+    def get_in_memory_footprint_bytes(self) -> int:
+        """Returns approximate RAM footprint of the cached in-memory structures in bytes."""
+        return 0
+
 
 class BaseVectorStore(ABC):
     """Abstract Base Class defining the pluggable interface for Vector Similarity Search Engines.
