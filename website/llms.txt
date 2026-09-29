@@ -1,0 +1,53 @@
+# LineagIQ
+> Enterprise Semantic Knowledge Graph & Real-Time Serverless Lineage Intelligence
+
+LineagIQ is a serverless data lineage and enterprise knowledge graph engine designed for modern lakehouse architectures (Delta Lake, Apache Parquet, S3, GCS). It completely replaces expensive, persistent graph database clusters (Neo4j, Amazon Neptune) by compiling Delta Lake tables directly into in-memory Compressed Sparse Row (CSR) and Column (CSC) contiguous arrays in RAM, achieving multi-hop graph reachability queries in under 25 microseconds (< 25 µs) with an 18.6x reduction in memory footprint.
+
+## Core Capabilities
+- **Serverless Lakehouse Storage**: Graph nodes, dependency edges, schema attributes, and vector embeddings persist directly in open Delta Lake Parquet tables with zero continuous server maintenance.
+- **Point-in-Time ACID Time-Travel**: Leverages Delta Lake commit logs (`_delta_log`) to reconstruct topological snapshots as of any historical commit or timestamp (T1 -> T2 diffing).
+- **Pure NumPy Vectorized Graph Runtime**: Adjacency matrices mapped into contiguous CSR/CSC arrays in RAM for microsecond upstream root cause and downstream blast-radius attribution.
+- **Domain-Specific Semantic Vectors**: In-process INT8 ONNX embedder generates 384-dimensional unit-normalized embeddings stored in Delta Lake vector tables.
+- **GraphRAG Prompt Synthesis**: High-speed BLAS dot-product similarity matching coupled with multi-hop reachability subgraphs formatted into structured prompt packets for LLM agents.
+- **Universal Pipeline Ingestion**: Turnkey collectors for dbt Core/Cloud manifests, SQL catalogs (Snowflake, BigQuery, Databricks, PostgreSQL, DuckDB), query logs, and OpenLineage standard JSON events.
+
+## Key Technical Specifications
+- Lineage Reachability Latency: < 25 microseconds (< 0.025 ms)
+- Memory Reduction: 18.6x lower RAM overhead vs traditional object graph wrappers (NetworkX)
+- Vector Search Latency: < 14 ms over 50,000 assets (BLAS dot-product + O(K) argpartition)
+- Quantized Embedding Model: `bge-small-en-v1.5` (INT8 ONNX in-process, 384 dimensions)
+- Storage Format: Apache Parquet columnar with Delta Lake ACID transaction protocol
+- Container Deployments: Multi-arch `linux/amd64` images on GitHub Container Registry (GHCR)
+
+## Agentic AI Tools & Integration
+LineagIQ provides pre-built retriever functions for AI agents and LLM orchestration (LangChain, AutoGen, LlamaIndex, CrewAI):
+- `get_dataset_blast_radius(dataset_id, max_depth=5)`: Evaluates downstream impact subgraph.
+- `get_lineage_time_travel_diff(node_id, timestamp_t1, timestamp_t2)`: Detects historical schema drift and altered edges.
+- `search_enterprise_data_catalog(query, top_k=5)`: Semantic catalog discovery via BLAS dot-product search.
+- Programmatic client: `LineagIQGraphRAGClient(base_url)`
+
+### REST Endpoints for Autonomous Browsing & Agents
+- `GET /`: Interactive Lineage Visualizer UI
+- `GET /docs`: OpenAPI / Swagger API specification
+- `GET /redoc`: ReDoc schema documentation
+- `POST /api/v1/chat`: Interactive GraphRAG conversation endpoint with live prompt synthesis
+- `POST /api/v1/blast-radius`: Downstream reachability traversal payload: `{"node_id": str, "max_depth": int}`
+- `POST /api/v1/root-cause`: Upstream provenance traversal payload: `{"node_id": str, "max_depth": int}`
+- `POST /api/v1/discovery`: Semantic catalog search payload: `{"query": str, "top_k": int}`
+- `POST /api/v1/time-travel/diff`: Snapshot comparison payload: `{"node_id": str, "timestamp_t1": str, "timestamp_t2": str}`
+
+## Quick Start (Docker)
+Run the complete stack in under 60 seconds:
+```bash
+curl -sSL https://raw.githubusercontent.com/timor-dataworks/LineagIQ/main/docker-compose.yml \
+  -o docker-compose.yml
+docker compose run --rm demo_generator
+docker compose up -d control_plane
+```
+
+## Machine-Readable Resources & Links
+- Canonical Website: https://lineagiq.com/
+- Live Demo Visualizer: https://plane.lineagiq.com/
+- Complete Technical Architecture (Agent-Friendly): https://lineagiq.com/llms-full.txt
+- GitHub Source Repository: https://github.com/timor-dataworks/LineagIQ
+- XML Sitemap: https://lineagiq.com/sitemap.xml

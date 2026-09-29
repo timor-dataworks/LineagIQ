@@ -1,0 +1,134 @@
+# LineagIQ Technical Specification & Architecture Manual (Full LLM Context)
+> Comprehensive reference for autonomous AI agents, LLM tool-calling engines, and data platform developers.
+
+---
+
+## 1. System Overview & The "Slim Stack" Paradigm
+
+LineagIQ fundamentally solves the infrastructure tax and operational complexity of enterprise data governance. Traditional enterprise data catalogs (e.g. Collibra, Alation, Apache Atlas) mandate persistent, dedicated graph databases (Neo4j Enterprise, Amazon Neptune, TigerGraph). These systems present critical drawbacks:
+1. **Persistent Infrastructure Bills**: 24/7 provisioned JVM instances demanding large RAM allocations and continuous garbage-collection tuning.
+2. **Destructive Updates**: Mutating property graphs in-place destroys historical topological states, making historical schema audit impossible without external versioning layers.
+3. **Perimeter Network Risk**: Mandates granting third-party SaaS vendors persistent inbound network tunnels to production data warehouses.
+
+### The LineagIQ Solution
+LineagIQ re-engineers graph lineage from first principles:
+- **Storage Plane**: Graph nodes (`nodes/`), edges (`edges/`), and embeddings (`vectors/`) are stored directly as open Delta Lake columnar Parquet tables on commodity object storage (Amazon S3, Google Cloud Storage, or local disk).
+- **Execution Plane**: The query runtime compiles Delta Lake snapshots directly into in-memory Compressed Sparse Row (CSR) and Compressed Sparse Column (CSC) contiguous integer index arrays in RAM.
+- **Latency & Footprint**: Multi-hop reachability traverses in under 25 microseconds (< 0.025 ms) with an 18.6x reduction in RAM footprint compared to pointer-based graph data structures.
+
+---
+
+## 2. Decoupled 3-Tier Architecture
+
+### Tier 1: Stateless Ephemeral Ingestion Agent
+- **Container**: `ghcr.io/timor-dataworks/lineagiq-collection-agent:latest`
+- **Role**: Lightweight CLI utility executed inside customer VPC, Kubernetes CronJobs, or CI/CD pipelines (e.g. GitHub Actions).
+- **Behavior**: Reads local dbt `manifest.json` files, queries warehouse `INFORMATION_SCHEMA` and `QUERY_HISTORY` views, or parses OpenLineage JSON event streams. Computes 384-dimensional INT8 ONNX embeddings in-process, then writes atomic transaction commits to Delta Lake tables.
+- **Security**: Operational customer record data never leaves private perimeter boundaries; only structural metadata and domain tokens are ingested.
+
+### Tier 2: Delta Lake Storage Layer
+- **Protocol**: Delta Lake ACID transactional commit protocol (`_delta_log/*.json`).
+- **Format**: Snappy-compressed columnar Parquet files.
+- **Tables**:
+  - `nodes`: `id` (string), `name` (string), `type` (string: DATASET, MODEL, COLUMN, METRIC, DASHBOARD), `description` (string), `properties` (JSON string), `created_at` (timestamp).
+  - `edges`: `source_id` (string), `target_id` (string), `type` (string: DEPENDS_ON, BELONGS_TO, CONSUMED_BY, PRODUCED_BY), `created_at` (timestamp).
+  - `vectors`: `node_id` (string), `embedding` (array<float32>, 384 dims, L2-normalized), `version` (int64).
+- **Auditability**: Point-in-time time travel enabled via Delta snapshot versioning (`as_of_version` or `as_of_timestamp`).
+
+### Tier 3: Serverless Control Plane & Query Runtime
+- **Container**: `ghcr.io/timor-dataworks/lineagiq-control-plane:latest`
+- **Framework**: FastAPI (Python 3.11+, strict typing).
+- **Engine**: Pure NumPy CSR/CSC adjacency index. Zero external graph database dependencies.
+- **Services**:
+  - Interactive Visualizer UI (`/`)
+  - Swagger REST Specs (`/docs`)
+  - GraphRAG Prompt Synthesizer (`/api/v1/chat`, `/api/v1/blast-radius`, `/api/v1/root-cause`)
+  - Vector similarity search via hardware-accelerated BLAS dot-product (`/api/v1/discovery`)
+
+---
+
+## 3. Mathematical Foundations of Graph Traversal & Search
+
+### CSR/CSC Adjacency Representation
+Given a directed graph $G = (V, E)$ with $|V| = N$ nodes and $|E| = M$ directed edges:
+- **Forward Matrix (CSR)**: Used for downstream blast-radius reachability.
+  - `indptr` of shape $(N + 1)$: `indptr[u]` to `indptr[u + 1]` defines slice of outgoing edges from node $u$.
+  - `indices` of shape $(M)$: array of destination node IDs.
+- **Reverse Matrix (CSC)**: Used for upstream root-cause attribution.
+  - Slices incoming edges to node $v$ to discover immediate and recursive upstream parents.
+- **Traversal Complexity**: Traversing $k$ hops downstream requires only memory-contiguous index lookups, executing in $\approx 20\ \mu\text{s}$ for thousands of edges.
+
+### Vectorized BLAS Cosine Similarity
+All node representations are normalized to the unit sphere:
+$$\|v\|_2 = \sqrt{\sum_{i=1}^{384} v_i^2} = 1.0$$
+Consequently, cosine similarity between a query vector $q \in \mathbb{R}^{384}$ and all $N$ snapshot vectors in matrix $M \in \mathbb{R}^{N \times 384}$ reduces to a matrix-vector dot product:
+$$\text{scores} = M \cdot q$$
+Top-$K$ selection is performed in $O(N)$ linear time using `np.argpartition(-scores, top_k)` rather than costly $O(N \log N)$ sorting.
+
+---
+
+## 4. Agentic AI Integration Code Patterns
+
+### Python Tool Integration (LangChain, AutoGen, LlamaIndex)
+```python
+from control_plane.src.agent_tools import (
+    get_dataset_blast_radius,
+    get_lineage_time_travel_diff,
+    search_enterprise_data_catalog,
+)
+
+# 1. Autonomous Blast Radius Assessment
+# Evaluates downstream dependencies if 'analytics.orders' column is altered:
+blast_context = get_dataset_blast_radius("analytics.orders", max_depth=5)
+
+# 2. Schema Drift Detection (T1 to T2)
+diff_context = get_lineage_time_travel_diff(
+    node_id="analytics.orders",
+    timestamp_t1="2026-09-01T00:00:00Z",
+    timestamp_t2="2026-09-29T00:00:00Z",
+)
+
+# 3. Natural Language Catalog Discovery
+catalog_results = search_enterprise_data_catalog("customer revenue and retention", top_k=5)
+```
+
+### Direct HTTP Integration for Agents
+```bash
+# Calculate blast radius via REST API
+curl -X POST "http://localhost:8000/api/v1/blast-radius" \
+  -H "Content-Type: application/json" \
+  -d '{"node_id": "postgres.public.customers", "max_depth": 5}'
+
+# Query GraphRAG AI Assistant
+curl -X POST "http://localhost:8000/api/v1/chat" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What breaks if I rename the user_id column in raw_users?"}'
+```
+
+---
+
+## 5. Docker Deployment
+
+### Docker Compose Quickstart
+```yaml
+version: '3.8'
+
+services:
+  control_plane:
+    image: ghcr.io/timor-dataworks/lineagiq-control-plane:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - DATA_PATH=/data
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
+```
+
+Deploy:
+```bash
+docker compose up -d control_plane
+```
+Access UI at `http://localhost:8000/` and Swagger OpenAPI specs at `http://localhost:8000/docs`.
