@@ -1,7 +1,7 @@
 """LineagIQ Core Storage & Path Constants.
 
 Defines standardized dataset table names, directory paths, and path resolution helpers
-shared across ingestion writers, DuckDB query engines, and cloud sync utilities.
+shared across ingestion writers, query engines, and cloud sync utilities.
 """
 
 import os

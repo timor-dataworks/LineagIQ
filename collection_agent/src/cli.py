@@ -75,7 +75,7 @@ def run_pipeline(
     Executes end-to-end Collection Agent pipeline:
     1. Metadata Extraction & Graph Normalization
     2. Local Vector Embedding
-    3. Parquet & DuckDB VSS Vector Artifact Serialization
+    3. Parquet & Delta Lake Vector Artifact Serialization
     4. Optional Multi-part S3 Lake Sync
     Data path is strictly read from DATA_PATH environment variable.
     """
@@ -133,7 +133,7 @@ def run_pipeline(
     payload = builder.to_payload()
     payload = embedder.embed_payload(payload)
 
-    # Write Parquet and DuckDB VSS vector artifacts
+    # Write Parquet and Delta Lake vector artifacts
     writer = ArtifactWriter()
     artifacts = writer.write_all(payload, target_dir)
 

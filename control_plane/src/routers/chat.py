@@ -36,7 +36,7 @@ def lineage_ai_chat(
 ) -> dict[str, Any]:
     """GraphRAG LLM Lineage Chat endpoint.
 
-    Integrates DuckDB query engine, PromptSynthesizer, OpenAI, and Gemini LLM
+    Integrates pure NumPy query engine, PromptSynthesizer, OpenAI, and Gemini LLM
     to answer interactive user queries regarding blast radius, root cause, and lineage graphs.
 
     Args:

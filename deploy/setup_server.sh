@@ -32,7 +32,7 @@ apt-get install -y --no-install-recommends \
   htop \
   jq
 
-# 2. Configure 2GB Swap (for DuckDB memory headroom)
+# 2. Configure 2GB Swap (for server memory headroom)
 if [ "$(swapon --show | wc -l)" -le 1 ]; then
   echo "💾 Creating 2GB swapfile..."
   fallocate -l 2G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=2048

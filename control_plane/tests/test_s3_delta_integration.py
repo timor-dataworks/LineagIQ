@@ -1,8 +1,8 @@
 """Integration tests for Delta Lake storage over S3 with moto.
 
 Tests end-to-end writing of Delta Lake tables (nodes, edges, vectors with dense embeddings)
-directly to mock AWS S3 buckets using ArtifactWriter and querying them with DuckDBGraphStore
-and DuckDBVectorStore, as well as multi-tenant S3 synchronization.
+directly to mock AWS S3 buckets using ArtifactWriter and querying them with NumpyGraphStore
+and NumpyVectorStore, as well as multi-tenant S3 synchronization.
 """
 
 import shutil
@@ -70,7 +70,7 @@ def moto_s3_server():
 
 def test_s3_direct_write_and_read_delta_with_vectors_and_embeddings(moto_s3_server):
     """Verifies that ArtifactWriter writes Delta Lake tables with dense vector embeddings
-    directly to an S3 bucket and that DuckDBGraphStore and DuckDBVectorStore query them directly.
+    directly to an S3 bucket and that NumpyGraphStore and NumpyVectorStore query them directly.
     """
     s3_client = moto_s3_server["s3_client"]
     storage_options = moto_s3_server["storage_options"]

@@ -24,7 +24,7 @@ Production-ready, single-server deployment configuration and automation for **Li
 ┌────────────────────────┐      ┌────────────────────────┐
 │ Static Website         │      │ Control Plane Engine   │
 │ - HTML5, CSS3, JS      │      │ - FastAPI Web App      │
-│ - Full Product Showcase│      │ - Embedded DuckDB VSS  │
+│ - Full Product Showcase│      │ - Pure NumPy CSR/CSC   │
 │ - Time Travel Demos    │      │ - GraphRAG AI Assistant│
 └────────────────────────┘      └───────────┬────────────┘
                                             │ Reads

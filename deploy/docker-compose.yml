@@ -22,7 +22,7 @@ services:
       - lineagiq-net
 
   # ----------------------------------------------------------------------------
-  # Control Plane: FastAPI + DuckDB Query Engine + Web Visualizer
+  # Control Plane: FastAPI + Pure NumPy Query Engine + Web Visualizer
   # ----------------------------------------------------------------------------
   control-plane:
     image: ghcr.io/timor-dataworks/lineagiq-control-plane:latest
