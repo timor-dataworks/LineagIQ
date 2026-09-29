@@ -1,6 +1,6 @@
 # LineagIQ: Enterprise Semantic Knowledge Graph Platform
 
-LineagIQ models an enterprise data landscape into a contextual knowledge graph. It decouples the core semantic and graph engine from tenant-specific operational data using a three-tier architecture:
+[**LineagIQ**](https://lineagiq.com) ([lineagiq.com](https://lineagiq.com)) models an enterprise data landscape into a contextual knowledge graph. It decouples the core semantic and graph engine from tenant-specific operational data using a three-tier architecture:
 
 1. **LineagIQ Core (`core`)**: Centralized ontology domain models (`Node`, `Edge`, `GraphPayload`), local quantized INT8 vector embedder with singleton caching, Delta Lake PyArrow schemas, storage table/path constants, and `ArtifactWriter`.
 2. **Stateless Ingestion Agent (`collection_agent`)**: An ephemeral edge metadata collector that extracts (dbt, SQL catalog, query logs, OpenLineage) and syncs metadata inside the customer environment.

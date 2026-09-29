@@ -224,6 +224,27 @@ header.site-header {
   gap: 12px;
 }
 
+#btn-header-github {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  background: #ffffff;
+  transition: var(--transition);
+}
+
+#btn-header-github:hover {
+  background: var(--bg-tertiary);
+  border-color: #94a3b8;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
 /* Mobile Hamburger Toggle */
 .nav-toggle {
   display: none;
@@ -2244,6 +2265,12 @@ footer.site-footer {
 }
 
 @media (max-width: 640px) {
+  #btn-header-github span {
+    display: none;
+  }
+  #btn-header-github {
+    padding: 8px 10px;
+  }
   .hero-title {
     font-size: 2.35rem;
   }
