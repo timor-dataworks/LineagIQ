@@ -38,6 +38,7 @@ control_plane/
     ├── test_agent_tools.py     # Unit tests for Agentic Retriever Tools
     ├── test_api.py             # Integration tests for FastAPI endpoints
     ├── test_query_engine.py    # Unit tests for query engine & prompt synthesis
+    ├── test_scale_duckdb.py    # Scale & load benchmark (50,000 nodes • 150,000 edges)
     └── test_time_travel.py     # Unit tests for Delta Lake commits, historical time travel, and diffing
 ```
 
