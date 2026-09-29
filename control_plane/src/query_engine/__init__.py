@@ -1,7 +1,7 @@
 """LineagIQ Query Engine package.
 
-Exposes pluggable graph, vector, and query engine abstractions along with DuckDB implementations
-and connection/storage utilities.
+Exposes pluggable graph, vector, and query engine abstractions along with DuckDB
+and pure NumPy implementations and storage utilities.
 """
 
 from control_plane.src.query_engine.base import (
@@ -22,6 +22,11 @@ from control_plane.src.query_engine.duckdb import (
     resolve_delta_table,
 )
 from control_plane.src.query_engine.engine import DuckDBQueryEngine, UnifiedQueryEngine
+from control_plane.src.query_engine.numpy import (
+    NumpyGraphStore,
+    NumpyQueryEngine,
+    NumpyVectorStore,
+)
 from core.utils import extract_search_terms
 
 __all__ = [
@@ -31,6 +36,9 @@ __all__ = [
     "DuckDBGraphStore",
     "DuckDBQueryEngine",
     "DuckDBVectorStore",
+    "NumpyGraphStore",
+    "NumpyQueryEngine",
+    "NumpyVectorStore",
     "UnifiedQueryEngine",
     "clear_duckdb_caches",
     "configure_duckdb_s3",
