@@ -4,7 +4,7 @@ from control_plane.src.query_engine.numpy.engine import NumpyQueryEngine
 
 # Unified Query Engine aliases
 QueryEngine = NumpyQueryEngine
-UnifiedQueryEngine = NumpyQueryEngine
+UnifiedQueryEngine = QueryEngine
 
 __all__ = [
     "NumpyQueryEngine",

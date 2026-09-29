@@ -41,7 +41,7 @@ def test_numpy_blast_radius_traversal(tmp_path):
     writer = ArtifactWriter()
     writer.write_all(payload, str(tmp_path))
 
-    engine = UnifiedQueryEngine(data_base_path=str(tmp_path))
+    engine = QueryEngine(data_base_path=str(tmp_path))
     result = engine.get_downstream_blast_radius("raw.customers", max_depth=5)
 
     assert result["root_node"]["id"] == "raw.customers"
@@ -73,7 +73,7 @@ def test_numpy_vector_semantic_search(tmp_path):
     writer = ArtifactWriter()
     writer.write_all(payload, str(tmp_path))
 
-    engine = UnifiedQueryEngine(data_base_path=str(tmp_path))
+    engine = QueryEngine(data_base_path=str(tmp_path))
     results = engine.search_semantic_assets("email address", top_k=5)
 
     node_ids = [r["id"] for r in results]
@@ -92,7 +92,7 @@ def test_hybrid_semantic_search_with_parent_resolution(tmp_path):
     writer = ArtifactWriter()
     writer.write_all(payload, str(tmp_path))
 
-    engine = UnifiedQueryEngine(data_base_path=str(tmp_path))
+    engine = QueryEngine(data_base_path=str(tmp_path))
     results = engine.search_semantic_assets("find order_id", top_k=5)
 
     matched_ids = {r["id"] for r in results}
@@ -119,7 +119,7 @@ def test_numpy_upstream_root_cause_traversal(tmp_path):
     writer = ArtifactWriter()
     writer.write_all(payload, str(tmp_path))
 
-    engine = UnifiedQueryEngine(data_base_path=str(tmp_path))
+    engine = QueryEngine(data_base_path=str(tmp_path))
     result = engine.get_upstream_root_cause("dbt.orders", max_depth=5)
 
     assert result["target_node"]["id"] == "dbt.orders"
@@ -164,7 +164,7 @@ def test_upstream_root_cause_filters_belongs_to_and_synthesizes_missing_nodes(tm
     writer = ArtifactWriter()
     writer.write_all(payload, str(tmp_path))
 
-    engine = UnifiedQueryEngine(data_base_path=str(tmp_path))
+    engine = QueryEngine(data_base_path=str(tmp_path))
 
     # Test get_upstream_root_cause
     result = engine.get_upstream_root_cause("model.stg_customers", max_depth=5)
@@ -237,7 +237,7 @@ def test_pluggable_stores_architecture(tmp_path):
     mock_graph = CustomMockGraphStore()
     mock_vector = CustomMockVectorStore()
 
-    engine = UnifiedQueryEngine(
+    engine = QueryEngine(
         data_base_path=str(tmp_path),
         graph_store=mock_graph,
         vector_store=mock_vector,
@@ -295,7 +295,7 @@ def test_semantic_search_raw_customers_edge_node_ranking(tmp_path):
     writer = ArtifactWriter()
     writer.write_all(payload, str(tmp_path))
 
-    engine = UnifiedQueryEngine(data_base_path=str(tmp_path))
+    engine = QueryEngine(data_base_path=str(tmp_path))
     results = engine.search_semantic_assets("raw_customers", top_k=5)
 
     assert len(results) > 0

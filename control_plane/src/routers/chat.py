@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 
 from control_plane.src.config import resolve_data_path
 from control_plane.src.prompt_synthesizer import PromptSynthesizer
-from control_plane.src.query_engine import UnifiedQueryEngine
+from control_plane.src.query_engine import QueryEngine
 from control_plane.src.schemas import ChatRequest
 from control_plane.src.services.llm_service import call_llm
 
@@ -50,7 +50,7 @@ def lineage_ai_chat(
 
     msg_lower = request.message.lower().strip()
     data_base = resolve_data_path()
-    engine = UnifiedQueryEngine(data_base_path=data_base)
+    engine = QueryEngine(data_base_path=data_base)
     synthesizer = PromptSynthesizer()
 
     # 1. Check if query asks about blast radius or downstream impact

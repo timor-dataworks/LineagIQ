@@ -10,7 +10,7 @@ import pyarrow as pa
 import pytest
 from deltalake import write_deltalake
 
-from control_plane.src.query_engine import UnifiedQueryEngine
+from control_plane.src.query_engine import QueryEngine
 from core.schemas import EDGE_SCHEMA, NODE_SCHEMA
 
 
@@ -73,7 +73,7 @@ def large_scale_delta_graph(tmp_path_factory) -> str:
 
 def test_numpy_scale_footprint_and_traversal_latency(large_scale_delta_graph: str) -> None:
     """Benchmark pure NumPy CSR/CSC engine memory footprint and microsecond traversal latencies."""
-    engine = UnifiedQueryEngine(data_base_path=large_scale_delta_graph)
+    engine = QueryEngine(data_base_path=large_scale_delta_graph)
 
     # 1. Cold Load & In-Memory Graph Materialization
     t0 = time.perf_counter()
