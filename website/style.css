@@ -140,11 +140,16 @@ header.site-header {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
 }
 
+.site-header .container {
+  max-width: 1320px;
+  padding: 0 24px;
+}
+
 .nav-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 76px;
+  height: 70px;
 }
 
 .logo-brand {
@@ -156,8 +161,8 @@ header.site-header {
 }
 
 .logo-icon {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 10px;
   background: linear-gradient(135deg, #4f46e5 0%, #0284c7 100%);
   display: flex;
@@ -167,14 +172,14 @@ header.site-header {
 }
 
 .logo-icon svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   stroke: #ffffff;
 }
 
 .logo-text {
   font-family: var(--font-heading);
-  font-size: 1.35rem;
+  font-size: 1.28rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   background: linear-gradient(90deg, #0f172a 40%, #4338ca 100%);
@@ -185,14 +190,14 @@ header.site-header {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: clamp(10px, 1.3vw, 20px);
+  gap: clamp(8px, 1.1vw, 16px);
   list-style: none;
 }
 
 .nav-link {
   color: var(--text-secondary);
   text-decoration: none;
-  font-size: 0.865rem;
+  font-size: 0.83rem;
   font-weight: 600;
   transition: var(--transition);
   position: relative;
@@ -221,15 +226,15 @@ header.site-header {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 #btn-header-github {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  font-size: 0.85rem;
+  gap: 6px;
+  padding: 7px 12px;
+  font-size: 0.82rem;
   font-weight: 600;
   border-radius: var(--radius-sm);
   color: var(--text-primary);
@@ -243,6 +248,11 @@ header.site-header {
   border-color: #94a3b8;
   color: #0f172a;
   transform: translateY(-1px);
+}
+
+#btn-live-demo {
+  padding: 8px 16px;
+  font-size: 0.84rem;
 }
 
 /* Mobile Hamburger Toggle */
@@ -2142,14 +2152,50 @@ footer.site-footer {
 }
 
 /* Responsive adjustments */
-@media (max-width: 1100px) {
+/* MacBook & Standard Laptop Screen Optimization (1181px - 1380px) */
+@media (min-width: 1181px) and (max-width: 1380px) {
+  .site-header .container {
+    padding: 0 16px;
+  }
+  .nav-links {
+    gap: 9px;
+  }
+  .nav-link {
+    font-size: 0.79rem;
+    padding: 2px 0;
+  }
+  .header-actions {
+    gap: 8px;
+  }
+  #btn-header-github {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+  #btn-live-demo {
+    padding: 7px 13px;
+    font-size: 0.8rem;
+  }
+  .logo-text {
+    font-size: 1.2rem;
+  }
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .logo-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (max-width: 1180px) {
   .nav-toggle {
     display: flex;
   }
 
   .nav-links {
     position: fixed;
-    top: 76px;
+    top: 70px;
     left: 0;
     right: 0;
     background: rgba(255, 255, 255, 0.98);
