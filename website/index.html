@@ -1094,6 +1094,40 @@ print(response.choices[0].message.content)</code></pre>
           <div class="step-note">
             <span class="note-bullet">✓</span> Service runs on <code>http://localhost:8000</code> with sub-second response times.
           </div>
+
+          <!-- Explore Running Endpoints for Step 2 -->
+          <div class="step-endpoints">
+            <h5 class="sidebar-title">Explore Running Endpoints</h5>
+            <ul class="endpoint-list">
+              <li>
+                <a href="http://localhost:8000/" target="_blank" class="endpoint-link">
+                  <span class="status-dot"></span>
+                  <div>
+                    <strong>Visualizer UI ⚡</strong>
+                    <span class="endpoint-sub">http://localhost:8000/</span>
+                  </div>
+                </a>
+              </li>
+              <li>
+                <a href="http://localhost:8000/docs" target="_blank" class="endpoint-link">
+                  <span class="status-dot"></span>
+                  <div>
+                    <strong>Swagger API Specs</strong>
+                    <span class="endpoint-sub">http://localhost:8000/docs</span>
+                  </div>
+                </a>
+              </li>
+              <li>
+                <a href="http://localhost:8000/redoc" target="_blank" class="endpoint-link">
+                  <span class="status-dot"></span>
+                  <div>
+                    <strong>ReDoc Schema Explorer</strong>
+                    <span class="endpoint-sub">http://localhost:8000/redoc</span>
+                  </div>
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -1123,29 +1157,38 @@ docker compose up -d control_plane</code></pre>
           <h5 class="sidebar-title">Explore Running Endpoints</h5>
           <ul class="endpoint-list">
             <li>
-              <a href="https://plane.lineagiq.com/" target="_blank" class="endpoint-link cloud">
-                <span class="status-dot cloud-dot"></span>
+              <a href="http://localhost:8000/" target="_blank" class="endpoint-link">
+                <span class="status-dot"></span>
                 <div>
                   <strong>Visualizer UI ⚡</strong>
-                  <span class="endpoint-sub">plane.lineagiq.com</span>
+                  <span class="endpoint-sub">http://localhost:8000/</span>
                 </div>
               </a>
             </li>
             <li>
-              <a href="https://plane.lineagiq.com/docs" target="_blank" class="endpoint-link">
+              <a href="http://localhost:8000/docs" target="_blank" class="endpoint-link">
                 <span class="status-dot"></span>
                 <div>
                   <strong>Swagger API Specs</strong>
-                  <span class="endpoint-sub">plane.lineagiq.com/docs</span>
+                  <span class="endpoint-sub">http://localhost:8000/docs</span>
                 </div>
               </a>
             </li>
             <li>
-              <a href="https://plane.lineagiq.com/redoc" target="_blank" class="endpoint-link">
+              <a href="http://localhost:8000/redoc" target="_blank" class="endpoint-link">
                 <span class="status-dot"></span>
                 <div>
                   <strong>ReDoc Schema Explorer</strong>
-                  <span class="endpoint-sub">plane.lineagiq.com/redoc</span>
+                  <span class="endpoint-sub">http://localhost:8000/redoc</span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a href="https://plane.lineagiq.com/" target="_blank" class="endpoint-link cloud">
+                <span class="status-dot cloud-dot"></span>
+                <div>
+                  <strong>Hosted Cloud Demo</strong>
+                  <span class="endpoint-sub">plane.lineagiq.com</span>
                 </div>
               </a>
             </li>

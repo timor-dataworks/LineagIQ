@@ -1699,6 +1699,24 @@ footer.site-footer {
   font-weight: 700;
 }
 
+.step-endpoints {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border-medium);
+}
+
+.step-endpoints .sidebar-title {
+  margin-bottom: 10px;
+}
+
+.step-endpoints .endpoint-list {
+  gap: 8px;
+}
+
+.step-endpoints .endpoint-link {
+  padding: 8px 12px;
+}
+
 .quickstart-callout {
   display: grid;
   grid-template-columns: 1.4fr 1fr;
