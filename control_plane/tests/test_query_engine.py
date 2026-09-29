@@ -280,6 +280,37 @@ def test_semantic_search_raw_customers_edge_node_ranking(tmp_path):
     assert results[0]["name"] == "raw_customers"
 
 
+def test_refactored_query_engine_interfaces_and_subpackages(tmp_path):
+    from control_plane.src.query_engine import (
+        BaseGraphStore,
+        BaseQueryEngine,
+        BaseVectorStore,
+        DuckDBGraphStore,
+        DuckDBQueryEngine,
+        DuckDBVectorStore,
+        UnifiedQueryEngine,
+    )
+    from control_plane.src.query_engine.duckdb import (
+        DuckDBGraphStore as SubDuckDBGraphStore,
+        DuckDBVectorStore as SubDuckDBVectorStore,
+        clear_duckdb_caches,
+        get_shared_duckdb_connection,
+    )
+
+    # Verify inheritance and polymorphism
+    assert issubclass(DuckDBGraphStore, BaseGraphStore)
+    assert issubclass(SubDuckDBGraphStore, BaseGraphStore)
+    assert issubclass(DuckDBVectorStore, BaseVectorStore)
+    assert issubclass(SubDuckDBVectorStore, BaseVectorStore)
+    assert issubclass(DuckDBQueryEngine, BaseQueryEngine)
+    assert UnifiedQueryEngine is DuckDBQueryEngine
+
+    con = get_shared_duckdb_connection(str(tmp_path))
+    assert con is not None
+    clear_duckdb_caches(str(tmp_path))
+
+
+
 
 
 

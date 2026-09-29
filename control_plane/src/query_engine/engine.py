@@ -1,17 +1,21 @@
 import json
 from typing import Any
 
-from control_plane.src.query_engine.base import BaseGraphStore, BaseVectorStore
-from control_plane.src.query_engine.duckdb_store import (
+from control_plane.src.query_engine.base import (
+    BaseGraphStore,
+    BaseQueryEngine,
+    BaseVectorStore,
+)
+from control_plane.src.query_engine.duckdb import (
     DuckDBGraphStore,
+    DuckDBVectorStore,
     get_available_timestamps,
     get_shared_duckdb_connection,
 )
-from control_plane.src.query_engine.duckdb_vector_store import DuckDBVectorStore
 from core.embedder import LocalEmbedder, get_default_embedder
 
 
-class DuckDBQueryEngine:
+class DuckDBQueryEngine(BaseQueryEngine):
     """Unified Query Engine orchestrating pluggable graph storage (`BaseGraphStore`)
     and vector index search (`BaseVectorStore`).
 
@@ -169,5 +173,12 @@ class DuckDBQueryEngine:
                     matched_nodes.append(p_node)
 
         return matched_nodes[: top_k * 2]
+
+
+# Generic alias for pluggable engine implementations
+UnifiedQueryEngine = DuckDBQueryEngine
+
+__all__ = ["DuckDBQueryEngine", "UnifiedQueryEngine"]
+
 
 

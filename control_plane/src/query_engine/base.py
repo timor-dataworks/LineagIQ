@@ -138,3 +138,97 @@ class BaseVectorStore(ABC):
         """
         pass
 
+
+class BaseQueryEngine(ABC):
+    """Abstract Base Class defining the unified interface for Query Engines.
+
+    Orchestrates graph retrieval, traversal, time-travel diffing, and semantic search.
+    """
+
+    @abstractmethod
+    def get_full_graph(self, as_of: str | None = None) -> dict[str, Any]:
+        """Retrieves all nodes and edges in the lineage knowledge graph as of timestamp.
+
+        Args:
+            as_of: Optional ISO 8601 timestamp string for historical time travel.
+
+        Returns:
+            Dictionary containing list of 'nodes' and list of 'edges'.
+        """
+        pass
+
+    @abstractmethod
+    def get_downstream_blast_radius(
+        self, start_node_id: str, max_depth: int = 5, as_of: str | None = None
+    ) -> dict[str, Any]:
+        """Calculates downstream blast radius starting from a target asset node.
+
+        Args:
+            start_node_id: Node ID of the asset under assessment.
+            max_depth: Maximum lineage traversal depth. Defaults to 5.
+            as_of: Optional ISO 8601 timestamp string for historical time travel.
+
+        Returns:
+            Dictionary containing 'root_node', 'impacted_nodes', 'edges', and 'depth_reached'.
+        """
+        pass
+
+    @abstractmethod
+    def get_upstream_root_cause(
+        self, start_node_id: str, max_depth: int = 5, as_of: str | None = None
+    ) -> dict[str, Any]:
+        """Calculates upstream root cause lineage starting from a target asset node.
+
+        Args:
+            start_node_id: Node ID of the affected target asset.
+            max_depth: Maximum lineage traversal depth. Defaults to 5.
+            as_of: Optional ISO 8601 timestamp string for historical time travel.
+
+        Returns:
+            Dictionary containing 'target_node', 'upstream_nodes', 'edges', and 'depth_reached'.
+        """
+        pass
+
+    @abstractmethod
+    def get_available_timestamps(self) -> list[dict[str, Any]]:
+        """Retrieves commit history timestamps from tenant Delta Lake table logs.
+
+        Returns:
+            List of dictionaries with 'version', 'timestamp', and 'operation'.
+        """
+        pass
+
+    @abstractmethod
+    def get_schema_time_travel_diff(
+        self, start_node_id: str | None, timestamp_t1: str, timestamp_t2: str
+    ) -> dict[str, Any]:
+        """Computes schema and lineage graph diff between two historical ISO 8601 timestamps.
+
+        Args:
+            start_node_id: Canonical asset identifier to scope diff assessment.
+            timestamp_t1: Initial ISO 8601 timestamp string.
+            timestamp_t2: Subsequent ISO 8601 timestamp string.
+
+        Returns:
+            Dictionary containing added_nodes, removed_nodes, modified_nodes, added_edges,
+            removed_edges, and summary counts.
+        """
+        pass
+
+    @abstractmethod
+    def search_semantic_assets(
+        self, query_text: str, top_k: int = 5, as_of: str | None = None
+    ) -> list[dict[str, Any]]:
+        """Executes hybrid search combining term match and vector similarity search.
+
+        Args:
+            query_text: Natural language user query string.
+            top_k: Maximum number of primary search matches to return per retrieval strategy.
+            as_of: Optional ISO 8601 timestamp string for historical vector/graph search.
+
+        Returns:
+            List of matching node dictionaries.
+        """
+        pass
+
+
