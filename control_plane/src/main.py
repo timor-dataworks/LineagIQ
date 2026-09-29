@@ -27,7 +27,7 @@ def create_app() -> FastAPI:
     application = FastAPI(
         title="LineagIQ Control Plane & GraphRAG API",
         description="Multi-tenant GraphRAG query engine over Delta Lake Parquet and NumPy vector indices.",
-        version="1.0.0",
+        version="0.1.0",
     )
 
     # Mount static assets for web visualizer

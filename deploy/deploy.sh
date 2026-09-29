@@ -58,7 +58,7 @@ scp "${SCRIPT_DIR}/run_collection.sh" "${TARGET_SERVER}:${REMOTE_DIR}/scripts/ru
 ssh "${TARGET_SERVER}" "chmod +x ${REMOTE_DIR}/scripts/*.sh"
 
 # Create .env from template if missing
-ssh "${TARGET_SERVER}" "if [ ! -f ${REMOTE_DIR}/.env ]; then cp -f ${REMOTE_DIR}/docker-compose.yml /dev/null 2>/dev/null; echo 'DATA_PATH=/data/tenants/default/' > ${REMOTE_DIR}/.env; fi"
+ssh "${TARGET_SERVER}" "if [ ! -f ${REMOTE_DIR}/.env ]; then printf 'LINEAGIQ_VERSION=v0.1.0\nDATA_PATH=/data/tenants/default/\n' > ${REMOTE_DIR}/.env; fi"
 
 # 4. Pull Latest Images & Launch Services
 echo "🐳 Pulling latest container images and launching services..."

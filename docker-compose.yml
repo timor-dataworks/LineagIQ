@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.control_plane
-    image: lineagiq-control-plane:latest
+    image: lineagiq-control-plane:${LINEAGIQ_VERSION:-v0.1.0}
     container_name: lineagiq-control-plane
     ports:
       - "8000:8000"
@@ -19,7 +19,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.collection_agent
-    image: lineagiq-collection-agent:latest
+    image: lineagiq-collection-agent:${LINEAGIQ_VERSION:-v0.1.0}
     container_name: lineagiq-collection-agent
     volumes:
       - lineagiq_data:/data
@@ -34,7 +34,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.collection_agent
-    image: lineagiq-collection-agent:latest
+    image: lineagiq-collection-agent:${LINEAGIQ_VERSION:-v0.1.0}
     container_name: lineagiq-demo-generator
     volumes:
       - lineagiq_data:/data

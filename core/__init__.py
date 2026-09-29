@@ -50,7 +50,10 @@ from core.writer import (
     ArtifactWriter,
 )
 
+__version__ = "0.1.0"
+
 __all__ = [
+    "__version__",
     # Models
     "NodeType",
     "EdgeType",

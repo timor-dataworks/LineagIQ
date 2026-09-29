@@ -25,7 +25,7 @@ services:
   # Control Plane: FastAPI + Pure NumPy Query Engine + Web Visualizer
   # ----------------------------------------------------------------------------
   control-plane:
-    image: ghcr.io/timor-dataworks/lineagiq-control-plane:latest
+    image: ghcr.io/timor-dataworks/lineagiq-control-plane:${LINEAGIQ_VERSION:-v0.1.0}
     container_name: lineagiq-control-plane
     restart: always
     ports:
@@ -52,7 +52,7 @@ services:
   # Run manually or via cron: docker compose run --rm collection-agent ...
   # ----------------------------------------------------------------------------
   collection-agent:
-    image: ghcr.io/timor-dataworks/lineagiq-collection-agent:latest
+    image: ghcr.io/timor-dataworks/lineagiq-collection-agent:${LINEAGIQ_VERSION:-v0.1.0}
     container_name: lineagiq-collection-agent
     profiles: ["tools"]
     environment:
