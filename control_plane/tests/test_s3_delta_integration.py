@@ -16,10 +16,9 @@ import boto3
 from moto.server import ThreadedMotoServer  # type: ignore
 
 from collection_agent.src.sync.s3_sync import S3Downloader, S3Uploader
-from control_plane.src.query_engine.duckdb import (
-    DuckDBGraphStore,
-    DuckDBVectorStore,
-    get_available_timestamps,
+from control_plane.src.query_engine import (
+    NumpyGraphStore,
+    NumpyVectorStore,
 )
 from core.models import Edge, EdgeType, GraphPayload, Node, NodeType
 from core.writer import ArtifactWriter
@@ -157,8 +156,8 @@ def test_s3_direct_write_and_read_delta_with_vectors_and_embeddings(moto_s3_serv
     assert any("vectors/_delta_log/00000000000000000000.json" in k for k in keys)
     assert any("vectors/part-" in k and k.endswith(".parquet") for k in keys)
 
-    # 4. Query graph directly from S3 using DuckDBGraphStore
-    graph_store = DuckDBGraphStore(s3_base_uri, storage_options=storage_options)
+    # 4. Query graph directly from S3 using NumpyGraphStore
+    graph_store = NumpyGraphStore(s3_base_uri, storage_options=storage_options)
 
     # Test full graph
     graph = graph_store.get_full_graph()
@@ -193,8 +192,8 @@ def test_s3_direct_write_and_read_delta_with_vectors_and_embeddings(moto_s3_serv
     assert "db.raw.customers" in match_ids
     assert "db.stg.customers" in match_ids
 
-    # 5. Query vector similarity directly from S3 using DuckDBVectorStore
-    vector_store = DuckDBVectorStore(s3_base_uri, storage_options=storage_options)
+    # 5. Query vector similarity directly from S3 using NumpyVectorStore
+    vector_store = NumpyVectorStore(s3_base_uri, storage_options=storage_options)
 
     # Customer similarity search
     customer_query = [0.92, 0.08, 0.00, 0.00]
@@ -246,13 +245,13 @@ def test_s3_delta_time_travel_versioning(moto_s3_server):
     writer.write_all(payload_v1, base_dir=s3_base_uri, mode="append", storage_options=storage_options)
 
     # Check commit history timestamps from S3
-    timestamps = get_available_timestamps(s3_base_uri, storage_options=storage_options)
+    timestamps = NumpyGraphStore(s3_base_uri, storage_options=storage_options).get_available_timestamps()
     assert len(timestamps) == 2
     assert timestamps[0]["version"] == 0
     assert timestamps[1]["version"] == 1
 
     # Query current state (version 1)
-    store = DuckDBGraphStore(s3_base_uri, storage_options=storage_options)
+    store = NumpyGraphStore(s3_base_uri, storage_options=storage_options)
     current_graph = store.get_full_graph()
     assert len(current_graph["nodes"]) == 4
 
@@ -268,7 +267,7 @@ def test_s3_delta_time_travel_versioning(moto_s3_server):
 
 def test_s3_sync_roundtrip_with_uploader_and_downloader(moto_s3_server):
     """Verifies that local Delta tables with embeddings can be synced to S3 with S3Uploader,
-    retrieved with S3Downloader, and queried with DuckDBGraphStore and DuckDBVectorStore.
+    retrieved with S3Downloader, and queried with NumpyGraphStore and NumpyVectorStore.
     """
     s3_client = moto_s3_server["s3_client"]
     bucket_name = "lineagiq-sync-roundtrip"
@@ -300,13 +299,13 @@ def test_s3_sync_roundtrip_with_uploader_and_downloader(moto_s3_server):
         downloaded = downloader.download_directory(temp_read_dir)
         assert len(downloaded) == len(uploaded)
 
-        # 5. Query downloaded tenant dataset with DuckDBGraphStore & DuckDBVectorStore
-        store = DuckDBGraphStore(temp_read_dir)
+        # 5. Query downloaded tenant dataset with NumpyGraphStore & NumpyVectorStore
+        store = NumpyGraphStore(temp_read_dir)
         graph = store.get_full_graph()
         assert len(graph["nodes"]) == 2
         assert len(graph["edges"]) == 1
 
-        vstore = DuckDBVectorStore(temp_read_dir)
+        vstore = NumpyVectorStore(temp_read_dir)
         matches = vstore.search_vectors([0.98, 0.02], top_k=1)
         assert len(matches) == 1
         assert matches[0] == "source_a"

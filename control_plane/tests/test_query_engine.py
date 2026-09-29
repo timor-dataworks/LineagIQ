@@ -1,5 +1,14 @@
 from control_plane.src.prompt_synthesizer import PromptSynthesizer
-from control_plane.src.query_engine import DuckDBQueryEngine
+from control_plane.src.query_engine import (
+    BaseGraphStore,
+    BaseQueryEngine,
+    BaseVectorStore,
+    NumpyGraphStore,
+    NumpyQueryEngine,
+    NumpyVectorStore,
+    QueryEngine,
+    UnifiedQueryEngine,
+)
 from core import (
     ArtifactWriter,
     ColumnNode,
@@ -13,7 +22,7 @@ from core import (
 )
 
 
-def test_duckdb_blast_radius_traversal(tmp_path):
+def test_numpy_blast_radius_traversal(tmp_path):
     # Construct a sample graph: Raw Customers -> Stg Customers Model -> Orders Model
     raw_ds = DatasetNode(id="raw.customers", name="raw_customers", description="Raw landing table")
     stg_pipe = PipelineNode(id="dbt.stg_customers", name="stg_customers", resource_type="model")
@@ -32,7 +41,7 @@ def test_duckdb_blast_radius_traversal(tmp_path):
     writer = ArtifactWriter()
     writer.write_all(payload, str(tmp_path))
 
-    engine = DuckDBQueryEngine(data_base_path=str(tmp_path))
+    engine = UnifiedQueryEngine(data_base_path=str(tmp_path))
     result = engine.get_downstream_blast_radius("raw.customers", max_depth=5)
 
     assert result["root_node"]["id"] == "raw.customers"
@@ -53,8 +62,7 @@ def test_duckdb_blast_radius_traversal(tmp_path):
     assert "dbt.orders" in prompt
 
 
-def test_duckdb_vector_semantic_search(tmp_path):
-
+def test_numpy_vector_semantic_search(tmp_path):
     ds = DatasetNode(id="db.users", name="users", description="User dimension dataset")
     col = ColumnNode(id="db.users.email", name="email", dataset_id="db.users", data_type="VARCHAR")
     payload = GraphPayload(nodes=[ds, col], edges=[])
@@ -65,7 +73,7 @@ def test_duckdb_vector_semantic_search(tmp_path):
     writer = ArtifactWriter()
     writer.write_all(payload, str(tmp_path))
 
-    engine = DuckDBQueryEngine(data_base_path=str(tmp_path))
+    engine = UnifiedQueryEngine(data_base_path=str(tmp_path))
     results = engine.search_semantic_assets("email address", top_k=5)
 
     node_ids = [r["id"] for r in results]
@@ -74,7 +82,6 @@ def test_duckdb_vector_semantic_search(tmp_path):
 
 
 def test_hybrid_semantic_search_with_parent_resolution(tmp_path):
-
     ds = DatasetNode(id="db.orders", name="orders", description="Fact orders")
     col = ColumnNode(id="db.orders.order_id", name="order_id", dataset_id="db.orders")
     payload = GraphPayload(nodes=[ds, col], edges=[])
@@ -85,7 +92,7 @@ def test_hybrid_semantic_search_with_parent_resolution(tmp_path):
     writer = ArtifactWriter()
     writer.write_all(payload, str(tmp_path))
 
-    engine = DuckDBQueryEngine(data_base_path=str(tmp_path))
+    engine = UnifiedQueryEngine(data_base_path=str(tmp_path))
     results = engine.search_semantic_assets("find order_id", top_k=5)
 
     matched_ids = {r["id"] for r in results}
@@ -93,7 +100,7 @@ def test_hybrid_semantic_search_with_parent_resolution(tmp_path):
     assert "db.orders" in matched_ids
 
 
-def test_duckdb_upstream_root_cause_traversal(tmp_path):
+def test_numpy_upstream_root_cause_traversal(tmp_path):
     # Construct graph: Raw Customers -> Stg Customers Model -> Orders Model
     raw_ds = DatasetNode(id="raw.customers", name="raw_customers", description="Raw landing table")
     stg_pipe = PipelineNode(id="dbt.stg_customers", name="stg_customers", resource_type="model")
@@ -112,7 +119,7 @@ def test_duckdb_upstream_root_cause_traversal(tmp_path):
     writer = ArtifactWriter()
     writer.write_all(payload, str(tmp_path))
 
-    engine = DuckDBQueryEngine(data_base_path=str(tmp_path))
+    engine = UnifiedQueryEngine(data_base_path=str(tmp_path))
     result = engine.get_upstream_root_cause("dbt.orders", max_depth=5)
 
     assert result["target_node"]["id"] == "dbt.orders"
@@ -149,7 +156,6 @@ def test_upstream_root_cause_filters_belongs_to_and_synthesizes_missing_nodes(tm
     )
     edge_derived = Edge(source_id="source.raw_customers", target_id="model.stg_customers", type=EdgeType.DERIVED_FROM)
 
-    # Note: source.raw_customers is intentionally left out of nodes list to test synthesis
     payload = GraphPayload(
         nodes=[stg_ds, col1, col2],
         edges=[edge_col1, edge_col2, edge_derived],
@@ -158,11 +164,10 @@ def test_upstream_root_cause_filters_belongs_to_and_synthesizes_missing_nodes(tm
     writer = ArtifactWriter()
     writer.write_all(payload, str(tmp_path))
 
-    engine = DuckDBQueryEngine(data_base_path=str(tmp_path))
+    engine = UnifiedQueryEngine(data_base_path=str(tmp_path))
 
     # Test get_upstream_root_cause
     result = engine.get_upstream_root_cause("model.stg_customers", max_depth=5)
-
     node_ids = {n["id"] for n in result["upstream_nodes"]}
 
     # Must NOT include child columns
@@ -190,8 +195,6 @@ def test_upstream_root_cause_filters_belongs_to_and_synthesizes_missing_nodes(tm
 
 
 def test_pluggable_stores_architecture(tmp_path):
-    from control_plane.src.query_engine import BaseGraphStore, BaseVectorStore
-
     class CustomMockGraphStore(BaseGraphStore):
         def get_full_graph(self, as_of: str | None = None):
             return {"nodes": [{"id": "mock.node", "name": "mock_node", "type": "Dataset"}], "edges": []}
@@ -234,7 +237,7 @@ def test_pluggable_stores_architecture(tmp_path):
     mock_graph = CustomMockGraphStore()
     mock_vector = CustomMockVectorStore()
 
-    engine = DuckDBQueryEngine(
+    engine = UnifiedQueryEngine(
         data_base_path=str(tmp_path),
         graph_store=mock_graph,
         vector_store=mock_vector,
@@ -250,9 +253,7 @@ def test_pluggable_stores_architecture(tmp_path):
     assert semantic[0]["id"] == "mock.vector_node"
 
 
-def test_duckdb_vss_vector_store(tmp_path):
-    from control_plane.src.query_engine import DuckDBVectorStore
-
+def test_numpy_vector_store(tmp_path):
     ds = DatasetNode(id="db.customers", name="customers", description="Customer dataset")
     col = ColumnNode(id="db.customers.email", name="email", dataset_id="db.customers")
     payload = GraphPayload(nodes=[ds, col], edges=[])
@@ -263,7 +264,7 @@ def test_duckdb_vss_vector_store(tmp_path):
     writer = ArtifactWriter()
     writer.write_all(payload, str(tmp_path))
 
-    vstore = DuckDBVectorStore(data_base_path=str(tmp_path))
+    vstore = NumpyVectorStore(data_base_path=str(tmp_path))
 
     query_vec = embedder.embed_text("email address")
     results = vstore.search_vectors(query_vec, top_k=5)
@@ -272,7 +273,6 @@ def test_duckdb_vss_vector_store(tmp_path):
 
 
 def test_semantic_search_raw_customers_edge_node_ranking(tmp_path):
-
     builder = GraphBuilder()
     stg_ds = DatasetNode(
         id="model.jaffle_shop.stg_customers", name="stg_customers", description="Staged customer records"
@@ -295,7 +295,7 @@ def test_semantic_search_raw_customers_edge_node_ranking(tmp_path):
     writer = ArtifactWriter()
     writer.write_all(payload, str(tmp_path))
 
-    engine = DuckDBQueryEngine(data_base_path=str(tmp_path))
+    engine = UnifiedQueryEngine(data_base_path=str(tmp_path))
     results = engine.search_semantic_assets("raw_customers", top_k=5)
 
     assert len(results) > 0
@@ -304,31 +304,12 @@ def test_semantic_search_raw_customers_edge_node_ranking(tmp_path):
     assert results[0]["name"] == "raw_customers"
 
 
-def test_refactored_query_engine_interfaces_and_subpackages(tmp_path):
-    from control_plane.src.query_engine import (
-        BaseGraphStore,
-        BaseQueryEngine,
-        BaseVectorStore,
-        DuckDBGraphStore,
-        DuckDBQueryEngine,
-        DuckDBVectorStore,
-        UnifiedQueryEngine,
-    )
-    from control_plane.src.query_engine.duckdb import (
-        DuckDBGraphStore as SubDuckDBGraphStore,
-        DuckDBVectorStore as SubDuckDBVectorStore,
-        clear_duckdb_caches,
-        get_shared_duckdb_connection,
-    )
-
+def test_numpy_query_engine_interfaces_and_subpackages(tmp_path):
     # Verify inheritance and polymorphism
-    assert issubclass(DuckDBGraphStore, BaseGraphStore)
-    assert issubclass(SubDuckDBGraphStore, BaseGraphStore)
-    assert issubclass(DuckDBVectorStore, BaseVectorStore)
-    assert issubclass(SubDuckDBVectorStore, BaseVectorStore)
-    assert issubclass(DuckDBQueryEngine, BaseQueryEngine)
-    assert UnifiedQueryEngine is DuckDBQueryEngine
-
-    con = get_shared_duckdb_connection(str(tmp_path))
-    assert con is not None
-    clear_duckdb_caches(str(tmp_path))
+    assert issubclass(NumpyGraphStore, BaseGraphStore)
+    assert issubclass(NumpyVectorStore, BaseVectorStore)
+    assert issubclass(NumpyQueryEngine, BaseQueryEngine)
+    assert issubclass(UnifiedQueryEngine, BaseQueryEngine)
+    assert issubclass(QueryEngine, BaseQueryEngine)
+    assert UnifiedQueryEngine is NumpyQueryEngine
+    assert QueryEngine is NumpyQueryEngine

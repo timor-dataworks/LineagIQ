@@ -26,7 +26,7 @@ def create_app() -> FastAPI:
     """FastAPI application factory for the LineagIQ Control Plane."""
     application = FastAPI(
         title="LineagIQ Control Plane & GraphRAG API",
-        description="Multi-tenant GraphRAG query engine over S3 Parquet and DuckDB VSS indices.",
+        description="Multi-tenant GraphRAG query engine over Delta Lake Parquet and NumPy vector indices.",
         version="1.0.0",
     )
 

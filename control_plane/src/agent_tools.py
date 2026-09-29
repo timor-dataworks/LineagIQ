@@ -2,7 +2,7 @@ import os
 
 from control_plane.src.config import resolve_data_path
 from control_plane.src.prompt_synthesizer import PromptSynthesizer
-from control_plane.src.query_engine import DuckDBQueryEngine
+from control_plane.src.query_engine import UnifiedQueryEngine
 from control_plane.src.services.http_client import post_json
 
 
@@ -27,7 +27,7 @@ class LineagIQGraphRAGClient:
     ) -> str:
         """Queries downstream blast radius and returns a high-context GraphRAG prompt.
 
-        Attempts in-process DuckDB query if DATA_PATH exists locally, or falls back to REST API.
+        Attempts in-process NumPy query if DATA_PATH exists locally, or falls back to REST API.
 
         Args:
             node_id: Unique asset identifier for target node.
@@ -39,7 +39,7 @@ class LineagIQGraphRAGClient:
         try:
             data_path = resolve_data_path()
             if os.path.exists(data_path):
-                engine = DuckDBQueryEngine(data_base_path=data_path)
+                engine = UnifiedQueryEngine(data_base_path=data_path)
                 res = engine.get_downstream_blast_radius(start_node_id=node_id, max_depth=max_depth)
                 synthesizer = PromptSynthesizer()
                 return synthesizer.synthesize_blast_radius_prompt(
@@ -67,7 +67,7 @@ class LineagIQGraphRAGClient:
     ) -> str:
         """Queries semantic data discovery and returns a high-context GraphRAG prompt.
 
-        Attempts in-process DuckDB query if DATA_PATH exists locally, or falls back to REST API.
+        Attempts in-process NumPy query if DATA_PATH exists locally, or falls back to REST API.
 
         Args:
             query: Natural language asset search query string.
@@ -79,7 +79,7 @@ class LineagIQGraphRAGClient:
         try:
             data_path = resolve_data_path()
             if os.path.exists(data_path):
-                engine = DuckDBQueryEngine(data_base_path=data_path)
+                engine = UnifiedQueryEngine(data_base_path=data_path)
                 matched_nodes = engine.search_semantic_assets(query_text=query, top_k=top_k)
                 synthesizer = PromptSynthesizer()
                 return synthesizer.synthesize_discovery_prompt(query_text=query, matched_nodes=matched_nodes)
@@ -115,7 +115,7 @@ class LineagIQGraphRAGClient:
         try:
             data_path = resolve_data_path()
             if os.path.exists(data_path):
-                engine = DuckDBQueryEngine(data_base_path=data_path)
+                engine = UnifiedQueryEngine(data_base_path=data_path)
                 diff_res = engine.get_schema_time_travel_diff(
                     start_node_id=node_id, timestamp_t1=timestamp_t1, timestamp_t2=timestamp_t2
                 )

@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from control_plane.src.config import resolve_data_path
 from control_plane.src.prompt_synthesizer import PromptSynthesizer
-from control_plane.src.query_engine import DuckDBQueryEngine
+from control_plane.src.query_engine import UnifiedQueryEngine
 from control_plane.src.schemas import (
     BlastRadiusRequest,
     DiscoveryRequest,
@@ -27,7 +27,7 @@ def get_graph(
     Returns:
         Full knowledge graph structure containing 'nodes' and 'edges'.
     """
-    engine = DuckDBQueryEngine(data_base_path=resolve_data_path())
+    engine = UnifiedQueryEngine(data_base_path=resolve_data_path())
     return engine.get_full_graph(as_of=as_of)
 
 
@@ -38,7 +38,7 @@ def get_timeline() -> dict[str, Any]:
     Returns:
         Dictionary containing list of available commit timestamp objects.
     """
-    engine = DuckDBQueryEngine(data_base_path=resolve_data_path())
+    engine = UnifiedQueryEngine(data_base_path=resolve_data_path())
     timestamps = engine.get_available_timestamps()
     return {"timestamps_count": len(timestamps), "timestamps": timestamps}
 
@@ -58,7 +58,7 @@ def calculate_blast_radius(
     if not request:
         raise HTTPException(status_code=400, detail="BlastRadiusRequest body is required")
     data_base = resolve_data_path()
-    engine = DuckDBQueryEngine(data_base_path=data_base)
+    engine = UnifiedQueryEngine(data_base_path=data_base)
     result = engine.get_downstream_blast_radius(
         start_node_id=request.node_id,
         max_depth=request.max_depth,
@@ -97,7 +97,7 @@ def calculate_root_cause(
     if not request:
         raise HTTPException(status_code=400, detail="RootCauseRequest body is required")
     data_base = resolve_data_path()
-    engine = DuckDBQueryEngine(data_base_path=data_base)
+    engine = UnifiedQueryEngine(data_base_path=data_base)
     result = engine.get_upstream_root_cause(
         start_node_id=request.node_id,
         max_depth=request.max_depth,
@@ -136,7 +136,7 @@ def discover_semantic_assets(
     if not request:
         raise HTTPException(status_code=400, detail="DiscoveryRequest body is required")
     data_base = resolve_data_path()
-    engine = DuckDBQueryEngine(data_base_path=data_base)
+    engine = UnifiedQueryEngine(data_base_path=data_base)
     matched_nodes = engine.search_semantic_assets(
         query_text=request.query,
         top_k=request.top_k,
@@ -172,7 +172,7 @@ def calculate_time_travel_diff(
     if not request:
         raise HTTPException(status_code=400, detail="TimeTravelDiffRequest body is required")
     data_base = resolve_data_path()
-    engine = DuckDBQueryEngine(data_base_path=data_base)
+    engine = UnifiedQueryEngine(data_base_path=data_base)
     diff_result = engine.get_schema_time_travel_diff(
         start_node_id=request.node_id,
         timestamp_t1=request.timestamp_t1,

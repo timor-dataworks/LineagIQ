@@ -5,7 +5,7 @@ from typing import Any
 class BaseGraphStore(ABC):
     """Abstract Base Class defining the pluggable interface for Graph Storage Engines.
 
-    Implementations (e.g., `DuckDBGraphStore`, Postgres, Neo4j) handle graph traversal,
+    Implementations (e.g., `NumpyGraphStore`, Postgres, Neo4j) handle graph traversal,
     downstream blast radius analysis, upstream root cause discovery, metadata queries,
     and historical time-travel snapshot analysis.
     """
@@ -110,7 +110,7 @@ class BaseGraphStore(ABC):
 class BaseVectorStore(ABC):
     """Abstract Base Class defining the pluggable interface for Vector Similarity Search Engines.
 
-    Implementations (e.g., `DuckDBVectorStore`, Qdrant, Pinecone) execute nearest-neighbor vector search.
+    Implementations (e.g., `NumpyVectorStore`, Qdrant, Pinecone) execute nearest-neighbor vector search.
     """
 
     @abstractmethod

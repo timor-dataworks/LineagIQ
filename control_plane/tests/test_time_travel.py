@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from control_plane.src.main import app
-from control_plane.src.query_engine import DuckDBQueryEngine
+from control_plane.src.query_engine import UnifiedQueryEngine
 from core import (
     ArtifactWriter,
     ColumnNode,
@@ -39,7 +39,7 @@ def test_delta_table_commits_and_time_travel_query(tmp_path):
     # Commit snapshot T1 to Delta Lake
     writer.write_all(payload1, base_dir, mode="overwrite")
 
-    engine = DuckDBQueryEngine(data_base_path=base_dir)
+    engine = UnifiedQueryEngine(data_base_path=base_dir)
     timestamps_t1 = engine.get_available_timestamps()
     assert len(timestamps_t1) >= 1
     t1_iso = timestamps_t1[0]["timestamp"]
@@ -105,7 +105,7 @@ def test_time_travel_api_endpoints(client, tmp_path, monkeypatch):
     payload1 = embedder.embed_payload(GraphPayload(nodes=[ds1], edges=[]))
     writer.write_all(payload1, base_dir, mode="overwrite")
 
-    engine = DuckDBQueryEngine(data_base_path=base_dir)
+    engine = UnifiedQueryEngine(data_base_path=base_dir)
     timestamps = engine.get_available_timestamps()
     t1_iso = timestamps[0]["timestamp"]
 

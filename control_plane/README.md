@@ -3,9 +3,9 @@
 The **Control Plane** provides serverless graph traversal, historical time-travel analysis, and semantic vector search over tenant datasets stored in **Delta Lake** and **Parquet** formats.
 
 Key Features:
-* **DuckDB Delta Lake Graph Engine**: Resolves historical snapshot versions from Delta Lake transaction logs (`_delta_log/`) as of any ISO 8601 timestamp (`as_of`) and executes recursive CTE queries to calculate downstream blast radius and upstream root cause lineage.
+* **Unified NumPy & Delta Lake Graph Engine**: Resolves historical snapshot versions from Delta Lake transaction logs (`_delta_log/`) as of any ISO 8601 timestamp (`as_of`) and executes ultra-fast CSR/CSC array traversals to calculate downstream blast radius and upstream root cause lineage.
 * **Time Travel & Schema Drift Engine**: Computes detailed schema additions, removals, modifications, and altered lineage edges between historical timestamps ($T_1 \rightarrow T_2$).
-* **Semantic Discovery & Vector Search**: Searches dense metadata vector indices (`vectors/`) against historical snapshot versions to locate relevant data assets.
+* **Semantic Discovery & Vector Search**: Searches dense metadata vector indices (`vectors/`) against historical snapshot versions via vectorized BLAS cosine similarity with `UnifiedQueryEngine`.
 * **GraphRAG Prompt Synthesizer**: Formats contextual graph traversals, historical diffs, and search results into structured LLM prompts for downstream AI analysis.
 * **Agentic Retriever Tools**: Standalone retriever tools in `control_plane/src/agent_tools.py` for integration into LLM agent workflows (LangChain, AutoGen, LlamaIndex).
 * **LineagIQ AI Assistant (Dynamic Docking & Ollama Support)**: Interactive GraphRAG AI assistant drawer dynamically docking to the right edge with automatic sidebar offset adaptation, supporting local models (Ollama on `11434`), OpenAI, and Google Gemini.
@@ -19,31 +19,26 @@ Key Features:
 ```text
 control_plane/
 ├── README.md
-├── requirements.txt            # Control plane dependencies (FastAPI, DuckDB, deltalake)
+├── requirements.txt            # Control plane dependencies (FastAPI, NumPy, deltalake, pyarrow)
 ├── src/
 │   ├── query_engine/           # Modular Query Engine package
 │   │   ├── base.py             # Abstract Base Classes (BaseGraphStore, BaseVectorStore, BaseQueryEngine)
-│   │   ├── duckdb/             # Dedicated DuckDB implementation package
-│   │   │   ├── connection.py   # Connection pooling, extensions, S3/IAM credentials
-│   │   │   ├── delta.py        # Delta table attaching & in-memory snapshot materialization
-│   │   │   ├── graph_store.py  # DuckDBGraphStore implementing BaseGraphStore
-│   │   │   └── vector_store.py # DuckDBVectorStore implementing BaseVectorStore
 │   │   ├── numpy/              # Pure NumPy & Arrow Delta Lake implementation package
+│   │   │   ├── engine.py       # NumpyQueryEngine orchestrating graph & vector stores
 │   │   │   ├── graph_store.py  # NumpyGraphStore (CSR/CSC multi-hop traversal & reachability)
 │   │   │   └── vector_store.py # NumpyVectorStore (BLAS dot-product cosine similarity & top-k)
-│   │   └── engine.py           # DuckDBQueryEngine / UnifiedQueryEngine
+│   │   └── engine.py           # Engine façade exporting UnifiedQueryEngine & QueryEngine
 │   ├── static/                 # Web Visualizer UI (index.html, style.css, script.js)
 │   ├── prompt_synthesizer.py   # LLM prompt synthesis (Blast Radius, Root Cause, Diff, Discovery)
 │   ├── agent_tools.py          # Agentic Retriever Tools & LineagIQGraphRAGClient
 │   └── main.py                 # FastAPI application endpoints
 └── tests/
-    ├── script.test.js               # Node.js unit tests for extracted client script.js
-    ├── test_agent_tools.py          # Unit tests for Agentic Retriever Tools
-    ├── test_api.py                  # Integration tests for FastAPI endpoints
-    ├── test_query_engine.py         # Unit tests for query engine & prompt synthesis
-    ├── test_scale_duckdb.py         # Scale & load benchmark (50,000 nodes • 150,000 edges)
-    ├── test_scale_duckdb_vs_numpy.py # Comparative benchmark: DuckDB vs Pure NumPy on Delta Lake
-    └── test_time_travel.py          # Unit tests for Delta Lake commits, historical time travel, and diffing
+    ├── script.test.js          # Node.js unit tests for extracted client script.js
+    ├── test_agent_tools.py     # Unit tests for Agentic Retriever Tools
+    ├── test_api.py             # Integration tests for FastAPI endpoints
+    ├── test_query_engine.py    # Unit tests for query engine & prompt synthesis
+    ├── test_scale_numpy.py     # Scale & load benchmark (50,000 nodes • 150,000 edges)
+    └── test_time_travel.py     # Unit tests for Delta Lake commits, historical time travel, and diffing
 ```
 
 ---
@@ -134,28 +129,25 @@ print(response.choices[0].message.content)
 
 ---
 
-## Storage Engine Architecture: DuckDB vs Pure NumPy on Delta Lake
+## Storage Engine Architecture: Pure NumPy on Delta Lake (`UnifiedQueryEngine`)
 
-LineagIQ supports dual storage engine implementations behind the unified `BaseGraphStore` and `BaseVectorStore` interfaces:
+LineagIQ operates on high-performance in-memory graph structures directly backed by Delta Lake storage:
 
-1. **`DuckDBGraphStore` & `DuckDBVectorStore`**:
-   - Leverages DuckDB's native Delta Lake extension (`delta`) and Parquet readers directly via in-memory duckdb connections.
-   - Executes recursive SQL Common Table Expressions (`WITH RECURSIVE`) for lineage traversals.
-   - Ideal for SQL-driven data teams requiring zero custom data structures and immediate queryability.
+* **Delta Lake Native Ingestion**: Reads Delta Lake transaction logs (`_delta_log/`) and columnar Parquet tables using `deltalake.DeltaTable` and Apache Arrow zero-copy memory buffers.
+* **Dual CSR/CSC Topology Layout**:
+  * **Compressed Sparse Row (CSR)** for downstream blast radius analysis: Direct contiguous index slices `targets[indptr[u]:indptr[u+1]]`.
+  * **Compressed Sparse Column (CSC)** for upstream root cause analysis: Backward reachability index for instantaneous ancestor lineage resolution.
+* **Vectorized Cosine Similarity**: Materializes 2D float32 normalized embeddings in contiguous RAM and executes BLAS dot-product matrix multiplications with `np.argpartition` for $O(K)$ candidate retrieval.
+* **Unified Query Interface**: Accessible via `UnifiedQueryEngine` and `QueryEngine` aliases implementing `BaseQueryEngine`.
 
-2. **`NumpyGraphStore` & `NumpyVectorStore`**:
-   - Directly reads Delta Lake transaction logs (`_delta_log/`) and Parquet data files using `deltalake.DeltaTable` and PyArrow.
-   - Compiles graph topology into **Compressed Sparse Row (CSR)** for downstream blast radius and **Compressed Sparse Column (CSC)** for upstream root cause lineage.
-   - Computes semantic vector similarity using high-performance vectorized BLAS dot-product operations with `np.argpartition` for $O(K)$ top-k extraction.
-   - Yields microsecond traversal latencies with an ultra-compact memory footprint.
+### Scale Benchmark (50,000 Nodes • 150,000 Edges on Delta Lake)
 
-### Benchmark Comparison (50,000 Nodes • 150,000 Edges on Delta Lake)
+| Performance & Memory Metric | Value | Architectural Benefit |
+| :--- | :---: | :--- |
+| **In-Memory Cache RAM Footprint** | **~1.5 MB** | 18.6x more compact than tabular database engines |
+| **Cold Delta Lake Load & Snapshot Build** | **~145 ms** | Direct Arrow memory transfer from Parquet files |
+| **Warm 5-Hop Blast Radius Traversal** | **~0.02 ms** (20 µs) | Instantaneous array indexing bypassing SQL parsing |
+| **Warm 10-Hop Deep Graph Traversal** | **~0.04 ms** (40 µs) | Microsecond multi-hop graph reachability |
+| **Warm 5-Hop Upstream Root Cause** | **~0.02 ms** (20 µs) | Backward CSC index eliminates reverse scan overhead |
+| **Keyword & Subgraph Search (50k nodes)** | **~14 ms** | In-memory token matching over metadata fields |
 
-| Performance & Memory Metric | DuckDB Engine | NumPy (CSR / CSC) Engine | Speedup / Efficiency |
-| :--- | :---: | :---: | :---: |
-| **Cold Delta Lake Table Read** | ~65 ms | ~150 ms | DuckDB C++ reader is ~2.3x faster for initial bulk cold scans |
-| **In-Memory Cache RAM Footprint** | ~28.5 MB | **~1.5 MB** | **NumPy is ~18.6x more memory efficient** |
-| **Warm 5-Hop Blast Radius Traversal** | ~3.4 ms | **~0.02 ms** | **NumPy is ~170x–190x faster** (direct array slices) |
-| **Warm 10-Hop Deep Graph Traversal** | ~8.7 ms | **~0.04 ms** | **NumPy is ~220x–250x faster** |
-| **Warm 5-Hop Upstream Root Cause** | ~3.6 ms | **~0.02 ms** | **NumPy is ~180x faster** (CSC backward index) |
-| **Full-Text Keyword Search (50k nodes)** | ~13.4 ms | ~14.5 ms | Comparable performance |
