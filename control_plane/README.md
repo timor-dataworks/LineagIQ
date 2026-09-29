@@ -22,10 +22,13 @@ control_plane/
 ├── requirements.txt            # Control plane dependencies (FastAPI, DuckDB, deltalake)
 ├── src/
 │   ├── query_engine/           # Modular Query Engine package
-│   │   ├── base.py             # Abstract Base Classes (BaseGraphStore, BaseVectorStore)
-│   │   ├── duckdb_store.py     # DuckDB Delta Lake Graph Store & Time Travel
-│   │   ├── duckdb_vector_store.py # DuckDB Vector Store with historical time travel
-│   │   └── engine.py           # DuckDBQueryEngine façade
+│   │   ├── base.py             # Abstract Base Classes (BaseGraphStore, BaseVectorStore, BaseQueryEngine)
+│   │   ├── duckdb/             # Dedicated DuckDB implementation package
+│   │   │   ├── connection.py   # Connection pooling, extensions, S3/IAM credentials
+│   │   │   ├── delta.py        # Delta table attaching & in-memory snapshot materialization
+│   │   │   ├── graph_store.py  # DuckDBGraphStore implementing BaseGraphStore
+│   │   │   └── vector_store.py # DuckDBVectorStore implementing BaseVectorStore
+│   │   └── engine.py           # DuckDBQueryEngine / UnifiedQueryEngine
 │   ├── static/                 # Web Visualizer UI (index.html, style.css, script.js)
 │   ├── prompt_synthesizer.py   # LLM prompt synthesis (Blast Radius, Root Cause, Diff, Discovery)
 │   ├── agent_tools.py          # Agentic Retriever Tools & LineagIQGraphRAGClient

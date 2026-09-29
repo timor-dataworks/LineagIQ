@@ -16,11 +16,11 @@ import boto3
 from moto.server import ThreadedMotoServer  # type: ignore
 
 from collection_agent.src.sync.s3_sync import S3Downloader, S3Uploader
-from control_plane.src.query_engine.duckdb_store import (
+from control_plane.src.query_engine.duckdb import (
     DuckDBGraphStore,
+    DuckDBVectorStore,
     get_available_timestamps,
 )
-from control_plane.src.query_engine.duckdb_vector_store import DuckDBVectorStore
 from core.models import Edge, EdgeType, GraphPayload, Node, NodeType
 from core.writer import ArtifactWriter
 
