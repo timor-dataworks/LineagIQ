@@ -20,7 +20,8 @@ ENV/
 *.parquet
 *.lance/
 *.log
-data/
+data/*
+!data/posts/
 
 # Environment variables & secrets
 .env
