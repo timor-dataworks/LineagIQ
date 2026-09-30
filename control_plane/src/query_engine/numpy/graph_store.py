@@ -149,13 +149,14 @@ class _NumpyGraphSnapshot:
 
     def memory_footprint_bytes(self) -> int:
         """Computes approximate RAM footprint of the NumPy CSR structures."""
-        return (self.fwd_all_indptr.nbytes
+        return (
+            self.fwd_all_indptr.nbytes
             + self.fwd_all_targets.nbytes
             + self.fwd_lineage_indptr.nbytes
             + self.fwd_lineage_targets.nbytes
             + self.bwd_indptr.nbytes
-            + self.bwd_sources.nbytes)
-        
+            + self.bwd_sources.nbytes
+        )
 
 
 class NumpyGraphStore(BaseGraphStore):

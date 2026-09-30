@@ -241,4 +241,3 @@ class BaseQueryEngine(ABC):
             List of matching node dictionaries.
         """
         pass
-
