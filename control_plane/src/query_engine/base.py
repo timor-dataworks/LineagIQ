@@ -215,6 +215,19 @@ class BaseQueryEngine(ABC):
         """
         pass
 
+    def search(self, query_text: str, top_k: int = 5, as_of: str | None = None) -> list[dict[str, Any]]:
+        """Unified search entrypoint: encapsulates vector embeddings, term matching, and parent resolution under the hood.
+
+        Args:
+            query_text: Natural language user query or exact entity identifier.
+            top_k: Maximum number of primary search matches to return per retrieval strategy.
+            as_of: Optional ISO 8601 timestamp string for historical time travel search.
+
+        Returns:
+            List of matching node dictionaries with resolved parent relationships.
+        """
+        return self.search_semantic_assets(query_text=query_text, top_k=top_k, as_of=as_of)
+
     @abstractmethod
     def search_semantic_assets(self, query_text: str, top_k: int = 5, as_of: str | None = None) -> list[dict[str, Any]]:
         """Executes hybrid search combining term match and vector similarity search.
@@ -228,3 +241,4 @@ class BaseQueryEngine(ABC):
             List of matching node dictionaries.
         """
         pass
+

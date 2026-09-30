@@ -80,7 +80,7 @@ class LineagIQGraphRAGClient:
             data_path = resolve_data_path()
             if os.path.exists(data_path):
                 engine = QueryEngine(data_base_path=data_path)
-                matched_nodes = engine.search_semantic_assets(query_text=query, top_k=top_k)
+                matched_nodes = engine.search(query_text=query, top_k=top_k)
                 synthesizer = PromptSynthesizer()
                 return synthesizer.synthesize_discovery_prompt(query_text=query, matched_nodes=matched_nodes)
         except Exception:

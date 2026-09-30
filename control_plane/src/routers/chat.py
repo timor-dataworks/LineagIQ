@@ -148,7 +148,7 @@ def lineage_ai_chat(
             }
 
     # 3. General Semantic Data Discovery / Lineage Asset Search
-    matched_nodes = engine.search_semantic_assets(query_text=request.message, top_k=5, as_of=request.as_of)
+    matched_nodes = engine.search(query_text=request.message, top_k=5, as_of=request.as_of)
     prompt = synthesizer.synthesize_discovery_prompt(query_text=request.message, matched_nodes=matched_nodes)
 
     llm_reply, llm_err = call_llm(

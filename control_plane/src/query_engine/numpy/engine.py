@@ -111,6 +111,10 @@ class NumpyQueryEngine(BaseQueryEngine):
         """
         return self.graph_store.get_schema_time_travel_diff(start_node_id, timestamp_t1, timestamp_t2)
 
+    def search(self, query_text: str, top_k: int = 5, as_of: str | None = None) -> list[dict[str, Any]]:
+        """Unified search entrypoint: encapsulates vector embeddings, term matching, and parent resolution under the hood."""
+        return self.search_semantic_assets(query_text=query_text, top_k=top_k, as_of=as_of)
+
     def search_semantic_assets(self, query_text: str, top_k: int = 5, as_of: str | None = None) -> list[dict[str, Any]]:
         """Executes hybrid search combining term match search via `graph_store`
         and vector similarity search via `vector_store`.

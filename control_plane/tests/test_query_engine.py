@@ -101,6 +101,12 @@ def test_hybrid_semantic_search_with_parent_resolution(tmp_path):
     assert "db.orders.order_id" in matched_ids
     assert "db.orders" in matched_ids
 
+    # Verify unified engine.search facade encapsulates the retrieval
+    unified_results = engine.search("find order_id", top_k=5)
+    unified_ids = {r["id"] for r in unified_results}
+    assert "db.orders.order_id" in unified_ids
+    assert "db.orders" in unified_ids
+
 
 def test_numpy_upstream_root_cause_traversal(tmp_path):
     # Construct graph: Raw Customers -> Stg Customers Model -> Orders Model

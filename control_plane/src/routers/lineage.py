@@ -137,7 +137,7 @@ def discover_semantic_assets(
         raise HTTPException(status_code=400, detail="DiscoveryRequest body is required")
     data_base = resolve_data_path()
     engine = QueryEngine(data_base_path=data_base)
-    matched_nodes = engine.search_semantic_assets(
+    matched_nodes = engine.search(
         query_text=request.query,
         top_k=request.top_k,
         as_of=request.as_of,
