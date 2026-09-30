@@ -1039,61 +1039,11 @@ header.site-header {
   color: var(--text-primary);
 }
 
-/* Architecture Deep Dive Section */
+/* Architecture Section & Three-Tier Deep Dive */
 .architecture-section {
   padding: 100px 0;
   position: relative;
   background: var(--bg-primary);
-}
-
-.arch-tabs-nav {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 40px;
-  flex-wrap: wrap;
-}
-
-.arch-tab-btn {
-  background: #ffffff;
-  border: 1px solid var(--border-medium);
-  color: var(--text-secondary);
-  padding: 12px 24px;
-  border-radius: var(--radius-sm);
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: var(--shadow-sm);
-}
-
-.arch-tab-btn:hover {
-  color: var(--text-primary);
-  border-color: var(--accent-primary);
-}
-
-.arch-tab-btn.active {
-  background: var(--accent-primary);
-  border-color: var(--accent-primary);
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
-}
-
-.arch-tab-panel {
-  display: none;
-}
-
-.arch-tab-panel.active {
-  display: block;
-  animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .diagram-card {
@@ -1105,7 +1055,8 @@ header.site-header {
   margin-bottom: 30px;
 }
 
-.diagram-flow {
+.diagram-flow,
+.three-tier-deepdive {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
@@ -2020,6 +1971,7 @@ footer.site-footer {
   .integrations-grid,
   .faq-grid,
   .diagram-flow,
+  .three-tier-deepdive,
   .tco-grid,
   .arch-grid-2,
   .scale-footer-insights {

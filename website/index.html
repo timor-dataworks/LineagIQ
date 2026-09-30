@@ -15,7 +15,7 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="LineagIQ">
   <meta property="og:title" content="LineagIQ – Serverless Data Lineage & Enterprise Knowledge Graph">
-  <meta property="og:description" content="Serverless data lineage and semantic knowledge graph for Delta Lake. Sub-second time-travel diffing, recursive blast-radius intelligence, and GraphRAG.">
+  <meta property="og:description" content="Serverless data lineage and semantic knowledge graph for Delta Lake. Point-in-time time-travel diffing, instant blast-radius intelligence, and CI/CD governance safeguards.">
   <meta property="og:url" content="https://lineagiq.com/">
   <meta property="og:image" content="https://lineagiq.com/assets/lineage_main_graph.png">
   <meta property="og:image:width" content="1200">
@@ -69,17 +69,17 @@
           "price": "0",
           "priceCurrency": "USD"
         },
-        "description": "Serverless data lineage and enterprise knowledge graph engine built on Delta Lake and vectorized pure NumPy CSR/CSC array runtime with zero JVM or dedicated graph database clusters.",
+        "description": "Serverless data lineage and enterprise knowledge graph engine built on Delta Lake. Track schema drift, prevent breaking pipeline changes with instant blast radius, and automate data governance with zero dedicated graph database clusters.",
         "softwareVersion": "v0.1.0",
         "license": "https://github.com/timor-dataworks/LineagIQ/blob/main/LICENSE",
         "codeRepository": "https://github.com/timor-dataworks/LineagIQ",
         "featureList": [
-          "Serverless Delta Lake Graph Storage Protocol",
+          "Serverless Delta Lake Graph Storage Architecture",
           "Point-in-Time ACID Time-Travel Lineage Diffing",
-          "Microsecond Traversal with Pure NumPy CSR/CSC Matrices",
-          "Recursive Downstream & Upstream Blast Radius Attribution",
-          "Vectorized BLAS Embeddings & GraphRAG Synthesis for AI Agents",
-          "Turnkey OpenLineage, dbt Core/Cloud, and SQL Parser Ingestion"
+          "Microsecond Multi-Hop Blast Radius & Impact Analysis",
+          "Automated CI/CD Breaking Change Safeguards",
+          "Context-Rich Lineage Copilots for AI Agents & Data Teams",
+          "Turnkey OpenLineage, dbt Core/Cloud, and SQL Warehouse Connectors"
         ]
       },
       {
@@ -91,15 +91,15 @@
             "name": "What is LineagIQ and how does it provide data lineage without a dedicated graph database?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "LineagIQ is a serverless data lineage and semantic knowledge graph platform. Unlike traditional catalogs like Collibra or Alation that mandate provisioned Neo4j or Amazon Neptune clusters, LineagIQ persists topology datasets directly on open Delta Lake Parquet tables in object storage (Amazon S3, GCS, or local disk). At query time, LineagIQ compiles these tables into vectorized Compressed Sparse Row (CSR) and Column (CSC) matrices in RAM, delivering microsecond traversals without persistent cluster overhead."
+              "text": "LineagIQ is a serverless data lineage and semantic knowledge graph platform. Unlike traditional catalogs like Collibra or Alation that mandate provisioned Neo4j or Amazon Neptune clusters, LineagIQ persists topology datasets directly on open Delta Lake Parquet tables in object storage (Amazon S3, GCS, or local disk). At query time, LineagIQ evaluates multi-hop dependency queries in RAM, delivering microsecond traversals without persistent cluster overhead or enterprise database licensing fees."
             }
           },
           {
             "@type": "Question",
-            "name": "How fast are graph traversals with LineagIQ's pure NumPy query engine?",
+            "name": "How fast are lineage queries and impact analyses with LineagIQ?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "By eliminating JVM overhead, pointers, and object graph wrapping, LineagIQ's CSR/CSC adjacency matrix engine resolves multi-hop upstream and downstream lineage reachability queries in under 25 microseconds (< 25 µs) while reducing memory footprint by 18.6x compared to traditional in-memory graph models."
+              "text": "By eliminating heavyweight graph database servers and network latency, LineagIQ resolves multi-hop upstream and downstream lineage reachability queries in under 25 microseconds (< 25 µs) while reducing memory footprint by 18.6x compared to traditional graph systems."
             }
           },
           {
@@ -123,15 +123,15 @@
             "name": "How does LineagIQ calculate downstream blast radius?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "LineagIQ performs breadth-first and depth-first vectorized matrix traversals downstream from any modified dataset or column node. It isolates the entire reachability subgraph to identify all affected BI dashboards, downstream data marts, and ML training pipelines before breaking changes are deployed."
+              "text": "When any dataset or column is modified, LineagIQ traverses the full downstream dependency chain in real time. It isolates the entire impact subgraph to identify all affected BI dashboards, downstream data marts, and ML training pipelines before breaking changes are deployed."
             }
           },
           {
             "@type": "Question",
-            "name": "How does GraphRAG empower AI agents and LLMs with lineage context?",
+            "name": "How does LineagIQ empower AI agents and data teams with lineage context?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "LineagIQ embeds graph metadata using domain-specific 384-dimensional embeddings stored in Delta Lake vector tables. Through vectorized BLAS dot-product similarity search and graph topology expansion, LineagIQ provides high-fidelity GraphRAG context packets to LLMs for automated root-cause analysis and governance queries."
+              "text": "LineagIQ organizes schema metadata and dependency relationships into structured semantic context packets. It powers AI agents and incident response teams with authoritative upstream root-cause analysis and automated data governance answers without LLM hallucination."
             }
           },
           {
@@ -237,7 +237,7 @@
 
         <p class="hero-subtitle">
           LineagIQ unifies fragmented data pipelines into an active, queryable semantic knowledge graph on Delta Lake. 
-          Detect <strong>point-in-time schema drift</strong>, attribute <strong>recursive blast-radius impact in microseconds</strong>, and power <strong>GraphRAG AI agents</strong>—with zero dedicated graph database infrastructure.
+          Detect <strong>point-in-time schema drift</strong>, prevent <strong>breaking pipeline changes before deployment</strong>, and deliver <strong>context-rich copilots for your data team</strong>—with zero dedicated graph database infrastructure.
         </p>
 
         <div class="hero-cta-group">
@@ -248,8 +248,8 @@
           <a href="#slim-stack" class="btn btn-outline btn-lg" id="btn-hero-tco" aria-label="Read Slim Stack TCO Review">
             <span>Why Slim Stack? (TCO Review)</span>
           </a>
-          <a href="#architecture" class="btn btn-outline btn-lg" id="btn-hero-arch" aria-label="Inspect Technical Architecture">
-            <span>Technical Architecture</span>
+          <a href="#architecture" class="btn btn-outline btn-lg" id="btn-hero-arch" aria-label="Inspect Solution Architecture">
+            <span>Solution Architecture</span>
           </a>
         </div>
 
@@ -275,8 +275,8 @@
 
           <div class="metric-card">
             <div class="metric-value">0</div>
-            <div class="metric-label">Heavyweight Daemons</div>
-            <div class="metric-desc">Zero continuous JVM graph servers, zero cluster maintenance overhead, and zero data exfiltration.</div>
+            <div class="metric-label">Servers to Manage</div>
+            <div class="metric-desc">Zero continuous database servers, zero cluster maintenance overhead, and zero data exfiltration.</div>
           </div>
         </div>
 
@@ -620,7 +620,7 @@
             </li>
             <li class="tco-item">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-              <span><strong>Pure NumPy &amp; CSR/CSC Engine:</strong> LineagIQ compiles Delta Lake graphs directly into Compressed Sparse Row (CSR) and Column (CSC) array layouts in RAM, evaluating multi-hop lineage traversals in <strong>microseconds (&lt; 25 µs)</strong> with an <strong>18.6x reduction in memory footprint</strong>.</span>
+              <span><strong>High-Performance Embedded Graph Engine:</strong> Evaluates multi-hop lineage and blast radius in <strong>microseconds (&lt; 25 µs)</strong> with an <strong>18.6x reduction in memory footprint</strong>—running enterprise data topologies seamlessly on standard serverless containers.</span>
             </li>
           </ul>
         </div>
@@ -630,12 +630,12 @@
       <div class="hardware-scale-card">
         <div class="scale-card-header">
           <div class="scale-header-badge">
-            <span class="badge badge-emerald">⚡ Pure NumPy CSR/CSC Benchmarks</span>
-            <span class="scale-tag">Delta Lake Zero-Copy Array Ingestion</span>
+            <span class="badge badge-emerald">⚡ Production Sizing &amp; Benchmarks</span>
+            <span class="scale-tag">Ultra-Low Operational Overhead</span>
           </div>
           <h3 class="scale-card-title">Hardware Sizing vs. Graph Scale (Nodes & Edges)</h3>
           <p class="scale-card-desc">
-            Thanks to LineagIQ's pure NumPy CSR/CSC memory layouts and Apache Arrow zero-copy ingestion, historical graph snapshots are cached directly as contiguous integer index slices. This achieves <strong>sub-millisecond (20–40 µs) lineage reachability traversals</strong> with an 18.6x memory footprint reduction—running large-scale topologies on lightweight, low-cost compute.
+            Unlike traditional graph databases that require massive dedicated memory and multi-node clusters, LineagIQ processes large enterprise graph topologies with virtually zero infrastructure footprint. Run comprehensive data lineage with sub-millisecond query responses on basic, low-cost serverless containers.
           </p>
         </div>
 
@@ -694,8 +694,8 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
             </div>
             <div>
-              <strong>Instant CSR/CSC Array Slicing:</strong>
-              <span>Traversals execute as contiguous array slices (<code>targets[indptr[u]:indptr[u+1]]</code>), completely bypassing database query parsing, planning, and SQL VM overhead.</span>
+              <strong>Microsecond Impact Analysis:</strong>
+              <span>Traversals resolve instantly in memory, bypassing database roundtrips, query compilation, and network latency so CI/CD pipelines can evaluate blast radius in real time.</span>
             </div>
           </div>
           <div class="insight-item">
@@ -703,8 +703,8 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
             </div>
             <div>
-              <strong>Zero JVM Garbage Collection Freezes:</strong>
-              <span>Contiguous C-ordered NumPy memory buffers eliminate Python object creation, pointer chasing, and the JVM garbage collection pauses typical of legacy graph engines.</span>
+              <strong>Zero Operational Maintenance:</strong>
+              <span>No dedicated database servers to patch, no cluster backups to configure, and no garbage collection freezes—your lineage graph scales on demand with minimal compute.</span>
             </div>
           </div>
         </div>
@@ -712,442 +712,206 @@
     </div>
   </section>
 
-  <!-- Technical Architecture & Developer Overview -->
+  <!-- Three-Tier Decoupled System Architecture -->
   <section class="architecture-section" id="architecture">
     <div class="container">
       <div class="section-header">
-        <span class="section-tag">Engineering Specification</span>
-        <h2 class="section-title">Developer & Architecture Deep Dive</h2>
+        <span class="section-tag">Enterprise Solution Architecture</span>
+        <h2 class="section-title">The Three-Tier Decoupled Architecture</h2>
         <p class="section-subtitle">
-          Designed for platform architects, data engineers, and AI developers. LineagIQ cleanly decouples edge metadata extraction, immutable table storage, and vectorized query execution.
+          Engineered for total data sovereignty, ironclad perimeter security, and sub-millisecond operational performance. 
+          LineagIQ cleanly separates edge metadata collection, open lakehouse storage, and serverless intelligence—eliminating proprietary database lock-in and persistent cluster costs.
         </p>
       </div>
 
-      <!-- Architecture Tabs -->
-      <div class="arch-tabs-nav" role="tablist" aria-label="Architecture Component Tabs">
-        <button class="arch-tab-btn active" role="tab" id="tab-btn-tiers" aria-selected="true" aria-controls="tab-tiers" data-tab="tab-tiers">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
-          Three-Tier System Design
-        </button>
-        <button class="arch-tab-btn" role="tab" id="tab-btn-traversal" aria-selected="false" aria-controls="tab-traversal" data-tab="tab-traversal">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-          CSR/CSC Traversal Algorithm
-        </button>
-        <button class="arch-tab-btn" role="tab" id="tab-btn-embeddings" aria-selected="false" aria-controls="tab-embeddings" data-tab="tab-embeddings">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-          Custom Embeddings &amp; Vectors
-        </button>
-        <button class="arch-tab-btn" role="tab" id="tab-btn-graphrag" aria-selected="false" aria-controls="tab-graphrag" data-tab="tab-graphrag">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><path d="M11 8v6M8 11h6"></path></svg>
-          Graph Search &amp; GraphRAG
-        </button>
-        <button class="arch-tab-btn" role="tab" id="tab-btn-code" aria-selected="false" aria-controls="tab-code" data-tab="tab-code">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"></path></svg>
-          AI Agent Retriever Tools
-        </button>
-      </div>
-
-      <!-- Tab 1: Three Tier System Design -->
-      <div class="arch-tab-panel active" id="tab-tiers" role="tabpanel" aria-labelledby="tab-btn-tiers">
-        <div class="diagram-card">
-          <div class="diagram-flow">
-            <!-- Tier 1 -->
-            <div class="diagram-tier">
-              <div class="tier-number">Tier 01 // Ephemeral Edge</div>
-              <h3 class="tier-title">Stateless Ingestion Agent</h3>
-              <p class="tier-desc">Executes as an ephemeral batch task (Docker, Kubernetes CronJob, or GitHub Action) inside customer boundaries. Ingests metadata from files, schemas, query logs, and orchestrators.</p>
-              <div class="tier-chips">
-                <span class="tier-chip">dbt manifest.json</span>
-                <span class="tier-chip">INFORMATION_SCHEMA</span>
-                <span class="tier-chip">QUERY_HISTORY</span>
-                <span class="tier-chip">OpenLineage JSON</span>
-                <span class="tier-chip">Vector Embeddings</span>
-              </div>
+      <!-- Top Visual 3-Tier Flow Diagram -->
+      <div class="diagram-card">
+        <div class="diagram-flow">
+          <!-- Tier 1 Overview -->
+          <div class="diagram-tier">
+            <div class="tier-number">Tier 01 // Sovereign Edge</div>
+            <h3 class="tier-title">Stateless Collection Agent</h3>
+            <p class="tier-desc">Runs as an ephemeral batch task inside your VPC, Kubernetes cluster, or CI/CD runner. Harvests schema definitions, manifests, and query logs with zero outbound data egress—customer PII and raw records never leave your network.</p>
+            <div class="tier-chips">
+              <span class="tier-chip">dbt Core &amp; Cloud</span>
+              <span class="tier-chip">Snowflake &amp; Databricks</span>
+              <span class="tier-chip">PostgreSQL &amp; DuckDB</span>
+              <span class="tier-chip">OpenLineage Events</span>
+              <span class="tier-chip">Zero Egress Security</span>
             </div>
+          </div>
 
-            <!-- Tier 2 -->
-            <div class="diagram-tier">
-              <div class="tier-number">Tier 02 // Lakehouse Storage</div>
-              <h3 class="tier-title">Delta Lake Storage Layer</h3>
-              <p class="tier-desc">Standard cloud object storage (S3/GCS) or enterprise storage layer. Stores lineage nodes, dependency edges, schema definitions, and vector embeddings backed by Delta Lake transaction logs.</p>
-              <div class="tier-chips">
-                <span class="tier-chip">ACID Transactions</span>
-                <span class="tier-chip">Delta Lake Tables</span>
-                <span class="tier-chip">Columnar Parquet</span>
-                <span class="tier-chip">Time-Travel Snapshots</span>
-                <span class="tier-chip">Cloud Object Storage</span>
-              </div>
+          <!-- Tier 2 Overview -->
+          <div class="diagram-tier">
+            <div class="tier-number">Tier 02 // Lakehouse Vault</div>
+            <h3 class="tier-title">Open Delta Lake Storage</h3>
+            <p class="tier-desc">Stored directly in your own cloud object storage (Amazon S3, Google Cloud Storage, or Azure Blob). Full ACID transaction guarantees, snappy columnar Parquet tables, and native point-in-time time travel replay—perpetual ownership without vendor lock-in.</p>
+            <div class="tier-chips">
+              <span class="tier-chip">100% Data Sovereignty</span>
+              <span class="tier-chip">Delta Lake Tables</span>
+              <span class="tier-chip">Columnar Parquet</span>
+              <span class="tier-chip">ACID Commit Logs</span>
+              <span class="tier-chip">Historical Time Travel</span>
             </div>
+          </div>
 
-            <!-- Tier 3 -->
-            <div class="diagram-tier">
-              <div class="tier-number">Tier 03 // Query &amp; GraphRAG</div>
-              <h3 class="tier-title">Serverless Control Plane</h3>
-              <p class="tier-desc">FastAPI query runtime running a high-performance pure NumPy CSR/CSC engine to execute multi-hop lineage traversals in microseconds (&lt; 0.05 ms) directly against Delta Lake snapshots. Exposes sub-millisecond REST endpoints, interactive graph visualizations, and GraphRAG tools.</p>
-              <div class="tier-chips">
-                <span class="tier-chip">Pure NumPy CSR/CSC Engine</span>
-                <span class="tier-chip">FastAPI REST</span>
-                <span class="tier-chip">BLAS Vector Dot-Product</span>
-                <span class="tier-chip">Timeline Scrubbing</span>
-                <span class="tier-chip">GraphRAG Agent Tools</span>
-              </div>
+          <!-- Tier 3 Overview -->
+          <div class="diagram-tier">
+            <div class="tier-number">Tier 03 // Query &amp; Governance</div>
+            <h3 class="tier-title">Serverless Intelligence Plane</h3>
+            <p class="tier-desc">High-performance query service executing multi-hop lineage reachability and blast-radius attribution in sub-milliseconds over Delta Lake snapshots. Powers interactive timeline scrubbing, CI/CD deployment gates, and context-grounded AI copilots.</p>
+            <div class="tier-chips">
+              <span class="tier-chip">Sub-Millisecond Engine</span>
+              <span class="tier-chip">Interactive Lineage UI</span>
+              <span class="tier-chip">Timeline Schema Diffing</span>
+              <span class="tier-chip">CI/CD PR Gates</span>
+              <span class="tier-chip">GraphRAG Agent Tools</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Tab: CSR/CSC Graph Traversal Engine -->
-      <div class="arch-tab-panel" id="tab-traversal" role="tabpanel" aria-labelledby="tab-btn-traversal">
-        <div class="diagram-card">
-          <h3 class="tier-title">Microsecond Multi-Hop Lineage Traversals (Pure NumPy CSR/CSC)</h3>
-          <p class="tier-desc">
-            LineagIQ transforms historical Delta Lake graph snapshots directly into in-memory Compressed Sparse Row (CSR) and Compressed Sparse Column (CSC) contiguous integer index arrays. This eliminates database query planners, virtual machines, and SQL parsing overhead to achieve <strong>sub-millisecond (&lt; 25 µs) lineage reachability</strong>.
-          </p>
-
-          <div class="arch-grid-2">
-            <div class="arch-detail-card">
-              <div class="arch-card-header">
-                <span class="arch-card-badge badge-indigo">Forward Indexing</span>
-                <span class="speed-badge">&lt; 0.02 ms (20 µs)</span>
-              </div>
-              <h5 class="arch-card-title">Dual Forward CSR &amp; Boundary Scoping</h5>
-              <p class="arch-card-p">
-                LineagIQ separates 1-hop structural relationships from multi-hop dataset lineage to maintain graph integrity:
-              </p>
-              <ul class="arch-bullet-list">
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong><code>fwd_all</code> Index (Depth = 1):</strong> Indexes all edge types including <code>BELONGS_TO</code> and <code>JOINS_WITH</code>, allowing column-level nodes to resolve parent datasets.</span>
-                </li>
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong><code>fwd_lineage</code> Index (Depth &ge; 2):</strong> Prunes containment edges to prevent transitive cross-dataset column leakage during deep blast-radius reachability.</span>
-                </li>
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>Direct Slicing:</strong> Resolves node neighbors instantly via <code>targets[indptr[u]:indptr[u+1]]</code> in continuous C-memory buffers.</span>
-                </li>
-              </ul>
-              <div class="tier-chips">
-                <span class="tier-chip">Compressed Sparse Row</span>
-                <span class="tier-chip">Contiguous Memory Slices</span>
-                <span class="tier-chip">Blast Radius Traversal</span>
-              </div>
-            </div>
-
-            <div class="arch-detail-card">
-              <div class="arch-card-header">
-                <span class="arch-card-badge badge-cyan">Backward Reachability</span>
-                <span class="speed-badge">&lt; 0.02 ms (20 µs)</span>
-              </div>
-              <h5 class="arch-card-title">Backward CSC Index &amp; Cycle Guard</h5>
-              <p class="arch-card-p">
-                Upstream root-cause investigations trace dependencies backward without reverse table scan bottlenecks:
-              </p>
-              <ul class="arch-bullet-list">
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>Compressed Sparse Column (CSC):</strong> Pre-inverted index maps targets back to sources (<code>bwd_indptr</code> &amp; <code>bwd_targets</code>) for instant root-cause tracing.</span>
-                </li>
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>Cycle Detection &amp; Deduplication:</strong> Integer bitset sets track visited indices, preventing infinite loops in cyclic pipelines or circular dbt refs.</span>
-                </li>
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>18.6x RAM Reduction:</strong> 50,000 nodes and 150,000 edges occupy only <strong>~1.5 MB</strong> in RAM compared to 28.5 MB in DuckDB and 16 GB in Neo4j.</span>
-                </li>
-              </ul>
-              <div class="tier-chips">
-                <span class="tier-chip">Compressed Sparse Column</span>
-                <span class="tier-chip">Visited Set Cycle Guard</span>
-                <span class="tier-chip">Root-Cause Provenance</span>
-              </div>
-            </div>
+      <!-- Expanded Deep-Dive Solution Cards -->
+      <div class="three-tier-deepdive">
+        <!-- Deep Dive Tier 1 -->
+        <div class="arch-detail-card">
+          <div class="arch-card-header">
+            <span class="arch-card-badge badge-cyan">Tier 01 Deep Dive</span>
+            <span class="scale-tag">Zero-Egress Security</span>
           </div>
+          <h4 class="arch-card-title">Sovereign Edge Ingestion: Private, Ephemeral &amp; Frictionless</h4>
+          <p class="arch-card-p">
+            Traditional data governance vendors demand intrusive VPN tunnels, static database superuser passwords, or direct inbound network access into production warehouses. LineagIQ reverses this operational paradigm:
+          </p>
+          <ul class="arch-bullet-list">
+            <li class="arch-bullet-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Runs Within Your Perimeter:</strong> The collection agent executes as a stateless CLI task, Docker container, or Kubernetes CronJob inside your private network.</span>
+            </li>
+            <li class="arch-bullet-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Pure Structural Metadata Extraction:</strong> Inspects compilation artifacts (dbt <code>manifest.json</code>), data catalog catalogs, and audit logs. Sensitive customer rows, PII, and financial records are never inspected or stored.</span>
+            </li>
+            <li class="arch-bullet-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Universal Ecosystem Compatibility:</strong> Seamlessly hooks into existing pipelines—orchestrated via Airflow DAGs, dbt Cloud webhooks, or automated GitHub Actions on pull requests.</span>
+            </li>
+          </ul>
+          <div class="tier-chips">
+            <span class="tier-chip">Kubernetes CronJob</span>
+            <span class="tier-chip">CI/CD Runner Native</span>
+            <span class="tier-chip">Airflow / Dagster Hook</span>
+            <span class="tier-chip">SOC2 &amp; HIPAA Friendly</span>
+          </div>
+        </div>
 
-          <div class="code-container">
-            <div class="code-header">
-              <span class="code-title">numpy_graph_store.py — Microsecond Contiguous Array Traversal</span>
-              <button class="copy-btn" id="btn-copy-traversal" aria-label="Copy Python CSR/CSC Traversal Code" data-code="snippet-traversal">Copy Python</button>
-            </div>
-            <pre><code id="snippet-traversal"># Pure NumPy Contiguous CSR Slicing Algorithm
-import numpy as np
+        <!-- Deep Dive Tier 2 -->
+        <div class="arch-detail-card">
+          <div class="arch-card-header">
+            <span class="arch-card-badge badge-emerald">Tier 02 Deep Dive</span>
+            <span class="scale-tag">Open Lakehouse Standards</span>
+          </div>
+          <h4 class="arch-card-title">Open Lakehouse Storage: 100% Data Ownership &amp; Audit Replay</h4>
+          <p class="arch-card-p">
+            Instead of locking your critical dependency graphs inside opaque, proprietary graph databases that cost thousands per month, LineagIQ stores all metadata in open Delta Lake tables on your own cloud bucket:
+          </p>
+          <ul class="arch-bullet-list">
+            <li class="arch-bullet-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Zero Vendor Lock-In:</strong> Metadata is written in open Apache Parquet format. Query it anytime with standard data engineering engines—DuckDB, Apache Spark, Trino, or Python pandas.</span>
+            </li>
+            <li class="arch-bullet-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Immutable ACID Audit Log:</strong> Every metadata update is an atomic commit. Never worry about corrupt state or unrecorded schema drift—every table revision is preserved for regulatory audits (SOX, BCBS 239).</span>
+            </li>
+            <li class="arch-bullet-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Point-in-Time Time Travel:</strong> Replay the historical topology of your entire data warehouse at any past timestamp to verify data provenance, investigate past incidents, or satisfy compliance checks.</span>
+            </li>
+          </ul>
+          <div class="tier-chips">
+            <span class="tier-chip">Amazon S3 / GCS / Azure</span>
+            <span class="tier-chip">Delta Lake <code>_delta_log</code></span>
+            <span class="tier-chip">Snappy Parquet</span>
+            <span class="tier-chip">Zero Licensing Fees</span>
+          </div>
+        </div>
 
-def traverse_blast_radius(start_idx: int, max_depth: int, fwd_all, fwd_lineage):
-    visited = {start_idx}
-    queue = [(start_idx, 0)]
-    impacted_nodes = []
-    
-    while queue:
-        curr_idx, depth = queue.pop(0)
-        if depth >= max_depth:
-            continue
-            
-        # Select dual CSR index: fwd_all for depth 1, fwd_lineage for depth >= 2
-        indptr, targets = (fwd_all if depth == 0 else fwd_lineage)
-        
-        # Zero-overhead contiguous slice: targets[indptr[curr_idx]:indptr[curr_idx + 1]]
-        start_pos = indptr[curr_idx]
-        end_pos = indptr[curr_idx + 1]
-        neighbors = targets[start_pos:end_pos]
-        
-        for neighbor in neighbors:
-            if neighbor not in visited:
-                visited.add(neighbor)
-                queue.append((neighbor, depth + 1))
-                impacted_nodes.append(neighbor)
-                
-    return impacted_nodes # Executed in ~0.02 ms (20 microseconds)</code></pre>
+        <!-- Deep Dive Tier 3 -->
+        <div class="arch-detail-card">
+          <div class="arch-card-header">
+            <span class="arch-card-badge badge-indigo">Tier 03 Deep Dive</span>
+            <span class="scale-tag">Operational Agility</span>
+          </div>
+          <h4 class="arch-card-title">Serverless Intelligence Plane: Rapid Triage, CI/CD Gates &amp; AI Copilots</h4>
+          <p class="arch-card-p">
+            The lightweight control plane transforms static lineage snapshots into active operational guardrails for your engineering team:
+          </p>
+          <ul class="arch-bullet-list">
+            <li class="arch-bullet-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Microsecond Reachability Traversals:</strong> Evaluate multi-hop upstream root cause and downstream blast radius across 50,000+ nodes in sub-milliseconds with an 18.6x memory reduction.</span>
+            </li>
+            <li class="arch-bullet-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Automated CI/CD Breaking Change Gates:</strong> Block risky PRs before merging by checking if a modified model or deleted column impacts downstream executive dashboards or ML models.</span>
+            </li>
+            <li class="arch-bullet-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span><strong>Hallucination-Free AI Assistant:</strong> Feed authoritative graph topology and time-travel diffs directly to internal LLMs (OpenAI, Gemini, or private local Ollama) for instant natural-language incident triage.</span>
+            </li>
+          </ul>
+          <div class="tier-chips">
+            <span class="tier-chip">FastAPI REST Services</span>
+            <span class="tier-chip">Automated PR Safeguards</span>
+            <span class="tier-chip">Interactive Web Visualizer</span>
+            <span class="tier-chip">Enterprise AI Copilot</span>
           </div>
         </div>
       </div>
 
-      <!-- Tab: Custom Embeddings & Vectors -->
-      <div class="arch-tab-panel" id="tab-embeddings" role="tabpanel" aria-labelledby="tab-btn-embeddings">
-        <div class="diagram-card">
-          <h3 class="tier-title">Domain-Specific Embeddings &amp; Delta Lake Vector Tables</h3>
-          <p class="tier-desc">
-            LineagIQ generates high-fidelity semantic representations in-process using an INT8-quantized ONNX embedder (<code>bge-small-en-v1.5</code>). Raw customer data never leaves private network perimeters, and vector artifacts are persisted with full ACID versioning in Delta Lake.
+      <!-- Developer & Programmatic Automation Integration -->
+      <div class="diagram-card" style="margin-top: 30px;">
+        <div class="scale-card-header">
+          <div class="scale-header-badge">
+            <span class="badge badge-purple">Automated Workflow Integration</span>
+            <span class="scale-tag">REST API &amp; Python Client</span>
+          </div>
+          <h3 class="scale-card-title">Embed Lineage Intelligence Directly Into Your CI/CD &amp; AI Workflows</h3>
+          <p class="scale-card-desc">
+            Query blast radius, execute semantic search, and detect breaking schema drift programmatically with clean, standard endpoints:
           </p>
-
-          <div class="arch-grid-2">
-            <div class="arch-detail-card">
-              <div class="arch-card-header">
-                <span class="arch-card-badge badge-purple">Semantic Modeling</span>
-                <span class="scale-tag">384-Dim Normalized</span>
-              </div>
-              <h5 class="arch-card-title">Ontology-Aware Prompt Synthesizer</h5>
-              <p class="arch-card-p">
-                Standard text embeddings fail on relational schema tokens. LineagIQ formats specialized prompt representations tailored to each node ontology:
-              </p>
-              <ul class="arch-bullet-list">
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>Dataset / Table:</strong> <code>dataset table {name}: {description} with columns {cols}</code></span>
-                </li>
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>Column:</strong> <code>column {name} of type {type} in dataset {dataset}: {desc}</code></span>
-                </li>
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>Pipeline / Task:</strong> <code>pipeline ETL transformation {name}: {desc}</code></span>
-                </li>
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>Business Glossary Term:</strong> <code>business term governance {name}: {definition}</code></span>
-                </li>
-              </ul>
-              <div class="tier-chips">
-                <span class="tier-chip">Domain Context Synthesis</span>
-                <span class="tier-chip">Schema Tokenization</span>
-                <span class="tier-chip">Zero External API Calls</span>
-              </div>
-            </div>
-
-            <div class="arch-detail-card">
-              <div class="arch-card-header">
-                <span class="arch-card-badge badge-emerald">Storage Plane</span>
-                <span class="scale-tag">ACID Vector Versioning</span>
-              </div>
-              <h5 class="arch-card-title">Delta Lake Parquet &amp; L2 Normalization</h5>
-              <p class="arch-card-p">
-                Dense embeddings are stored alongside graph metadata to support point-in-time semantic search:
-              </p>
-              <ul class="arch-bullet-list">
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>L2 Unit Normalization:</strong> All 384-dimensional vectors are normalized to unit sphere (<code>||v||₂ = 1.0</code>), simplifying cosine similarity to a BLAS dot product.</span>
-                </li>
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>Delta Lake Transactions:</strong> Embeddings are stored in <code>vectors/</code> Delta tables, maintaining atomic parity with graph node commits.</span>
-                </li>
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>Historical Time Travel:</strong> Query vector states as of any past timestamp (<code>as_of</code>) to discover deleted or renamed historical assets.</span>
-                </li>
-              </ul>
-              <div class="tier-chips">
-                <span class="tier-chip">Delta Lake Vectors</span>
-                <span class="tier-chip">L2 Unit Vectors</span>
-                <span class="tier-chip">Historical Embedding Snapshots</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="code-container">
-            <div class="code-header">
-              <span class="code-title">core/embedder.py — In-Process INT8 ONNX Vector Embedding</span>
-              <button class="copy-btn" id="btn-copy-embedder" data-code="snippet-embedder" aria-label="Copy In-Process INT8 ONNX Vector Embedding Python code">Copy Python</button>
-            </div>
-            <pre><code id="snippet-embedder"># In-process quantized embedding generation & L2 unit normalization
-from core.embedder import LocalEmbedder
-from core.models import Node, NodeType
-
-# 1. Initialize quantized INT8 ONNX embedder (zero external API latency)
-embedder = LocalEmbedder()
-
-# 2. Node with domain properties
-node = Node(
-    id="analytics.mart_orders",
-    type=NodeType.DATASET,
-    name="mart_orders",
-    description="Consolidated customer orders mart for revenue analysis"
-)
-
-# 3. Generate domain-specific representation and normalized 384-dim vector
-semantic_text = embedder.format_node_text(node)
-embedding_vector = embedder.embed_text(semantic_text)
-
-# Norm verification: np.linalg.norm(embedding_vector) == 1.0
-print(f"Generated {len(embedding_vector)}-dim normalized vector: {embedding_vector[:4]}...")</code></pre>
-          </div>
         </div>
-      </div>
 
-      <!-- Tab: Graph Search & GraphRAG -->
-      <div class="arch-tab-panel" id="tab-graphrag" role="tabpanel" aria-labelledby="tab-btn-graphrag">
-        <div class="diagram-card">
-          <h3 class="tier-title">Vectorized BLAS Dot-Product &amp; GraphRAG Context Synthesis</h3>
-          <p class="tier-desc">
-            LineagIQ bridges the gap between semantic catalog discovery and structural knowledge graphs. By evaluating dense vector similarities via hardware-accelerated BLAS matrix operations and overlaying multi-hop topological reachability, LineagIQ synthesizes rich GraphRAG prompts for autonomous LLM agents.
-          </p>
-
-          <div class="arch-grid-2">
-            <div class="arch-detail-card">
-              <div class="arch-card-header">
-                <span class="arch-card-badge badge-cyan">Vector Search Core</span>
-                <span class="speed-badge">&lt; 14 ms (50k Assets)</span>
-              </div>
-              <h5 class="arch-card-title">Contiguous Matrix &amp; O(K) Argpartition</h5>
-              <p class="arch-card-p">
-                Bypasses bloated vector database daemon architectures through contiguous in-memory linear algebra:
-              </p>
-              <ul class="arch-bullet-list">
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>2D Float32 Contiguous Matrix:</strong> All snapshot vectors are loaded into a single <code>(N, 384)</code> matrix in RAM via Apache Arrow zero-copy buffers.</span>
-                </li>
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>BLAS Dot Product:</strong> Cosine similarities are evaluated with a single vector-matrix multiply: <code>scores = matrix @ query_vector</code>.</span>
-                </li>
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>O(K) Argpartition:</strong> <code>np.argpartition(-scores, top_k)</code> extracts highest scoring matches in linear time, avoiding O(N log N) sorting bottlenecks.</span>
-                </li>
-              </ul>
-              <div class="tier-chips">
-                <span class="tier-chip">BLAS Matrix-Vector Multiply</span>
-                <span class="tier-chip">O(K) Candidate Selection</span>
-                <span class="tier-chip">Arrow Zero-Copy Buffer</span>
-              </div>
-            </div>
-
-            <div class="arch-detail-card">
-              <div class="arch-card-header">
-                <span class="arch-card-badge badge-indigo">GraphRAG Synthesis</span>
-                <span class="scale-tag">LLM Orchestration</span>
-              </div>
-              <h5 class="arch-card-title">Topological Context &amp; Prompt Synthesis</h5>
-              <p class="arch-card-p">
-                Vector search finds the root; graph traversal discovers the operational blast radius:
-              </p>
-              <ul class="arch-bullet-list">
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>Hybrid Retrieval:</strong> Semantic search identifies ambiguous asset names; CSR/CSC traversal traverses up to 10 hops downstream and upstream.</span>
-                </li>
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>Specialized Prompt Templates:</strong> Generates structured context for Blast Radius, Root Cause, Historical Schema Drift (T₁ &rarr; T₂), and Discovery.</span>
-                </li>
-                <li class="arch-bullet-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span><strong>Universal Model Support:</strong> Formatted with clean HTML markup and Unicode lineage arrows (<code>&rarr;</code>), fully compatible with OpenAI, Gemini, and Ollama.</span>
-                </li>
-              </ul>
-              <div class="tier-chips">
-                <span class="tier-chip">Hybrid Search</span>
-                <span class="tier-chip">Graph-Augmented RAG</span>
-                <span class="tier-chip">Ollama / OpenAI / Gemini</span>
-              </div>
-            </div>
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-title">automated_governance.py — Automated CI/CD Safeguard &amp; Impact Analysis</span>
+            <button class="copy-btn" id="btn-copy-py" data-code="snippet-py" aria-label="Copy Programmatic Governance Python code">Copy Python</button>
           </div>
-
-          <div class="code-container">
-            <div class="code-header">
-              <span class="code-title">prompt_synthesizer.py — GraphRAG Topological Context Synthesis</span>
-              <button class="copy-btn" id="btn-copy-graphrag" data-code="snippet-graphrag" aria-label="Copy GraphRAG Context Synthesis Python code">Copy Python</button>
-            </div>
-            <pre><code id="snippet-graphrag"># GraphRAG Context Synthesis: Combining Vector Search + CSR Blast Radius
+          <pre><code id="snippet-py"># Automated CI/CD Guardrail: Evaluate Blast Radius before merging a PR
+from control_plane.src.agent_tools import get_dataset_blast_radius
 from control_plane.src.query_engine import QueryEngine
-from control_plane.src.prompt_synthesizer import PromptSynthesizer
 
-# 1. Initialize Unified Query Engine over Delta Lake
-engine = QueryEngine(data_path="/data/tenants/default/")
+# 1. Initialize LineagIQ query engine directly over your Lakehouse storage
+engine = QueryEngine(data_base_path="s3://enterprise-lakehouse/lineagiq/")
 
-# 2. Hybrid Step A: Semantic Vector Discovery via BLAS Dot-Product
-candidates = engine.vector_store.search_similar(query="customer churn revenue", top_k=1)
-target_node_id = candidates[0]["id"]  # "analytics.marts.fct_churn"
-
-# 3. Hybrid Step B: Microsecond CSR Multi-Hop Traversal (5 Hops)
-traversal_result = engine.graph_store.traverse_blast_radius(
-    node_id=target_node_id, 
+# 2. Compute downstream blast radius for a modified data asset
+impact_analysis = engine.get_downstream_blast_radius(
+    start_node_id="postgres.raw.raw_customers",
     max_depth=5
 )
 
-# 4. GraphRAG Context Synthesis: Format structured prompt for AI Agent
-synthesizer = PromptSynthesizer()
-llm_prompt = synthesizer.build_blast_radius_prompt(traversal_result)
+# 3. Check for high-impact downstream assets (e.g. executive dashboards, ML predictors)
+impacted_nodes = impact_analysis["impacted_nodes"]
+high_priority = [n for n in impacted_nodes if n.get("properties", {}).get("tier") == "executive_gold"]
 
-# Send to OpenAI, Gemini, or local Ollama instance (http://localhost:11434)</code></pre>
-          </div>
+if high_priority:
+    print(f"⚠️ Warning: {len(high_priority)} downstream executive assets impacted by this change:")
+    for asset in high_priority:
+        print(f"  • {asset['name']} ({asset['id']})")
+    # Gate the pull request or alert relevant data consumers automatically</code></pre>
         </div>
       </div>
-
-      <!-- Tab: AI Agent Retriever Tools -->
-      <div class="arch-tab-panel" id="tab-code" role="tabpanel" aria-labelledby="tab-btn-code">
-        <div class="diagram-card">
-          <h3 class="tier-title">Programmatic GraphRAG Integration for AI Agents</h3>
-          <p class="tier-desc">
-            Embed LineagIQ's lineage intelligence and blast-radius tools into agentic Python workflows (LangChain, AutoGen, LlamaIndex, or CrewAI) with minimal boilerplate:
-          </p>
-
-          <div class="code-container">
-            <div class="code-header">
-              <span class="code-title">agent_example.py — Autonomous Impact Assessment</span>
-              <button class="copy-btn" id="btn-copy-py" data-code="snippet-py" aria-label="Copy Programmatic GraphRAG Integration Python code">Copy Python</button>
-            </div>
-            <pre><code id="snippet-py">from openai import OpenAI
-from control_plane.src.agent_tools import (
-    get_dataset_blast_radius,
-    get_lineage_time_travel_diff
-)
-
-# 1. Retrieve Graph Context & Synthesized GraphRAG Prompt
-blast_radius_prompt = get_dataset_blast_radius(
-    node_id="postgres.raw.raw_customers",
-    max_depth=5
-)
-
-# 2. Dispatch Context to LLM of your choice (OpenAI, Gemini, or local Ollama)
-client = OpenAI()
-response = client.chat.completions.create(
-    model="gpt-4o",
-    messages=[
-        {"role": "system", "content": "You are LineagIQ AI Agent, an expert enterprise data architect."},
-        {"role": "user", "content": blast_radius_prompt}
-    ]
-)
-
-print(response.choices[0].message.content)</code></pre>
-          </div>
-        </div>
-      </div>
-
     </div>
   </section>
 
@@ -1365,7 +1129,7 @@ docker compose up -d control_plane</code></pre>
         </span>
         <h2 class="section-title" id="faq-title">Everything You Need to Know About LineagIQ</h2>
         <p class="section-subtitle">
-          Got questions about our serverless Delta Lake architecture, pure NumPy traversal engine, or GraphRAG AI integration? Find answers below.
+          Got questions about our serverless architecture, time-travel lineage diffing, CI/CD governance gates, or AI copilots? Find answers below.
         </p>
       </div>
 
@@ -1377,18 +1141,18 @@ docker compose up -d control_plane</code></pre>
           </summary>
           <div class="faq-answer">
             <p>LineagIQ is a serverless data lineage and enterprise semantic knowledge graph platform. Unlike traditional data catalogs (Collibra, Alation) that mandate provisioned Neo4j or Amazon Neptune clusters, LineagIQ persists topology datasets directly on open <strong>Delta Lake Parquet tables</strong> in cloud object storage (Amazon S3, Google Cloud Storage, or local disk).</p>
-            <p>At query runtime, LineagIQ compiles these tables into vectorized <strong>Compressed Sparse Row (CSR)</strong> and <strong>Compressed Sparse Column (CSC)</strong> contiguous index arrays in RAM, delivering microsecond traversals without persistent cluster overhead, JVM tuning, or 6-figure enterprise license fees.</p>
+            <p>At query runtime, LineagIQ loads these open tables into an ultra-fast, zero-overhead in-memory graph index, delivering sub-millisecond lineage traversals without persistent cluster overhead, JVM memory tuning, or 6-figure enterprise license fees.</p>
           </div>
         </details>
 
         <details class="faq-item">
           <summary class="faq-question">
-            <span>How fast are graph traversals with LineagIQ's pure NumPy query engine?</span>
+            <span>How fast are lineage queries and impact analyses with LineagIQ?</span>
             <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </summary>
           <div class="faq-answer">
-            <p>By eliminating JVM pointer chasing, database query planners, and object graph wrapping, LineagIQ's CSR/CSC adjacency engine evaluates multi-hop upstream and downstream lineage reachability queries in <strong>under 25 microseconds (&lt; 25 µs)</strong>.</p>
-            <p>In extensive benchmarks, this architecture delivers an <strong>18.6x reduction in memory footprint</strong> compared to traditional in-memory graph models like NetworkX, allowing 50,000+ entities to be analyzed effortlessly within single-digit megabytes of RAM.</p>
+            <p>By avoiding heavyweight graph database servers, network hops, and object overhead, LineagIQ resolves multi-hop upstream and downstream dependency queries in <strong>under 25 microseconds (&lt; 25 µs)</strong>.</p>
+            <p>In extensive benchmarks, this architecture delivers an <strong>18.6x reduction in memory footprint</strong> compared to legacy catalog solutions, allowing 50,000+ data assets to be analyzed effortlessly within lightweight serverless containers or standard CI/CD runners.</p>
           </div>
         </details>
 
@@ -1423,19 +1187,19 @@ docker compose up -d control_plane</code></pre>
             <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </summary>
           <div class="faq-answer">
-            <p>When any dataset or column is selected or flagged for modification, LineagIQ performs a vectorized Breadth-First Search (BFS) or Depth-First Search (DFS) traversal through its contiguous CSR index arrays.</p>
-            <p>It isolates the complete downstream reachability subgraph in real time, revealing every affected dbt mart, downstream ML training set, reverse-ETL connector, and executive BI dashboard before breaking changes reach production.</p>
+            <p>When any dataset or column is modified or reviewed in a pull request, LineagIQ traverses the full dependency chain downstream in real time.</p>
+            <p>It isolates every affected data mart, downstream machine learning model, reverse-ETL connector, and executive BI dashboard—giving engineering teams clear visibility into the impact before changes reach production.</p>
           </div>
         </details>
 
         <details class="faq-item">
           <summary class="faq-question">
-            <span>How does GraphRAG empower AI agents with lineage context?</span>
+            <span>How does LineagIQ empower AI agents and teams with lineage context?</span>
             <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </summary>
           <div class="faq-answer">
-            <p>LineagIQ creates 384-dimensional domain embeddings for all schema assets using an in-process INT8 ONNX embedder. Embeddings are stored in Delta Lake vector tables with normalized unit vectors.</p>
-            <p>When an engineer or AI agent poses a question (e.g., <em>"What broke the executive churn dashboard?"</em>), LineagIQ performs high-speed BLAS dot-product similarity matching, expands the structural graph context, and formats clean GraphRAG prompt packets for OpenAI, Gemini, or local Ollama LLMs.</p>
+            <p>LineagIQ provides structured semantic context and graph relationships directly to your engineering team and AI assistants.</p>
+            <p>When investigating incidents (e.g., <em>"What broke the executive churn dashboard?"</em>), LineagIQ pinpoints the exact upstream pipeline failure and delivers authoritative context to OpenAI, Claude, Gemini, or private local models (Ollama) without hallucination.</p>
           </div>
         </details>
 
@@ -1492,7 +1256,7 @@ docker compose up -d control_plane</code></pre>
             <li><a href="#time-travel">Time Travel Diffing</a></li>
             <li><a href="#blast-radius">Blast Radius Intelligence</a></li>
             <li><a href="#integrations">Universal Integrations</a></li>
-            <li><a href="#architecture">GraphRAG AI Assistant</a></li>
+            <li><a href="#ai-governance">AI Copilot &amp; Governance</a></li>
             <li><a href="#faq">Frequently Asked Questions</a></li>
           </ul>
         </div>
@@ -1501,9 +1265,9 @@ docker compose up -d control_plane</code></pre>
           <h4>Architecture</h4>
           <ul>
             <li><a href="#slim-stack">Slim Stack &amp; TCO</a></li>
+            <li><a href="#architecture">Three-Tier System Design</a></li>
             <li><a href="#architecture">Delta Lake Commit Log</a></li>
-            <li><a href="#architecture">Vectorized Traversal</a></li>
-            <li><a href="#architecture">Stateless Collectors</a></li>
+            <li><a href="#architecture">CI/CD Governance Gates</a></li>
           </ul>
         </div>
 
