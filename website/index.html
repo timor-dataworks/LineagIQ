@@ -885,43 +885,23 @@
 
         <div class="code-container">
           <div class="code-header">
-            <span class="code-title">automated_governance.py — Automated CI/CD Safeguard via LineagIQ REST API</span>
+            <span class="code-title">automated_governance.py — CI/CD Blast Radius Gate</span>
             <button class="copy-btn" id="btn-copy-py" data-code="snippet-py" aria-label="Copy Programmatic Governance Python code">Copy Python</button>
           </div>
-          <pre><code id="snippet-py"># Automated CI/CD Guardrail: Evaluate Blast Radius via REST API before merging PR
-import os
-import sys
-import requests
+          <pre><code id="snippet-py">import requests, sys
 
-# 1. Target LineagIQ Control Plane REST API
-LINEAGIQ_API_URL = os.getenv("LINEAGIQ_API_URL", "https://plane.lineagiq.com")
+# 1. Query downstream blast radius for a modified data asset
+res = requests.post("https://plane.lineagiq.com/api/v1/blast-radius", json={
+    "node_id": "postgres.raw.raw_customers",
+    "max_depth": 5
+}).json()
 
-# 2. Query Downstream Blast Radius endpoint for the modified data asset
-response = requests.post(
-    f"{LINEAGIQ_API_URL}/api/v1/blast-radius",
-    json={
-        "node_id": "postgres.raw.raw_customers",
-        "max_depth": 5
-    },
-    timeout=10
-)
-response.raise_for_status()
-impact_analysis = response.json()
+# 2. Block PR merge if critical downstream assets are affected
+critical = [n["name"] for n in res["impacted_nodes"] if n.get("properties", {}).get("tier") == "executive_gold"]
+if critical:
+    sys.exit(f"❌ CI/CD Gate Blocked: {len(critical)} critical downstream assets affected: {critical}")
 
-# 3. Check for high-impact downstream assets (e.g. executive gold marts, ML predictors)
-impacted_nodes = impact_analysis.get("impacted_nodes", [])
-gold_assets = [
-    n for n in impacted_nodes
-    if n.get("properties", {}).get("tier") == "executive_gold"
-]
-
-if gold_assets:
-    print(f"⚠️ CI/CD Gate Failed: {len(gold_assets)} executive assets impacted by this change:")
-    for asset in gold_assets:
-        print(f"  • {asset.get('name', asset.get('id'))} ({asset.get('type')})")
-    sys.exit(1)  # Block pull request merge until downstream owners approve
-
-print(f"✅ Lineage Gate Passed: 0 breaking changes across {len(impacted_nodes)} downstream dependencies.")</code></pre>
+print(f"✅ Lineage Gate Passed: {len(res['impacted_nodes'])} downstream dependencies verified safe.")</code></pre>
         </div>
       </div>
     </div>
