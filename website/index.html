@@ -875,41 +875,53 @@
         <div class="scale-card-header">
           <div class="scale-header-badge">
             <span class="badge badge-purple">Automated Workflow Integration</span>
-            <span class="scale-tag">REST API &amp; Python Client</span>
+            <span class="scale-tag">REST API Calls</span>
           </div>
           <h3 class="scale-card-title">Embed Lineage Intelligence Directly Into Your CI/CD &amp; AI Workflows</h3>
           <p class="scale-card-desc">
-            Query blast radius, execute semantic search, and detect breaking schema drift programmatically with clean, standard endpoints:
+            Evaluate blast radius, detect breaking schema drift, and gate PRs automatically using clean REST API calls from GitHub Actions, GitLab CI, Airflow, or AI agents:
           </p>
         </div>
 
         <div class="code-container">
           <div class="code-header">
-            <span class="code-title">automated_governance.py — Automated CI/CD Safeguard &amp; Impact Analysis</span>
+            <span class="code-title">automated_governance.py — Automated CI/CD Safeguard via LineagIQ REST API</span>
             <button class="copy-btn" id="btn-copy-py" data-code="snippet-py" aria-label="Copy Programmatic Governance Python code">Copy Python</button>
           </div>
-          <pre><code id="snippet-py"># Automated CI/CD Guardrail: Evaluate Blast Radius before merging a PR
-from control_plane.src.agent_tools import get_dataset_blast_radius
-from control_plane.src.query_engine import QueryEngine
+          <pre><code id="snippet-py"># Automated CI/CD Guardrail: Evaluate Blast Radius via REST API before merging PR
+import os
+import sys
+import requests
 
-# 1. Initialize LineagIQ query engine directly over your Lakehouse storage
-engine = QueryEngine(data_base_path="s3://enterprise-lakehouse/lineagiq/")
+# 1. Target LineagIQ Control Plane REST API
+LINEAGIQ_API_URL = os.getenv("LINEAGIQ_API_URL", "https://plane.lineagiq.com")
 
-# 2. Compute downstream blast radius for a modified data asset
-impact_analysis = engine.get_downstream_blast_radius(
-    start_node_id="postgres.raw.raw_customers",
-    max_depth=5
+# 2. Query Downstream Blast Radius endpoint for the modified data asset
+response = requests.post(
+    f"{LINEAGIQ_API_URL}/api/v1/blast-radius",
+    json={
+        "node_id": "postgres.raw.raw_customers",
+        "max_depth": 5
+    },
+    timeout=10
 )
+response.raise_for_status()
+impact_analysis = response.json()
 
-# 3. Check for high-impact downstream assets (e.g. executive dashboards, ML predictors)
-impacted_nodes = impact_analysis["impacted_nodes"]
-high_priority = [n for n in impacted_nodes if n.get("properties", {}).get("tier") == "executive_gold"]
+# 3. Check for high-impact downstream assets (e.g. executive gold marts, ML predictors)
+impacted_nodes = impact_analysis.get("impacted_nodes", [])
+gold_assets = [
+    n for n in impacted_nodes
+    if n.get("properties", {}).get("tier") == "executive_gold"
+]
 
-if high_priority:
-    print(f"⚠️ Warning: {len(high_priority)} downstream executive assets impacted by this change:")
-    for asset in high_priority:
-        print(f"  • {asset['name']} ({asset['id']})")
-    # Gate the pull request or alert relevant data consumers automatically</code></pre>
+if gold_assets:
+    print(f"⚠️ CI/CD Gate Failed: {len(gold_assets)} executive assets impacted by this change:")
+    for asset in gold_assets:
+        print(f"  • {asset.get('name', asset.get('id'))} ({asset.get('type')})")
+    sys.exit(1)  # Block pull request merge until downstream owners approve
+
+print(f"✅ Lineage Gate Passed: 0 breaking changes across {len(impacted_nodes)} downstream dependencies.")</code></pre>
         </div>
       </div>
     </div>
